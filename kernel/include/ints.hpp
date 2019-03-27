@@ -42,4 +42,19 @@ public:
         uint16_t paddingSS[3];
     };
 #pragma pack(pop)
+    typedef bool (*HandlerCallback)(State *state, void *context);
+    struct Handler
+    {
+        Handler *Next; // set to 0
+        HandlerCallback Callback;
+        void *Context;
+    };
+private:
+    static Handler *Handlers[];
+public:
+    static void CommonHandler(State *state);
+    static void RegisterHandler(uint intNo, Handler *handler);
+    static void UnRegisterHandler(uint intNo, Handler *handler);
+    static uint HandlerCount(uint intNo);
+    static void DumpState(Ints::State *state);
 };

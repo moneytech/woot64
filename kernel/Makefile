@@ -1,8 +1,13 @@
 OUTFILE = kernel
 OBJS = boot/boot.o boot/boot64.o \
+	bitmap.o \
+	cpu.o \
+	cxx.o \
 	ints.o \
 	isrs.o \
-	kmain.o
+	kmain.o \
+	memory.o \
+	paging.o
 
 TOP_DIR ?= $(shell realpath ..)
 CC ?= clang

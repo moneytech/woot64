@@ -50,7 +50,7 @@ clean-$(IMGFILE):
 	rm -f $(IMGFILE)
 
 run:
-	$(QEMU) -s -m 256 -M q35 -drive format=raw,file=hdd.img
+	$(QEMU) -s -m 256 -M q35 -drive format=raw,file=hdd.img -debugcon vc
 
 .PHONY: clean distclean clean-$(IMGFILE) run install
 

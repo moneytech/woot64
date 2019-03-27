@@ -147,6 +147,30 @@ pdpe:
     dq (($ - pdpe) << 21) | 0x83
     dq (($ - pdpe) << 21) | 0x83
     dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
+    dq (($ - pdpe) << 21) | 0x83
     times 4096 - ($ - pdpe) db 0
 
 gdt:

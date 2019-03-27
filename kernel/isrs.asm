@@ -347,7 +347,6 @@ isrCommonStub:
     mov ss, ax
 
     mov rdi, rsp
-    ;add rdi, 0x60
     call intsCommonHandler
 
     pop gs
