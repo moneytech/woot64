@@ -1,4 +1,6 @@
 Makefile
 boot/boot.asm
+boot/boot64.asm
 boot/grub/grub.cfg
+kmain.cpp
 link.ld
