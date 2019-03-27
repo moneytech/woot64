@@ -1,6 +1,10 @@
 [bits 32]
 
 %define KERNEL_BASE 0xFFFF800000000000
+%define PAGE_SIZE 4096
+
+%define ISR_STUB_SIZE       16  ; this MUST match the size of ISR_ERRCODE and
+                                ; ISR_NOERRCODE macro expansions in isrs.asm
 
 %define MULTIBOOT_MAGIC 0x1BADB002
 %define MULTIBOOT_FLAGS 0x00000007
@@ -61,6 +65,53 @@ _start:
     mov gs, ax
     mov ss, ax
 
+; set up TSS
+.setup_tss:
+    cld
+    mov rax, KERNEL_BASE
+    add rax, tss - KERNEL_BASE
+    mov rdi, KERNEL_BASE
+    add rdi, gdt - KERNEL_BASE + 0x48 + 2
+    stosw
+    shr rax, 16
+    stosb
+    inc rdi
+    inc rdi
+    mov [rdi], ah
+    shr rax, 16
+    inc rdi
+    stosd
+    mov ax, 0x0048
+    ltr ax
+
+; set up IDT
+extern isr0
+.setup_idt:
+    cld
+    mov rcx, 256
+    mov rdi, KERNEL_BASE
+    add rdi, idt - KERNEL_BASE
+    mov rdx, KERNEL_BASE
+    add rdx, isr0 - KERNEL_BASE
+.next_idt_entry
+    mov rax, rdx
+    stosw           ; offset 15..0
+    mov ax, 0x0028
+    stosw           ; 32 bit kernel code selector
+    mov al, 0
+    stosb           ; zero
+    mov al, 0x8E
+    stosb           ; type and attributes
+    shr rax, 16
+    stosw           ; offset 31..16
+    shr rax, 16
+    stosd           ; offset 63..32
+    shr rax, 32
+    stosd           ; reserverd fields
+    add rdx, ISR_STUB_SIZE
+    loop .next_idt_entry
+    lidt [idt_descr - KERNEL_BASE]
+
     ; jump to 64 bit entry point
     mov rbx, KERNEL_BASE
     add rbx, [multiboot_info_ptr - KERNEL_BASE]
@@ -112,8 +163,22 @@ gdt:
     dq 0x00AFF2000000FFFF   ; user64 data 0x0040
 
     dq 0x0040890000000067   ; tss 0x0048
-.end
+    dq 0x0000000000000000   ; tss high half
+.end:
+
+idt_descr:
+    dw idt.end - idt;
+    dq idt
 
 segment .bss
 multiboot_info_ptr:
     resd 1
+
+align PAGE_SIZE
+tss:
+    resb PAGE_SIZE
+
+align PAGE_SIZE
+idt:
+    resq 256 * 2
+.end:

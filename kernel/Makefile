@@ -1,5 +1,8 @@
 OUTFILE = kernel
-OBJS = boot/boot.o boot/boot64.o kmain.o
+OBJS = boot/boot.o boot/boot64.o \
+	ints.o \
+	isrs.o \
+	kmain.o
 
 TOP_DIR ?= $(shell realpath ..)
 CC ?= clang
@@ -17,7 +20,8 @@ COMPILE_FLAGS = \
 	-Ulinux \
 	-D__WOOT__ \
 	-ggdb \
-	-I$(TOP_DIR)/kernel
+	-I$(TOP_DIR)/kernel/include \
+	-masm=intel
 	
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions -fno-rtti

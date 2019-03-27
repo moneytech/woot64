@@ -2,5 +2,10 @@ Makefile
 boot/boot.asm
 boot/boot64.asm
 boot/grub/grub.cfg
+include/ints.hpp
+include/multiboot.h
+include/types.h
+ints.cpp
+isrs.asm
 kmain.cpp
 link.ld
