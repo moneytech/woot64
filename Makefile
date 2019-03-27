@@ -1,6 +1,7 @@
 MOUNTPOINT = /mnt
 LOOP_DEVICE = /dev/loop7
 QEMU = /usr/bin/qemu-system-x86_64
+IMGFILE = hdd.img
 
 SUBDIRS = kernel
 
@@ -11,17 +12,21 @@ ASM = yasm
 LD = ld
 AR = ar
 
-export CC CXX ASM LD AR
+TOP_DIR = $(shell realpath .)
+
+export CC CXX ASM LD AR TOP_DIR
 
 all:
-	for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir; \
-	done
+	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
 
-install:
-	
+install: $(IMGFILE)
+	mkdir -p ./root
+	for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
+	$(MAKE) try-mount
+	-cp -r ./root/* $(MOUNTPOINT)
+	$(MAKE) try-umount
 
-hdd.img: hdd-empty-ext2.img.gz
+$(IMGFILE): hdd-empty-ext2.img.gz
 	gunzip -c $? > $@
 	$(MAKE) try-mount
 	grub-install --boot-directory=$(MOUNTPOINT)/boot $(LOOP_DEVICE)
@@ -36,9 +41,16 @@ try-umount:
 	-sudo losetup -D $(LOOP_DEVICE)
 
 clean:
+	-for dir in $(SUBDIRS); do $(MAKE) -C $$dir clean; done
+
+distclean: clean clean-$(IMGFILE)
+	rm -rf ./root
+	
+clean-$(IMGFILE):
+	rm -f $(IMGFILE)
 
 run:
-	$(QEMU) -s -m 256 -M q35 -drive type=raw,file=hdd.img
+	$(QEMU) -s -m 256 -M q35 -drive format=raw,file=hdd.img
 
-.PHONY: clean run
+.PHONY: clean distclean clean-$(IMGFILE) run install
 
