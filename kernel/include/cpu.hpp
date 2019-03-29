@@ -53,10 +53,21 @@ void cpuIOClrBitsW(uint16_t port, uint16_t mask);
 void cpuIOClrBitsL(uint16_t port, uint64_t mask);
 void cpuIOClrBitsD(uint16_t port, uint64_t mask);
 
+// int n instruction
+void cpuINT(uint8_t intNo);
+
 // floating point stuff
 void cpuFXSave(void *buffer);
 void cpuFXRstor(void *buffer);
 void cpuInitFPU(uint16_t cw);
 void cpuEnableSSE();
+
+// MSRs
+uint64_t cpuReadMSR(uint32_t msr);
+void cpuWriteMSR(uint32_t msr, uint64_t value);
+
+// misc
+//void cpuEnterUserMode(uint32_t esp, uint32_t eip);
+uint64_t cpuReadTSC();
 
 }

@@ -1,6 +1,7 @@
 #include <cpu.hpp>
 #include <debug.hpp>
 #include <ints.hpp>
+#include <irqs.hpp>
 
 #define VECTOR_COUNT 256
 
@@ -52,22 +53,21 @@ class Thread;
 
 void Ints::CommonHandler(Ints::State *state)
 {
-    //int irq = state->InterruptNumber - IRQs::Base;
-    //bool isIrq = irq >= 0 && irq < IRQs::Count;
+    int irq = state->InterruptNumber - IRQs::Base;
+    bool isIrq = irq >= 0 && irq < IRQs::Count;
     Process *cp = nullptr;//Process::GetCurrent();
     Thread *ct = nullptr;//Thread::GetCurrent();
 
     // handle spurious irqs
-    /*if(isIrq)
+    if(isIrq)
     {
         if(IRQs::IsSpurious(irq))
         {
             IRQs::HandleSpurious(irq);
             return;
         }
-    }*/
+    }
 
-    bool isIrq = false;
     bool handled = false;
 
     /*if(ct)

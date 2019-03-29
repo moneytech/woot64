@@ -1,8 +1,14 @@
 callbackstream.cpp
+cmos.cpp
 debug.cpp
 include/callbackstream.hpp
+include/cmos.hpp
+include/irqs.hpp
 include/random.hpp
+include/time.hpp
+irqs.cpp
 random.cpp
+time.cpp
 uuid.cpp
 character.cpp
 include/character.hpp

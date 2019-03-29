@@ -1,10 +1,12 @@
 #include <cpu.hpp>
 #include <debug.hpp>
 #include <heap.hpp>
+#include <irqs.hpp>
 #include <misc.hpp>
 #include <multiboot.h>
 #include <paging.hpp>
 #include <sysdefs.h>
+#include <time.hpp>
 #include <types.h>
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
@@ -13,6 +15,14 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
           KERNEL_VERSION_MAJOR,
           KERNEL_VERSION_MINOR,
           KERNEL_VERSION_DESCR);
+    IRQs::Initialize();
+    Time::Initialize();
+    Time::DateTime bootDateTime;
+    Time::GetDateTime(&bootDateTime);
+    DEBUG("[kmain] Boot started on %.4d-%.2d-%.2d at %.2d:%.2d:%.2d\n",
+          bootDateTime.Year, bootDateTime.Month, bootDateTime.Day,
+          bootDateTime.Hour, bootDateTime.Minute, bootDateTime.Second);
+    DEBUG("[kmain] Exiting kmain()\n");
     return 0xABCD;
 }
 

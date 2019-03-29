@@ -3,11 +3,13 @@ OBJS = boot/boot.o boot/boot64.o \
 	bitmap.o \
 	callbackstream.o \
 	character.o \
+	cmos.o \
 	cpu.o \
 	cxx.o \
 	debug.o \
 	heap.o \
 	ints.o \
+	irqs.o \
 	isrs.o \
 	kmain.o \
 	memory.o \
@@ -16,6 +18,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	random.o \
 	stream.o \
 	string.o \
+	time.o \
 	uuid.o
 
 TOP_DIR ?= $(shell realpath ..)
