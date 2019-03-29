@@ -313,7 +313,7 @@ int64_t Stream::VWriteFmt(const char *fmt, VarArgs args)
                 }
 
                 bool upperCase = Character::IsUpper(c);
-                uint64_t val = longSpec ? VarArg(args, uint64_t) : VarArg(args, uint);
+                uint64_t val = longSpec ? VarArg(args, uint64_t) : VarArg(args, uintn);
                 int maxDigits = width ? width - (hashFlag ? 2 : 0) : 16;
                 int len = WriteHex(val, upperCase, precision, maxDigits, true);
                 len += hashFlag ? 2 : 0;

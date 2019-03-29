@@ -54,12 +54,12 @@ class Thread;
 void Ints::CommonHandler(Ints::State *state)
 {
     int irq = state->InterruptNumber - IRQs::Base;
-    bool isIrq = irq >= 0 && irq < IRQs::Count;
+    bool isIRQ = irq >= 0 && irq < IRQs::Count;
     Process *cp = nullptr;//Process::GetCurrent();
     Thread *ct = nullptr;//Thread::GetCurrent();
 
     // handle spurious irqs
-    if(isIrq)
+    if(isIRQ)
     {
         if(IRQs::IsSpurious(irq))
         {
@@ -84,27 +84,27 @@ void Ints::CommonHandler(Ints::State *state)
     Handler *handler = Handlers[state->InterruptNumber];
     for(; !handled && handler && handler->Callback; handler = handler->Next)
         handled = handler->Callback(state, handler->Context);
-    //if(!handled && isIrq)
-    //    IRQs::HandleSpurious(irq);
-    /*else */if(!handled && state->InterruptNumber != 0x80)
+    if(!handled && isIRQ)
+        IRQs::HandleSpurious(irq); // unhandled IRQs are treated as spurious
+    if(!handled && state->InterruptNumber != 0x80)
     {
         // print some info about what happened
-        /*if(isIrq)
+        if(isIRQ)
             DEBUG("Unhandled IRQ %d (interrupt %d)\n", irq, state->InterruptNumber);
         else
         {
             DEBUG("Unhandled %s %d (%s)\n",
-                  state->InterruptNumber < IRQS_BASE ? "exception" : "interrupt",
+                  state->InterruptNumber < IRQs::Base ? "exception" : "interrupt",
                   state->InterruptNumber,
-                  state->InterruptNumber < IRQS_BASE ? excNames[state->InterruptNumber] : "hardware interrupt");
+                  state->InterruptNumber < IRQs::Base ? excNames[state->InterruptNumber] : "hardware interrupt");
 
-            if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
+            /*if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
             if(ct)
             {
                 ++ct->ExcCount;
                 DEBUG("Thread: %d (%s)\n", ct->ID, ct->Name);
-            }
-        }*/
+            }*/
+        }
 
         // print extra info for PF
         if(state->InterruptNumber == 14)
@@ -121,7 +121,7 @@ void Ints::CommonHandler(Ints::State *state)
             Thread::Finalize(ct, 127);
         }*/
 
-        DEBUG("Stack trace:\n");
+        /*DEBUG("Stack trace:\n");
         uintptr_t *rbp = (uintptr_t *)state->RBP;
         for(int i = 0; i < 5; ++i)
         {
@@ -129,15 +129,15 @@ void Ints::CommonHandler(Ints::State *state)
             if(!rip) break;
             rbp = (uintptr_t *)(*rbp);
             DEBUG("%p\n", rip);
-        }
+        }*/
 
         _outsb("except", 0xE9, 6);
         /*if(ct && ct->ID != 1)
             Thread::Finalize(ct, 127);
-        else cpuSystemHalt(state->InterruptNumber);*/
+        else*/ cpuSystemHalt(state->InterruptNumber);
     }
 
-    //if(isIrq) IRQs::SendEOI(irq);
+    if(isIRQ) IRQs::SendEOI(irq);
 }
 
 void Ints::RegisterHandler(uint intNo, Ints::Handler *handler)
@@ -179,14 +179,17 @@ uint Ints::HandlerCount(uint intNo)
 
 void Ints::DumpState(Ints::State *state)
 {
-    DEBUG("RAX: %.16X RBX: %.16X\nRCX: %.16X EDX: %.16X\n",
-          state->RAX, state->RBX, state->RCX, state->RDX);
-    DEBUG("RSI: %.16X RDI: %.16X\nRSP: %.16X RBP: %.16X\n",
-          state->RSI, state->RDI, state->RSP, state->RBP);
-    DEBUG("CS: %.4X RIP: %.16X\nEFLAGS: %.16X ErrorCode: %.16x\n",
-          state->CS, state->RIP, state->RFLAGS, state->ErrorCode);
-    DEBUG("DS: %.4X ES: %.4X FS: %.4X GS: %.4X SS: %.4X\n",
-          state->DS, state->ES, state->FS, state->GS, state->SS);
-    DEBUG("CR0: %.16X\nCR2: %.16X\nCR3: %.8X\n",
-          cpuGetCR0(), cpuGetCR2(), cpuGetCR3());
+    DEBUG("RAX: %.16X RBX: %.16X\n", state->RAX, state->RBX);
+    DEBUG("RCX: %.16X EDX: %.16X\n", state->RCX, state->RDX);
+    DEBUG("RSI: %.16X RDI: %.16X\n", state->RSI, state->RDI);
+    DEBUG("RSP: %.16X RBP: %.16X\n", state->RSP, state->RBP);
+    DEBUG(" R8: %.16X  R9: %.16X\n", state->R8, state->R9);
+    DEBUG("R10: %.16X R11: %.16X\n", state->R10, state->R11);
+    DEBUG("R12: %.16X R13: %.16X\n", state->R12, state->R13);
+    DEBUG("R14: %.16X R15: %.16X\n", state->R14, state->R15);
+    DEBUG("RFL: %.16X ERR: %.16x\n", state->RFLAGS, state->ErrorCode);
+    DEBUG("CR0: %.16X CR2: %.16X\n", cpuGetCR0(), cpuGetCR2());
+    DEBUG("CR3: %.16X CR4: %.16X\n", cpuGetCR3(), cpuGetCR4());
+    DEBUG(" CS: %.4x    DS: %.4x  ES: %.4x    FS: %.4x\n", state->CS, state->DS, state->ES, state->FS);
+    DEBUG(" GS: %.4x    SS: %.4x RIP: %.16X\n", state->GS, state->SS, state->RIP);
 }

@@ -22,6 +22,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("[kmain] Boot started on %.4d-%.2d-%.2d at %.2d:%.2d:%.2d\n",
           bootDateTime.Year, bootDateTime.Month, bootDateTime.Day,
           bootDateTime.Hour, bootDateTime.Minute, bootDateTime.Second);
+    asm("int3");
     DEBUG("[kmain] Exiting kmain()\n");
     return 0xABCD;
 }

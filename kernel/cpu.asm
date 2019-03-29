@@ -71,6 +71,16 @@ cpuSetCR3:
     mov cr3, rdi
     ret
 
+global cpuGetCR4
+cpuGetCR4:
+    mov rax, cr4
+    ret
+
+global cpuSetCR4
+cpuSetCR4:
+    mov cr4, rdi
+    ret
+
 global cpuInvalidatePage
 cpuInvalidatePage:
     invlpg [rdi]

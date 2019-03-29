@@ -50,6 +50,11 @@ extern "C" void __cxa_pure_virtual()
     cpuSystemHalt(0xCACACACA);
 }
 
+extern "C" void __cxa_bad_typeid()
+{
+    cpuSystemHalt(0x2BAD2BAD);
+}
+
 void *operator new(size_t size)
 {
     return Heap::Allocate(size, 0, true);

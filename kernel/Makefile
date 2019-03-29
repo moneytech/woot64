@@ -6,6 +6,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	cmos.o \
 	cpu.o \
 	cxx.o \
+	cxxabi.o \
 	debug.o \
 	heap.o \
 	ints.o \
@@ -19,6 +20,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	stream.o \
 	string.o \
 	time.o \
+	typeinfo.o \
 	uuid.o
 
 TOP_DIR ?= $(shell realpath ..)
@@ -41,7 +43,7 @@ COMPILE_FLAGS = \
 	-masm=intel
 	
 CFLAGS = $(COMPILE_FLAGS)
-CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions -fno-rtti
+CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions
 ASMFLAGS ?= -f elf64 -g dwarf2 -w
 LDFLAGS = -Tlink.ld -z max-page-size=4096
 
