@@ -11,7 +11,7 @@ extern cpuInitFPU
 extern cpuEnableSSE
 global _start64
 _start64:
-    lea rsp, [rel kernelStack.end]
+    lea rsp, [rel mainKernelThreadStack]
     xor rbp, rbp
     mov rdi, rbx
 
@@ -44,6 +44,8 @@ _start64:
 
 segment .bss
 align PAGE_SIZE
-kernelStack:
+global mainKernelThreadStack
+mainKernelThreadStack:
     resb 64 << 10
-.end:
+global mainKernelThreadStackEnd
+mainKernelThreadStackEnd:

@@ -54,7 +54,7 @@ void cpuIOClrBitsL(uint16_t port, uint64_t mask);
 void cpuIOClrBitsD(uint16_t port, uint64_t mask);
 
 // int n instruction
-void cpuINT(uint8_t intNo);
+uintn cpuINT(uint8_t intNo);
 
 // floating point stuff
 void cpuFXSave(void *buffer);

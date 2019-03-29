@@ -36,7 +36,7 @@ public:
     static uint64_t GetTickFrequency();
     static uint64_t GetTickCount();
     static double GetSystemUpTime();
-    static void FakeTick();
+    static uintn FakeTick();
     static uint Sleep(uint millis, bool interruptible);
     static time_t GetTime();
     static time_t GetTimeOfDay();

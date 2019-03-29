@@ -346,8 +346,10 @@ isrCommonStub:
     mov es, ax
     mov ss, ax
 
+    push rsp
     mov rdi, rsp
     call intsCommonHandler
+    pop rsp
 
     pop gs
     pop fs

@@ -2,8 +2,10 @@
 #include <cpu.hpp>
 #include <errno.h>
 #include <irqs.hpp>
-//#include <thread.hpp>
+#include <thread.hpp>
 #include <time.hpp>
+
+#include <debug.hpp>
 
 uint64_t Time::systemTicks = 0;
 uint64_t Time::systemTickFreq = 1;
@@ -18,7 +20,7 @@ static uint8_t bcdToDec(uint8_t bcd)
 bool Time::Tick(Ints::State *state, void *context)
 {
     bool isIRQ = CMOS::Read(0x0C) & 0x80;
-    //Thread::Switch(state, Thread::GetNext(isIRQ && !isFakeTick));
+    Thread::Switch(state, Thread::GetNext(isIRQ && !isFakeTick));
     isFakeTick = false;
     if(isIRQ)
         ++systemTicks;
@@ -160,20 +162,21 @@ double Time::GetSystemUpTime()
     return (double)GetTickCount() / (double)systemTickFreq;
 }
 
-void Time::FakeTick()
+uintn Time::FakeTick()
 {
     bool ints = cpuDisableInterrupts();
     isFakeTick = true;
-    cpuINT(IRQs::Base + 8);
+    uintn res = cpuINT(IRQs::Base + 8);
     cpuRestoreInterrupts(ints);
+    return res;
 }
 
-/*uint Time::Sleep(uint millis, bool interruptible)
+uint Time::Sleep(uint millis, bool interruptible)
 {
     Thread *ct = Thread::GetCurrent();
     if(!ct) return 0;
     return ct->Sleep(millis, interruptible);
-}*/
+}
 
 time_t Time::GetTime()
 {

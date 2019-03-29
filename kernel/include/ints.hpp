@@ -8,6 +8,7 @@ public:
 #pragma pack(push, 1)
     struct State
     {
+        uint64_t SwitchRSP;
         uint16_t GS;
         uint16_t paddingGS[3];
         uint16_t FS;

@@ -19,6 +19,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	random.o \
 	stream.o \
 	string.o \
+	thread.o \
 	time.o \
 	typeinfo.o \
 	uuid.o
@@ -30,6 +31,7 @@ ASM ?= yasm
 LD ?= ld
 
 COMPILE_FLAGS = \
+	-masm=intel \
 	-ffreestanding \
 	-mcmodel=large \
 	-mno-red-zone \
@@ -39,8 +41,7 @@ COMPILE_FLAGS = \
 	-Ulinux \
 	-D__WOOT__ \
 	-ggdb \
-	-I$(TOP_DIR)/kernel/include \
-	-masm=intel
+	-I$(TOP_DIR)/kernel/include
 	
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions

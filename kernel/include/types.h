@@ -26,4 +26,7 @@ typedef uint32_t uintn;
 #error Can compile only for 32 or 64 bit architectures
 #endif // __SIZE_WIDTH__
 
+// these should go to their respective headers
+typedef int pid_t;
+
 typedef unsigned int uint;

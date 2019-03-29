@@ -1267,9 +1267,8 @@ _INTFF:
 
 global cpuINT
 cpuINT:
-    shl rdi, 3
-    add rdi, [rel _INTJumpTable]
-    jmp [rdi]
+    lea rsi, [rel _INTJumpTable]
+    jmp [rsi + rdi * 8]
 
   segment .data
 _INTJumpTable:
@@ -1311,7 +1310,7 @@ cpuInitFPU:
 global cpuEnableSSE
 cpuEnableSSE:
     mov rax, cr0
-    and rax, 0xFFFFFFFB
+    and rax, ~4
     or rax, 0x00000022
     mov cr0, rax
     mov rax, cr4

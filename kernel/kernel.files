@@ -7,10 +7,13 @@ include/cmos.hpp
 include/cxxabi.h
 include/irqs.hpp
 include/random.hpp
+include/sequencer.hpp
+include/thread.hpp
 include/time.hpp
 include/typeinfo
 irqs.cpp
 random.cpp
+thread.cpp
 time.cpp
 typeinfo.cpp
 uuid.cpp

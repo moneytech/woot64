@@ -2,6 +2,7 @@
 #include <debug.hpp>
 #include <ints.hpp>
 #include <irqs.hpp>
+#include <thread.hpp>
 
 #define VECTOR_COUNT 256
 
@@ -56,7 +57,7 @@ void Ints::CommonHandler(Ints::State *state)
     int irq = state->InterruptNumber - IRQs::Base;
     bool isIRQ = irq >= 0 && irq < IRQs::Count;
     Process *cp = nullptr;//Process::GetCurrent();
-    Thread *ct = nullptr;//Thread::GetCurrent();
+    Thread *ct = Thread::GetCurrent();
 
     // handle spurious irqs
     if(isIRQ)
@@ -98,12 +99,12 @@ void Ints::CommonHandler(Ints::State *state)
                   state->InterruptNumber,
                   state->InterruptNumber < IRQs::Base ? excNames[state->InterruptNumber] : "hardware interrupt");
 
-            /*if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
+            //if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
             if(ct)
             {
                 ++ct->ExcCount;
                 DEBUG("Thread: %d (%s)\n", ct->ID, ct->Name);
-            }*/
+            }
         }
 
         // print extra info for PF
@@ -119,9 +120,9 @@ void Ints::CommonHandler(Ints::State *state)
         {
             DEBUG("Something went wrong when building stack trace. Killing thread.\n");
             Thread::Finalize(ct, 127);
-        }*/
+        }
 
-        /*DEBUG("Stack trace:\n");
+        DEBUG("Stack trace:\n");
         uintptr_t *rbp = (uintptr_t *)state->RBP;
         for(int i = 0; i < 5; ++i)
         {
@@ -131,10 +132,8 @@ void Ints::CommonHandler(Ints::State *state)
             DEBUG("%p\n", rip);
         }*/
 
-        _outsb("except", 0xE9, 6);
-        /*if(ct && ct->ID != 1)
-            Thread::Finalize(ct, 127);
-        else*/ cpuSystemHalt(state->InterruptNumber);
+        if(ct && ct->ID != 1) Thread::Finalize(ct, 127);
+        else cpuSystemHalt(state->InterruptNumber);
     }
 
     if(isIRQ) IRQs::SendEOI(irq);
@@ -180,7 +179,7 @@ uint Ints::HandlerCount(uint intNo)
 void Ints::DumpState(Ints::State *state)
 {
     DEBUG("RAX: %.16X RBX: %.16X\n", state->RAX, state->RBX);
-    DEBUG("RCX: %.16X EDX: %.16X\n", state->RCX, state->RDX);
+    DEBUG("RCX: %.16X RDX: %.16X\n", state->RCX, state->RDX);
     DEBUG("RSI: %.16X RDI: %.16X\n", state->RSI, state->RDI);
     DEBUG("RSP: %.16X RBP: %.16X\n", state->RSP, state->RBP);
     DEBUG(" R8: %.16X  R9: %.16X\n", state->R8, state->R9);

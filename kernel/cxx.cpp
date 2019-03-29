@@ -65,8 +65,24 @@ void *operator new[](size_t size)
     return Heap::Allocate(size, 0, true);
 }
 
+// new with alignment
+void *operator new(size_t size, size_t alignment)
+{
+    return Heap::Allocate(size, alignment, true);
+}
+
+void *operator new[](size_t size, size_t alignment)
+{
+    return Heap::Allocate(size, alignment, true);
+}
+
 // placement new
 void *operator new(size_t size, void *ptr)
+{
+    return ptr;
+}
+
+void *operator new[](size_t size, void *ptr)
 {
     return ptr;
 }
