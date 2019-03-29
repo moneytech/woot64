@@ -15,4 +15,7 @@ typedef __INTPTR_TYPE__ intptr_t;
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 typedef __SIZE_TYPE__ size_t;
 
+typedef __int128_t int128_t;
+typedef __uint128_t uint128_t;
+
 typedef unsigned int uint;

@@ -9,3 +9,7 @@
 #define PAGE_SHIFT  12
 #define PAGE_SIZE   (1 << PAGE_SHIFT)
 #define PAGE_MASK   (PAGE_SIZE - 1)
+
+#define KERNEL_VERSION_MAJOR 0
+#define KERNEL_VERSION_MINOR 3
+#define KERNEL_VERSION_DESCR "64-bit"

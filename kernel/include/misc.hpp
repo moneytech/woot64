@@ -12,3 +12,10 @@ class Stream;
 #define offsetof __builtin_offsetof
 
 #define c_func_alias(al, name) extern "C" void al() __attribute__((alias(#name)))
+
+class Misc
+{
+public:
+    static void InitializeDebugStream();
+    static uint64_t PowMax(uint64_t base, uint64_t exp);
+};

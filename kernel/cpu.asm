@@ -25,11 +25,23 @@ cpuAreInterruptsEnabled:
 global cpuRestoreInterrupts
 cpuRestoreInterrupts:
     or rdi, rdi
-    jz .disable
+    jz .no_enable
     sti
     ret
-.disable:
+.no_enable:
     cli
+    ret
+
+global cpuSystemHalt
+cpuSystemHalt:
+    mov rax, rdi
+    cli
+    hlt
+
+global cpuWaitForInterrupt
+cpuWaitForInterrupt:
+    mov rax, rdi
+    hlt
     ret
 
 global cpuGetCR0
@@ -215,4 +227,31 @@ cpuIOClrBitsD:
     not rsi
     and rax, rsi
     out dx, eax
+    ret
+
+global cpuFXSave
+cpuFXSave:
+    fxsave [rdi]
+    ret
+
+global cpuFXRstor
+cpuFXRstor:
+    fxrstor [rdi]
+    ret
+
+global cpuInitFPU
+cpuInitFPU:
+    fninit
+    fldcw [rdi]
+    ret
+
+global cpuEnableSSE
+cpuEnableSSE:
+    mov rax, cr0
+    and rax, 0xFFFFFFFB
+    or rax, 0x00000022
+    mov cr0, rax
+    mov rax, cr4
+    or rax, 0x00000600
+    mov cr4, rax
     ret

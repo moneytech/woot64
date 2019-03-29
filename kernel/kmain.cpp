@@ -1,5 +1,7 @@
 #include <cpu.hpp>
+#include <debug.hpp>
 #include <heap.hpp>
+#include <misc.hpp>
 #include <multiboot.h>
 #include <paging.hpp>
 #include <sysdefs.h>
@@ -7,6 +9,10 @@
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
+    DEBUG("Starting WOOT v%d.%d (%s)\n",
+          KERNEL_VERSION_MAJOR,
+          KERNEL_VERSION_MINOR,
+          KERNEL_VERSION_DESCR);
     return 0xABCD;
 }
 
@@ -19,6 +25,7 @@ extern "C" void _init(multiboot_info_t *mbootInfo)
 {
     Paging::Initialize(mbootInfo);
     Heap::Initialize(KERNEL_HEAP_BASE, KERNEL_HEAP_END, 16);
+    Misc::InitializeDebugStream();
 
     for(InitFiniFunc *func = __init_array_start; func != __init_array_end; ++func)
         (*func)();

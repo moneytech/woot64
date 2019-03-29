@@ -10,6 +10,10 @@ bool cpuDisableInterrupts();            // returns true if interrupts were enabl
 bool cpuAreInterruptsEnabled();         // returns true if interrupts were enabled without disabling them
 void cpuRestoreInterrupts(bool state);  // restores interrupt state returned by cpuDisableInterrupts
 
+// halt instructions
+void cpuSystemHalt(uintptr_t errcode);      // errcode will be put into eax before halting
+void cpuWaitForInterrupt(uintptr_t debug);  // as above (for debug purpose)
+
 // control registers
 uintptr_t cpuGetCR0();
 void cpuSetCR0(uintptr_t value);
@@ -48,5 +52,11 @@ void cpuIOClrBitsB(uint16_t port, uint8_t mask);
 void cpuIOClrBitsW(uint16_t port, uint16_t mask);
 void cpuIOClrBitsL(uint16_t port, uint64_t mask);
 void cpuIOClrBitsD(uint16_t port, uint64_t mask);
+
+// floating point stuff
+void cpuFXSave(void *buffer);
+void cpuFXRstor(void *buffer);
+void cpuInitFPU(uint16_t cw);
+void cpuEnableSSE();
 
 }

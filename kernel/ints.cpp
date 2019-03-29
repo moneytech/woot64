@@ -89,7 +89,7 @@ void Ints::CommonHandler(Ints::State *state)
     /*else */if(!handled && state->InterruptNumber != 0x80)
     {
         // print some info about what happened
-        if(isIrq)
+        /*if(isIrq)
             DEBUG("Unhandled IRQ %d (interrupt %d)\n", irq, state->InterruptNumber);
         else
         {
@@ -99,12 +99,12 @@ void Ints::CommonHandler(Ints::State *state)
                   state->InterruptNumber < IRQS_BASE ? excNames[state->InterruptNumber] : "hardware interrupt");
 
             if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
-            /*if(ct)
+            if(ct)
             {
                 ++ct->ExcCount;
                 DEBUG("Thread: %d (%s)\n", ct->ID, ct->Name);
-            }*/
-        }
+            }
+        }*/
 
         // print extra info for PF
         if(state->InterruptNumber == 14)
@@ -179,17 +179,14 @@ uint Ints::HandlerCount(uint intNo)
 
 void Ints::DumpState(Ints::State *state)
 {
-    DEBUG("EAX: %.8X EBX: %.8X ECX: %.8X EDX: %.8X\n",
-          state->EAX, state->EBX, state->ECX, state->EDX);
-    DEBUG("ESI: %.8X EDI: %.8X ESP: %.8X EBP: %.8X\n",
-          state->ESI, state->EDI, state->ESP, state->EBP);
-    DEBUG("CS: %.4X EIP: %.8X EFLAGS: %.8X ErrorCode: %.8x\n",
-          state->CS, state->EIP, state->EFLAGS, state->ErrorCode);
+    DEBUG("RAX: %.16X RBX: %.16X\nRCX: %.16X EDX: %.16X\n",
+          state->RAX, state->RBX, state->RCX, state->RDX);
+    DEBUG("RSI: %.16X RDI: %.16X\nRSP: %.16X RBP: %.16X\n",
+          state->RSI, state->RDI, state->RSP, state->RBP);
+    DEBUG("CS: %.4X RIP: %.16X\nEFLAGS: %.16X ErrorCode: %.16x\n",
+          state->CS, state->RIP, state->RFLAGS, state->ErrorCode);
     DEBUG("DS: %.4X ES: %.4X FS: %.4X GS: %.4X SS: %.4X\n",
           state->DS, state->ES, state->FS, state->GS, state->SS);
-    DEBUG("CR0: %.8x CR2: %.8X CR3: %.8X\n",
+    DEBUG("CR0: %.16X\nCR2: %.16X\nCR3: %.8X\n",
           cpuGetCR0(), cpuGetCR2(), cpuGetCR3());
-    if(state->CS & 0x03 || state->RFLAGS & (1 << 17))
-        DEBUG("UserSS: %.4X UserESP: %.8X\n", state->UserSS, state->UserESP);
-    else DEBUG("UserSS: N/A  UserESP: N/A\n");
 }

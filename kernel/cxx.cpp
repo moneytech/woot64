@@ -1,3 +1,4 @@
+#include <cpu.hpp>
 #include <heap.hpp>
 #include <types.h>
 
@@ -42,6 +43,11 @@ extern "C" void __cxa_finalize(atexitHandler handler)
             entry->handled = true;
         }
     }
+}
+
+extern "C" void __cxa_pure_virtual()
+{
+    cpuSystemHalt(0xCACACACA);
 }
 
 void *operator new(size_t size)
