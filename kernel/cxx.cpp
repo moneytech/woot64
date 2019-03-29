@@ -1,3 +1,4 @@
+#include <heap.hpp>
 #include <types.h>
 
 extern "C" uintptr_t __dso_handle;
@@ -45,12 +46,12 @@ extern "C" void __cxa_finalize(atexitHandler handler)
 
 void *operator new(size_t size)
 {
-    return nullptr;
+    return Heap::Allocate(size, 0, true);
 }
 
 void *operator new[](size_t size)
 {
-    return nullptr;
+    return Heap::Allocate(size, 0, true);
 }
 
 // placement new
@@ -61,8 +62,10 @@ void *operator new(size_t size, void *ptr)
 
 void operator delete(void *ptr)
 {
+    Heap::Free(ptr);
 }
 
 void operator delete[](void *ptr)
 {
+    Heap::Free(ptr);
 }

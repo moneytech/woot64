@@ -66,6 +66,16 @@ AddressSpace Paging::GetCurrentAddressSpace()
     return (AddressSpace)cpuGetCR3();
 }
 
+void Paging::FlushTLB()
+{
+    cpuSetCR3(cpuGetCR3());
+}
+
+void Paging::InvalidatePage(uintptr_t addr)
+{
+    cpuInvalidatePage(addr);
+}
+
 bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write)
 {
     va &= ~PAGE_MASK;
@@ -79,34 +89,34 @@ bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, boo
     if(as == PG_CURRENT_ADDR_SPC)
         as = GetCurrentAddressSpace();
 
-    uintptr_t *pml4 = (uintptr_t *)as;
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
     if(!(pml4[pml4idx] & 1))
     {
         uintptr_t addr = AllocFrame();
         if(addr == PG_INVALID_ADDRESS)
             return false;
         pml4[pml4idx] = addr | 0x07;
-        Memory::Zero((void *)addr, PAGE_SIZE);
+        Memory::Zero((void *)(addr + KERNEL_BASE), PAGE_SIZE);
     }
-    uintptr_t *pml3 = (uintptr_t *)(pml4[pml4idx] & ~PAGE_MASK);
+    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] + KERNEL_BASE) & ~PAGE_MASK);
     if(!(pml3[pml3idx] & 1))
     {
         uintptr_t addr = AllocFrame();
         if(addr == PG_INVALID_ADDRESS)
             return false;
         pml3[pml3idx] = addr | 0x07;
-        Memory::Zero((void *)addr, PAGE_SIZE);
+        Memory::Zero((void *)(addr + KERNEL_BASE), PAGE_SIZE);
     }
-    uintptr_t *pml2 = (uintptr_t *)(pml3[pml3idx] & ~PAGE_MASK);
+    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] + KERNEL_BASE) & ~PAGE_MASK);
     if(!(pml2[pml2idx] & 1))
     {
         uintptr_t addr = AllocFrame();
         if(addr == PG_INVALID_ADDRESS)
             return false;
         pml2[pml2idx] = addr | 0x07;
-        Memory::Zero((void *)addr, PAGE_SIZE);
+        Memory::Zero((void *)(addr + KERNEL_BASE), PAGE_SIZE);
     }
-    uintptr_t *pml1 = (uintptr_t *)(pml2[pml2idx] & ~PAGE_MASK);
+    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
 
     pml1[pml1idx] = pa | 0x01 | (write ? 0x02 : 0x00) | (user ? 0x04 : 0x00);
     return true;
@@ -124,17 +134,17 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     if(as == PG_CURRENT_ADDR_SPC)
         as = GetCurrentAddressSpace();
 
-    uintptr_t *pml4 = (uintptr_t *)as;
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
 
     if(!(pml4[pml4idx] & 1))
         return false;
 
-    uintptr_t *pml3 = (uintptr_t *)(pml4[pml4idx] & ~PAGE_MASK);
+    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] + KERNEL_BASE) & ~PAGE_MASK);
     if(!(pml3[pml3idx] & 1))
     {
-        bool freePML3 = false;
-        for(uint i = 0; i < 512 && !freePML3; ++i)
-            freePML3 |= pml3[i] & 1;
+        bool freePML3 = true;
+        for(uint i = 0; i < 512 && freePML3; ++i)
+            freePML3 = !(pml3[i] & 1);
         if(freePML3)
         {
             pml4[pml4idx] = 0;
@@ -143,12 +153,12 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml2 = (uintptr_t *)(pml3[pml3idx] & ~PAGE_MASK);
+    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] + KERNEL_BASE) & ~PAGE_MASK);
     if(!(pml2[pml2idx] & 1))
     {
-        bool freePML2 = false;
-        for(uint i = 0; i < 512 && !freePML2; ++i)
-            freePML2 |= pml2[i] & 1;
+        bool freePML2 = true;
+        for(uint i = 0; i < 512 && freePML2; ++i)
+            freePML2 = !(pml2[i] & 1);
         if(freePML2)
         {
             pml3[pml3idx] = 0;
@@ -157,30 +167,30 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml1 = (uintptr_t *)(pml2[pml2idx] & ~PAGE_MASK);
+    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
     pml1[pml1idx] = 0;
 
-    bool freePML1 = false;
-    for(uint i = 0; i < 512 && !freePML1; ++i)
-        freePML1 |= pml1[i] & 1;
+    bool freePML1 = true;
+    for(uint i = 0; i < 512 && freePML1; ++i)
+        freePML1 = !(pml1[i] & 1);
     if(freePML1)
     {
         pml2[pml2idx] = 0;
         FreeFrame((uintptr_t)pml1);
     }
 
-    bool freePML2 = false;
-    for(uint i = 0; i < 512 && !freePML2; ++i)
-        freePML2 |= pml2[i] & 1;
+    bool freePML2 = true;
+    for(uint i = 0; i < 512 && freePML2; ++i)
+        freePML2 = !(pml2[i] & 1);
     if(freePML2)
     {
         pml3[pml3idx] = 0;
         FreeFrame((uintptr_t)pml2);
     }
 
-    bool freePML3 = false;
-    for(uint i = 0; i < 512 && !freePML3; ++i)
-        freePML3 |= pml3[i] & 1;
+    bool freePML3 = true;
+    for(uint i = 0; i < 512 && freePML3; ++i)
+        freePML3 = !(pml3[i] & 1);
     if(freePML3)
     {
         pml4[pml4idx] = 0;
@@ -201,6 +211,46 @@ bool Paging::MapPages(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bo
             return false;
     }
     return true;
+}
+
+bool Paging::UnMapPages(AddressSpace as, uintptr_t va, size_t n)
+{
+    if(as == PG_CURRENT_ADDR_SPC)
+        as = GetCurrentAddressSpace();
+
+    for(uintptr_t i = 0; i < n; ++i, va += PAGE_SIZE)
+    {
+        if(!UnMapPage(as, va))
+            return false;
+    }
+    return true;
+}
+
+uintptr_t Paging::GetPhysicalAddress(AddressSpace as, uintptr_t va)
+{
+    if(as == PG_CURRENT_ADDR_SPC)
+        as = GetCurrentAddressSpace();
+
+    va &= ~PAGE_MASK;
+
+    uint pml1idx = (va >> 12) & 511;
+    uint pml2idx = (va >> 21) & 511;
+    uint pml3idx = (va >> 30) & 511;
+    uint pml4idx = (va >> 39) & 511;
+
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
+    if(!(pml4[pml4idx] & 1))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] + KERNEL_BASE) & ~PAGE_MASK);
+    if(!(pml3[pml3idx] & 1))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] + KERNEL_BASE) & ~PAGE_MASK);
+    if(!(pml2[pml2idx] & 1))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
+    if(!(pml1[pml1idx] & 1))
+        return PG_INVALID_ADDRESS;
+    return pml1[pml1idx] & ~PAGE_MASK;
 }
 
 uintptr_t Paging::AllocFrame()

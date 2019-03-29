@@ -1,3 +1,5 @@
+heap.cpp
+include/heap.hpp
 include/list.hpp
 include/misc.hpp
 include/new.hpp

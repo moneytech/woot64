@@ -4,17 +4,21 @@
 
 segment .text
 
-extern preInitialize
 extern kmain
+extern _init
+extern _fini
 global _start64
 _start64:
     lea rsp, [rel kernelStack.end]
     xor rbp, rbp
     mov rdi, rbx
     push rdi
-    call preInitialize
+    call _init
     pop rdi
     call kmain
+    push rax
+    call _fini
+    pop rax
     cli
     hlt
 

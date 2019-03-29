@@ -3,6 +3,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	bitmap.o \
 	cpu.o \
 	cxx.o \
+	heap.o \
 	ints.o \
 	isrs.o \
 	kmain.o \

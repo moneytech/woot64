@@ -10,7 +10,9 @@ SECTIONS
     . += SIZEOF_HEADERS;
 
     . = ALIGN(4096);
+    _btext_start = .;
     .text.boot : AT(ADDR(.text.boot) - KERNEL_BASE) { *(.text.boot*) } : text
+    _btext_end = .;
 
     . = ALIGN(4096);
     _utext_start = .;

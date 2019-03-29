@@ -40,11 +40,10 @@ public:
     static bool MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write);
     static bool UnMapPage(AddressSpace as, uintptr_t va);
     static bool MapPages(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write, size_t n);
-    static bool UnMapPages(AddressSpace pd, uintptr_t va, size_t n);
+    static bool UnMapPages(AddressSpace as, uintptr_t va, size_t n);
     static void UnmapRange(AddressSpace pd, uintptr_t startVA, size_t rangeSize);
     static void CloneRange(AddressSpace dstPd, uintptr_t srcPd, uintptr_t startVA, size_t rangeSize);
-    static uintptr_t GetPhysicalAddress(AddressSpace pd, uintptr_t va);
-    static uintptr_t GetFirstUsableAddress();
+    static uintptr_t GetPhysicalAddress(AddressSpace as, uintptr_t va);
     static uintptr_t AllocFrame();
     static uintptr_t AllocFrame(size_t alignment);
     static uintptr_t AllocFrames(size_t n);

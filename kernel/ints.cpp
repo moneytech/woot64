@@ -47,26 +47,30 @@ extern "C" void intsCommonHandler(Ints::State *state)
     Ints::CommonHandler(state);
 }
 
+class Process;
+class Thread;
+
 void Ints::CommonHandler(Ints::State *state)
 {
-    /*int irq = state->InterruptNumber - IRQs::Base;
-    bool isIrq = irq >= 0 && irq < IRQs::Count;
+    //int irq = state->InterruptNumber - IRQs::Base;
+    //bool isIrq = irq >= 0 && irq < IRQs::Count;
     Process *cp = nullptr;//Process::GetCurrent();
     Thread *ct = nullptr;//Thread::GetCurrent();
 
     // handle spurious irqs
-    if(isIrq)
+    /*if(isIrq)
     {
         if(IRQs::IsSpurious(irq))
         {
             IRQs::HandleSpurious(irq);
             return;
         }
-    }
+    }*/
 
+    bool isIrq = false;
     bool handled = false;
 
-    if(ct)
+    /*if(ct)
     {
         //if(state->CS & 3 && ct->CurrentSignal < 0)
         //    Signal::HandleSignals(ct, state);
@@ -75,14 +79,14 @@ void Ints::CommonHandler(Ints::State *state)
             //Signal::ReturnFromSignal(ct, state);
             handled = true;
         }
-    }
+    }*/
 
     Handler *handler = Handlers[state->InterruptNumber];
     for(; !handled && handler && handler->Callback; handler = handler->Next)
         handled = handler->Callback(state, handler->Context);
-    if(!handled && isIrq)
-        IRQs::HandleSpurious(irq);
-    else if(!handled && state->InterruptNumber != 0x80)
+    //if(!handled && isIrq)
+    //    IRQs::HandleSpurious(irq);
+    /*else */if(!handled && state->InterruptNumber != 0x80)
     {
         // print some info about what happened
         if(isIrq)
@@ -95,11 +99,11 @@ void Ints::CommonHandler(Ints::State *state)
                   state->InterruptNumber < IRQS_BASE ? excNames[state->InterruptNumber] : "hardware interrupt");
 
             if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
-            if(ct)
+            /*if(ct)
             {
                 ++ct->ExcCount;
                 DEBUG("Thread: %d (%s)\n", ct->ID, ct->Name);
-            }
+            }*/
         }
 
         // print extra info for PF
@@ -111,28 +115,29 @@ void Ints::CommonHandler(Ints::State *state)
         }
         DumpState(state);
 
-        if(ct && ct->ExcCount > 1)
+        /*if(ct && ct->ExcCount > 1)
         {
             DEBUG("Something went wrong when building stack trace. Killing thread.\n");
             Thread::Finalize(ct, 127);
-        }
+        }*/
 
         DEBUG("Stack trace:\n");
-        uintptr_t *ebp = (uintptr_t *)state->EBP;
+        uintptr_t *rbp = (uintptr_t *)state->RBP;
         for(int i = 0; i < 5; ++i)
         {
-            uintptr_t eip = ebp[1];
-            if(!eip) break;
-            ebp = (uintptr_t *)(*ebp);
-            DEBUG("%p\n", eip);
+            uintptr_t rip = rbp[1];
+            if(!rip) break;
+            rbp = (uintptr_t *)(*rbp);
+            DEBUG("%p\n", rip);
         }
 
-        if(ct && ct->ID != 1)
+        _outsb("except", 0xE9, 6);
+        /*if(ct && ct->ID != 1)
             Thread::Finalize(ct, 127);
-        else cpuSystemHalt(state->InterruptNumber);
+        else cpuSystemHalt(state->InterruptNumber);*/
     }
 
-    if(isIrq) IRQs::SendEOI(irq);*/
+    //if(isIrq) IRQs::SendEOI(irq);
 }
 
 void Ints::RegisterHandler(uint intNo, Ints::Handler *handler)
