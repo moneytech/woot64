@@ -3,3 +3,4 @@ boot
 include
 ide
 ahci
+ext2

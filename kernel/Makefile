@@ -10,10 +10,16 @@ OBJS = boot/boot.o boot/boot64.o \
 	cxx.o \
 	cxxabi.o \
 	debug.o \
+	dentry.o \
 	device.o \
+	directoryentry.o \
 	drive.o \
+	ext2/ext2.o \
+	filesystem.o \
+	filesystemtype.o \
 	heap.o \
 	ide/idedrive.o \
+	inode.o \
 	ints.o \
 	irqs.o \
 	isrs.o \

@@ -1,5 +1,7 @@
 #pragma once
 
+// NOTE: It IS OK to remove current object from this list in for(:) loop
+
 #include <types.h>
 
 template<class T>

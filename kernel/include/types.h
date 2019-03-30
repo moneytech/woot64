@@ -28,5 +28,10 @@ typedef uint32_t uintn;
 
 // these should go to their respective headers
 typedef int pid_t;
+typedef int uid_t;
+typedef int gid_t;
+typedef uint32_t mode_t;
+typedef int64_t ino_t;
+typedef intptr_t off_t;
 
 typedef unsigned int uint;

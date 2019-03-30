@@ -1,4 +1,5 @@
 #include <../ahci/ahcidrive.hpp>
+#include <../ext2/ext2.hpp>
 #include <../ide/idedrive.hpp>
 #include <cpu.hpp>
 #include <debug.hpp>
@@ -33,7 +34,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     IDEDrive::Initialize();
     AHCIDrive::Initialize();
     PartVolume::Initialize();
-    PartVolume::DetectAll();
+    EXT2::Initialize();
+
+    Volume::DetectAll();
+    FileSystem::DetectAll();
 
     DEBUG("> ");
     char line[64] = { 0 };
@@ -41,6 +45,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
 
+    EXT2::Cleanup();
     PartVolume::Cleanup();
     AHCIDrive::Cleanup();
     IDEDrive::Cleanup();

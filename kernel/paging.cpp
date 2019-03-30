@@ -90,12 +90,8 @@ bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, boo
     uint pml3idx = (va >> 30) & 511;
     uint pml4idx = (va >> 39) & 511;
 
-    bool invalidate = false;
     if(as == PG_CURRENT_ADDR_SPC)
-    {
         as = GetCurrentAddressSpace();
-        invalidate = true;
-    }
 
     uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
     if(!(pml4[pml4idx] & 1))
@@ -127,8 +123,7 @@ bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, boo
     uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
 
     pml1[pml1idx] = pa | 0x01 | (write ? 0x02 : 0x00) | (user ? 0x04 : 0x00);
-    if(invalidate)
-        InvalidatePage(va);
+    InvalidatePage(va);
     return true;
 }
 
@@ -141,12 +136,8 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     uint pml3idx = (va >> 30) & 511;
     uint pml4idx = (va >> 39) & 511;
 
-    bool invalidate = false;
     if(as == PG_CURRENT_ADDR_SPC)
-    {
         as = GetCurrentAddressSpace();
-        invalidate = true;
-    }
 
     uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
 
@@ -211,8 +202,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         FreeFrame((uintptr_t)pml3);
     }
 
-    if(invalidate)
-        InvalidatePage(va);
+    InvalidatePage(va);
     return true;
 }
 
