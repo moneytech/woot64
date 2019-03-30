@@ -10,21 +10,6 @@
 #include <time.hpp>
 #include <types.h>
 
-Thread *kernelThread = nullptr;
-
-int testThread(uintptr_t arg)
-{
-    for(int i = 0; i < 10; ++i)
-    {
-        DEBUG("testThread %d\n", arg);
-        Time::Sleep(510, false);
-        if(arg == 125)
-            kernelThread->Resume(false);
-    }
-    if(arg == 123) asm("int3");
-    return 0xAA55AA55 + arg;
-}
-
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
     DEBUG("Starting WOOT v%d.%d (%s)\n",
@@ -42,23 +27,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     cpuEnableInterrupts();
     Time::StartSystemTimer();
 
-    kernelThread = Thread::GetCurrent();
-
-    int r1 = 0;
-    Thread *tt1 = new Thread("test 1", nullptr, (void *)testThread, 123, 0, 0, &r1, nullptr);
-    tt1->Enable();
-    tt1->Resume(false);
-
-    int r2 = 0;
-    Thread *tt2 = new Thread("test 2", nullptr, (void *)testThread, 125, 0, 0, &r2, nullptr);
-    tt2->Enable();
-    tt2->Resume(false);
-
-    Time::Sleep(100, false);
-    for(;;)
-    {
-        DEBUG("L: %d %x %x\n", Time::Sleep(1000, true), r1, r2);
-    }
+    //for(;;) cpuWaitForInterrupt(0);
 
     DEBUG("[kmain] Exiting kmain()\n");
     return 0xABCD;

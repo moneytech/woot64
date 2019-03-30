@@ -15,8 +15,10 @@ OBJS = boot/boot.o boot/boot64.o \
 	kmain.o \
 	memory.o \
 	misc.o \
+	mutex.o \
 	paging.o \
 	random.o \
+	semaphore.o \
 	stream.o \
 	string.o \
 	thread.o \
