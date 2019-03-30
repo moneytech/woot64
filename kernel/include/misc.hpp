@@ -13,6 +13,8 @@ class Stream;
 
 #define c_func_alias(al, name) extern "C" void al() __attribute__((alias(#name)))
 
+#define IS_ERROR(val) ((intptr_t)(val) < 0 && (intptr_t)(val) >= -4096)
+
 class Misc
 {
 public:

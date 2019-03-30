@@ -2,6 +2,7 @@ OUTFILE = kernel
 OBJS = boot/boot.o boot/boot64.o \
 	ahci/ahcidrive.o \
 	bitmap.o \
+	bufferedvolume.o \
 	callbackstream.o \
 	character.o \
 	cmos.o \
@@ -22,6 +23,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	misc.o \
 	mutex.o \
 	paging.o \
+	partvolume.o \
 	pci.o \
 	random.o \
 	semaphore.o \
@@ -31,7 +33,9 @@ OBJS = boot/boot.o boot/boot64.o \
 	thread.o \
 	time.o \
 	typeinfo.o \
-	uuid.o
+	uuid.o \
+	volume.o \
+	volumetype.o 
 
 TOP_DIR ?= $(shell realpath ..)
 CC ?= clang

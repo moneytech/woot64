@@ -7,6 +7,7 @@
 #include <misc.hpp>
 #include <multiboot.h>
 #include <paging.hpp>
+#include <partvolume.hpp>
 #include <pci.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
@@ -31,6 +32,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     PCI::Initialize();
     IDEDrive::Initialize();
     AHCIDrive::Initialize();
+    PartVolume::Initialize();
+    PartVolume::DetectAll();
 
     DEBUG("> ");
     char line[64] = { 0 };
@@ -38,6 +41,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
 
+    PartVolume::Cleanup();
     AHCIDrive::Cleanup();
     IDEDrive::Cleanup();
     PCI::Cleanup();

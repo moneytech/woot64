@@ -18,7 +18,7 @@ void Drive::unLockList()
     return listLock.Release();
 }
 
-bool Drive::add(Drive *drive)
+bool Drive::append(Drive *drive)
 {
     if(!lockList()) return false;
     drives.Append(drive);
@@ -43,6 +43,7 @@ Drive::Drive(Device *parent, size_t sectorSize, uint64_t sectorCount, const char
     Model(model ? String::Duplicate(model) : nullptr),
     Serial(serial ? String::Duplicate(serial) : nullptr)
 {
+    append(this);
 }
 
 Drive *Drive::GetById(int id)
@@ -59,6 +60,18 @@ Drive *Drive::GetById(int id)
     }
     unLockList();
     return res;
+}
+
+bool Drive::ForEach(bool (*callback)(Drive *, void *), void *arg)
+{
+    if(!lockList()) return false;
+    for(Drive *drive : drives)
+    {
+        if(callback(drive, arg))
+            break;
+    }
+    unLockList();
+    return true;
 }
 
 int64_t Drive::ReadSectors(void *buffer, uint64_t start, int64_t count)
@@ -78,6 +91,7 @@ bool Drive::HasMedia()
 
 Drive::~Drive()
 {
+    remove(this);
     if(Model) delete[] Model;
     if(Serial) delete[] Serial;
 }

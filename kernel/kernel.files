@@ -1,3 +1,10 @@
+bufferedvolume.cpp
+include/bufferedvolume.hpp
+include/partvolume.hpp
+partvolume.cpp
+volumetype.cpp
+include/volumetype.hpp
+volume.cpp
 ahci/ahcidrive.cpp
 ahci/ahcidrive.hpp
 callbackstream.cpp
@@ -27,6 +34,7 @@ include/thread.hpp
 include/time.hpp
 include/typeinfo
 include/vector.hpp
+include/volume.hpp
 irqs.cpp
 memorystream.cpp
 mutex.cpp
