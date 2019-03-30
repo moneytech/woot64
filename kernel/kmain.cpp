@@ -27,6 +27,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     cpuEnableInterrupts();
     Time::StartSystemTimer();
 
+    DEBUG("> ");
+    char line[64] = { 0 };
+    DEBUG_IN(line, sizeof(line));
+    DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
 
     DEBUG("[kmain] Exiting kmain()\n");
@@ -42,7 +46,7 @@ extern "C" void _init(multiboot_info_t *mbootInfo)
 {
     Paging::Initialize(mbootInfo);
     Heap::Initialize(KERNEL_HEAP_BASE, KERNEL_HEAP_END, 16);
-    Misc::InitializeDebugStream();
+    Debug::Initialize();
 
     for(InitFiniFunc *func = __init_array_start; func != __init_array_end; ++func)
         (*func)();

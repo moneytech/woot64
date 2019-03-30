@@ -2,11 +2,11 @@
 //#include <gdt.hpp>
 #include <irqs.hpp>
 #include <misc.hpp>
-//#include <mutex.hpp>
+#include <mutex.hpp>
 #include <new.hpp>
 #include <paging.hpp>
 //#include <process.hpp>
-//#include <semaphore.hpp>
+#include <semaphore.hpp>
 #include <string.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
@@ -170,16 +170,16 @@ void Thread::Finalize(Thread *thread, int returnValue)
     if(!thread) thread = currentThread;
     if(thread->ReturnCodePtr)
         *thread->ReturnCodePtr = returnValue;
-    //if(thread->Finished)
-    //    thread->Finished->Signal(nullptr);
+    if(thread->Finished)
+        thread->Finished->Signal(nullptr);
     thread->State = State::Finalized;
-    //if(thread->WaitingMutex)
-    //    thread->WaitingMutex->Cancel(thread);
-    //if(thread->WaitingSemaphore)
-    //    thread->WaitingSemaphore->Cancel(thread);
-    //readyThreads.Remove(thread, nullptr);
-    //suspendedThreads.Remove(thread, nullptr);
-    //sleepingThreads.Remove(thread, nullptr);
+    if(thread->WaitingMutex)
+        thread->WaitingMutex->Cancel(thread);
+    if(thread->WaitingSemaphore)
+        thread->WaitingSemaphore->Cancel(thread);
+    threadQueueRemove(&readyThreads, thread);
+    threadQueueRemove(&suspendedThreads, thread);
+    threadQueueRemove(&sleepingThreads, thread);
     if(lastVectorStateThread == thread)
         lastVectorStateThread = nullptr;
     bool self = currentThread == thread;
@@ -212,10 +212,10 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     SelfSleep(false),
     FXSaveData(new(16) uint8_t[512]),
     SignalMask(0),
-    //SignalQueue(64),
+    SignalQueue(64),
     CurrentSignal(-1),
     ReturnCodePtr(returnCodePtr),
-    //Finished(finished ? finished : new Semaphore(0)),
+    Finished(finished ? finished : new Semaphore(0)),
     DeleteFinished(!finished),
     WaitingMutex(nullptr),
     WaitingSemaphore(nullptr),
@@ -560,5 +560,5 @@ Thread::~Thread()
         UserStack = nullptr;
     }
     if(FXSaveData) delete[] FXSaveData;
-    //if(DeleteFinished && Finished) delete Finished;
+    if(DeleteFinished && Finished) delete Finished;
 }

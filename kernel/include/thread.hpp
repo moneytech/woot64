@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ints.hpp>
-//#include <queue.hpp>
+#include <queue.hpp>
 #include <sequencer.hpp>
 //#include <signal.hpp>
 #include <types.h>
@@ -79,7 +79,7 @@ public:
 
     // signals
     uint64_t SignalMask;
-    //Queue<uint8_t> SignalQueue;
+    Queue<uint8_t> SignalQueue;
     Ints::State SavedMachineState;
     int CurrentSignal;
     uintptr_t SignalRetAddr;

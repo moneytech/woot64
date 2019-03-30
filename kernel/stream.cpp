@@ -14,12 +14,12 @@ char Stream::ReadChar()
     return c;
 }
 
-int64_t Stream::ReadLine(char *buffer, int64_t maxLen)
+int64_t Stream::ReadLine(char *buffer, int64_t bufSize)
 {
-    if(!maxLen)
+    if(!bufSize)
         return 0;
     int64_t i;
-    for(i = 0; i < maxLen - 1;)
+    for(i = 0; i < bufSize - 1;)
     {
         char c = ReadChar();
         if(c == 127)

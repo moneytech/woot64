@@ -14,7 +14,7 @@ size_t Heap::heapSize;
 size_t Heap::defaultAlignment;
 Heap::HeapBlock *Heap::firstBlock;
 Heap::HeapBlock *Heap::lastBlock;
-//Mutex Heap::mutex(false, "heap");
+Mutex Heap::mutex(false, "heap");
 
 bool Heap::pageFault(Ints::State *state, void *context)
 {
@@ -37,12 +37,12 @@ bool Heap::pageFault(Ints::State *state, void *context)
 
 bool Heap::lock()
 {
-    return true;//mutex.Acquire(3000);
+    return mutex.Acquire(3000);
 }
 
 void Heap::unLock()
 {
-    //mutex.Release();
+    mutex.Release();
 }
 
 size_t Heap::getMaxSize(void *ptr)

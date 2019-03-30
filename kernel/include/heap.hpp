@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ints.hpp>
-//#include <mutex.hpp>
+#include <mutex.hpp>
 #include <types.h>
 
 class Heap
@@ -22,7 +22,7 @@ class Heap
     static size_t defaultAlignment;
     static HeapBlock *firstBlock;
     static HeapBlock *lastBlock;
-    //static Mutex mutex;
+    static Mutex mutex;
 
     static bool pageFault(Ints::State *state, void *context);
     static bool lock();
