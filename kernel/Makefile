@@ -8,7 +8,10 @@ OBJS = boot/boot.o boot/boot64.o \
 	cxx.o \
 	cxxabi.o \
 	debug.o \
+	device.o \
+	drive.o \
 	heap.o \
+	ide/idedrive.o \
 	ints.o \
 	irqs.o \
 	isrs.o \

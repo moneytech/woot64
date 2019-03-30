@@ -2,9 +2,16 @@ callbackstream.cpp
 cmos.cpp
 cxxabi.cpp
 debug.cpp
+device.cpp
+drive.cpp
+ide/idedrive.cpp
+ide/idedrive.hpp
+include/ata.hpp
 include/callbackstream.hpp
 include/cmos.hpp
 include/cxxabi.h
+include/device.hpp
+include/drive.hpp
 include/irqs.hpp
 include/memorystream.hpp
 include/mutex.hpp

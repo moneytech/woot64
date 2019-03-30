@@ -377,3 +377,90 @@ bool Paging::FreeFrames(uintptr_t pa, size_t n)
     return true;
 }
 
+void *Paging::AllocDMA(size_t size)
+{
+    return AllocDMA(size, PAGE_SIZE);
+}
+
+void *Paging::AllocDMA(size_t size, size_t alignment)
+{
+    // TODO: make DMA physical addresses be allocatable in specific ranges
+    if(!size) return nullptr;
+
+    size = align(size, PAGE_SIZE);
+    size_t nPages = size / PAGE_SIZE;
+    uintptr_t pa = AllocFrames(nPages, alignment); // allocate n pages in ONE block
+    if(pa == ~0) return nullptr;
+    bool ints = cpuDisableInterrupts();
+    uintptr_t va = 0;
+    if(!dmaPtrList.Count())
+    {
+        va = KERNEL_DMA_BASE;
+        dmaPtrList.Append(DMAPointerHead { va, size });
+    }
+    else
+    {
+        for(auto it = dmaPtrList.begin(); it != dmaPtrList.end(); ++it)
+        {
+            DMAPointerHead ph = *it;
+            uintptr_t blockEnd = ph.Address + ph.Size;
+            auto nextNode = it.GetNextNode();
+
+            if(!nextNode)
+            {
+                va = blockEnd;
+                dmaPtrList.Append(DMAPointerHead { va, size });
+                break;
+            }
+
+            DMAPointerHead nextPh = nextNode->Value;
+            uintptr_t newBlockEnd = blockEnd + size;
+
+            if(nextPh.Address >= newBlockEnd)
+            {
+                va = blockEnd;
+                DMAPointerHead newPh = { va, size };
+                dmaPtrList.InsertBefore(newPh, nextPh);
+                break;
+            }
+        }
+    }
+
+    MapPages(PG_CURRENT_ADDR_SPC, va, pa, false, true, nPages);
+    void *ptr = (void *)va;
+    Memory::Zero(ptr, size);
+    cpuRestoreInterrupts(ints);
+    return ptr;
+}
+
+uintptr_t Paging::GetDMAPhysicalAddress(void *ptr)
+{
+    return GetPhysicalAddress(PG_CURRENT_ADDR_SPC, (uintptr_t)ptr);
+}
+
+void Paging::FreeDMA(void *ptr)
+{
+    uintptr_t va = (uintptr_t)ptr;
+    bool ints = cpuDisableInterrupts();
+    DMAPointerHead ph = { va, 0 };
+    ph = dmaPtrList.Find(ph, nullptr);
+    if(!ph.Address || !ph.Size)
+    {
+        cpuRestoreInterrupts(ints);
+        return;
+    }
+    dmaPtrList.Remove(ph, nullptr, false);
+    size_t size = ph.Size;
+    size_t nPages = size / PAGE_SIZE;
+
+    uintptr_t pa = GetPhysicalAddress(PG_CURRENT_ADDR_SPC, va);
+    if(pa == ~0)
+    {
+        cpuRestoreInterrupts(ints);
+        return;
+    }
+    UnMapPages(PG_CURRENT_ADDR_SPC, va, nPages);
+    FreeFrames(pa, nPages);
+    cpuRestoreInterrupts(ints);
+}
+

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <device.hpp>
 #include <types.h>
 #include <vector.hpp>
 
@@ -104,7 +105,7 @@ public:
 #pragma pack(pop)
     typedef uint32_t Address;
 
-    class Device
+    class Device : public ::Device
     {
     public:
         PCI::Address Address;
@@ -122,7 +123,7 @@ private:
     static void CheckDevice(int8_t bus, uint8_t device);
     static void CheckFunction(uint8_t bus, uint8_t device, uint8_t func);
 public:
-    static Vector<Device> Devices;
+    static Vector<Device *> Devices;
 
     static void Initialize();
     static uint8_t ReadConfigByte(Address address);

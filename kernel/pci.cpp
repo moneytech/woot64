@@ -5,10 +5,16 @@
 
 #define PCI_SHOW_LIST 1
 
-Vector<PCI::Device> PCI::Devices(32, 16);
+Vector<PCI::Device *> PCI::Devices(32, 16);
 
 PCI::Device::Device(PCI::Address address, uint16_t vid, uint16_t did, uint8_t cls, uint8_t subCls, uint8_t progif) :
-    Address(address), VendorID(vid), DeviceID(did), Class(cls), SubClass(subCls), ProgIF(progif)
+    ::Device(::Device::Root),
+    Address(address),
+    VendorID(vid),
+    DeviceID(did),
+    Class(cls),
+    SubClass(subCls),
+    ProgIF(progif)
 {
 }
 
@@ -62,7 +68,7 @@ void PCI::CheckFunction(uint8_t bus, uint8_t device, uint8_t func)
           config.DeviceID);
 #endif // PCI_LIST
 
-    Devices.Append(Device(address, config.VendorID, config.DeviceID, config.Class, config.SubClass, config.ProgIF));
+    Devices.Append(new Device(address, config.VendorID, config.DeviceID, config.Class, config.SubClass, config.ProgIF));
 
     if(config.Class == 0x06 && config.SubClass == 0x09)
         CheckBus(config.Header.PCI2PCI.SecondaryBusNumber);
@@ -160,5 +166,7 @@ void PCI::WriteConfigData(PCI::Address address, PCI::Config *config)
 
 void PCI::Cleanup()
 {
+    for(Device *dev : Devices)
+        delete dev;
     Devices.Clear();
 }
