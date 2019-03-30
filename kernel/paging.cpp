@@ -12,6 +12,7 @@ uintptr_t Paging::memoryTop = (uintptr_t)&_end;
 Bitmap *Paging::pageFrameBitmap;
 AddressSpace Paging::kernelAddressSpace;
 List<Paging::DMAPointerHead> Paging::dmaPtrList;
+uintptr_t Paging::currentMMIOPtr = KERNEL_MMIO_BASE;
 
 void *Paging::moveMemTop(intptr_t incr)
 {
@@ -57,6 +58,9 @@ void Paging::Initialize(multiboot_info_t *mboot)
 
     // map whole physical memory to kernel space
     MapPages(kernelAddressSpace, KERNEL_BASE, 0, false, true, ramSize >> PAGE_SHIFT);
+
+    // TODO: allocate ALL (and never release) kernel PML4 entries to ensure kernel
+    //       address space coherency over all processes
 
     cpuSetCR3(kernelAddressSpace);
 }
@@ -462,5 +466,25 @@ void Paging::FreeDMA(void *ptr)
     UnMapPages(PG_CURRENT_ADDR_SPC, va, nPages);
     FreeFrames(pa, nPages);
     cpuRestoreInterrupts(ints);
+}
+
+void *Paging::AllocMMIO(size_t size, uintptr_t pa)
+{
+    // TODO: add proper allocator/deallocator
+    if(!size) return nullptr;
+    size = align(size, PAGE_SIZE);
+    bool ints = cpuDisableInterrupts();
+    uintptr_t va = currentMMIOPtr;
+    currentMMIOPtr += size;
+    MapPages(PG_CURRENT_ADDR_SPC, va, pa, false, true, size >> PAGE_SHIFT);
+    cpuRestoreInterrupts(ints);
+    return (void *)va;
+}
+
+void Paging::FreeMMIO(void *ptr, size_t size)
+{
+    // TODO: add proper allocator/deallocator
+    size = align(size, PAGE_SIZE);
+    UnMapPages(PG_CURRENT_ADDR_SPC, (uintptr_t)ptr, size >> PAGE_SHIFT);
 }
 

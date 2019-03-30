@@ -1,3 +1,4 @@
+#include <../ahci/ahcidrive.hpp>
 #include <../ide/idedrive.hpp>
 #include <cpu.hpp>
 #include <debug.hpp>
@@ -29,6 +30,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Time::StartSystemTimer();
     PCI::Initialize();
     IDEDrive::Initialize();
+    AHCIDrive::Initialize();
 
     DEBUG("> ");
     char line[64] = { 0 };
@@ -36,6 +38,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
 
+    AHCIDrive::Cleanup();
     IDEDrive::Cleanup();
     PCI::Cleanup();
     DEBUG("[kmain] Exiting kmain()\n");

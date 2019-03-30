@@ -2,3 +2,4 @@
 boot
 include
 ide
+ahci

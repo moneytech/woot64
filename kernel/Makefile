@@ -1,5 +1,6 @@
 OUTFILE = kernel
 OBJS = boot/boot.o boot/boot64.o \
+	ahci/ahcidrive.o \
 	bitmap.o \
 	callbackstream.o \
 	character.o \

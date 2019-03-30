@@ -1,3 +1,5 @@
+ahci/ahcidrive.cpp
+ahci/ahcidrive.hpp
 callbackstream.cpp
 cmos.cpp
 cxxabi.cpp

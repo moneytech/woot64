@@ -24,6 +24,7 @@ class Paging
     static Bitmap *pageFrameBitmap;
     static AddressSpace kernelAddressSpace;
     static List<DMAPointerHead> dmaPtrList;
+    static uintptr_t currentMMIOPtr;
 
     static void *moveMemTop(intptr_t incr);
     static uint64_t getRAMSize(multiboot_info_t *mboot);
@@ -54,6 +55,8 @@ public:
     static void *AllocDMA(size_t size, size_t alignment);
     static uintptr_t GetDMAPhysicalAddress(void *ptr);
     static void FreeDMA(void *ptr);
+    static void *AllocMMIO(size_t size, uintptr_t pa);
+    static void FreeMMIO(void *ptr, size_t size);
     static size_t GetTotalFrames();
     static size_t GetFreeFrames();
     static size_t GetUsedFrames();
