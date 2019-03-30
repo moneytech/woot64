@@ -5,6 +5,7 @@
 #include <misc.hpp>
 #include <multiboot.h>
 #include <paging.hpp>
+#include <pci.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
 #include <time.hpp>
@@ -23,6 +24,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("[kmain] Boot started on %.4d-%.2d-%.2d at %.2d:%.2d:%.2d\n",
           bootDateTime.Year, bootDateTime.Month, bootDateTime.Day,
           bootDateTime.Hour, bootDateTime.Minute, bootDateTime.Second);
+    PCI::Initialize();
 
     cpuEnableInterrupts();
     Time::StartSystemTimer();
@@ -33,6 +35,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
 
+    PCI::Cleanup();
     DEBUG("[kmain] Exiting kmain()\n");
     return 0xABCD;
 }

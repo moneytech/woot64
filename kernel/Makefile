@@ -14,13 +14,16 @@ OBJS = boot/boot.o boot/boot64.o \
 	isrs.o \
 	kmain.o \
 	memory.o \
+	memorystream.o \
 	misc.o \
 	mutex.o \
 	paging.o \
+	pci.o \
 	random.o \
 	semaphore.o \
 	stream.o \
 	string.o \
+	stringbuilder.o \
 	thread.o \
 	time.o \
 	typeinfo.o \
