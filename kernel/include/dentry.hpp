@@ -9,7 +9,8 @@ class StringBuilder;
 class DEntry
 {
     static void getPath(DEntry *dentry, StringBuilder &sb);
-    void getFSLabelAndID(char *buf, size_t bufSize, int *id);
+    const char *getFSLabel();
+    int getFSId();
 public:
     DEntry *Parent;
     char *Name;

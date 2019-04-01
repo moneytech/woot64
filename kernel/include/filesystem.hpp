@@ -1,12 +1,15 @@
 #pragma once
 
-#define MAX_FS_LABEL_LENGTH 128
-
 #include <list.hpp>
 #include <mutex.hpp>
 #include <sequencer.hpp>
 #include <types.h>
 #include <uuid.hpp>
+
+#define MAX_FS_LABEL_LENGTH 128
+#define MAX_PATH_LENGTH     4095
+#define FS_SEPARATOR        ':'
+#define PATH_SEPARATORS     "/\\"
 
 class DEntry;
 class FileSystemType;
@@ -42,6 +45,7 @@ public:
     static int DetectAll();
     static void AddDEntry(DEntry *dentry);
     static void RemoveDEntry(DEntry *dentry);
+    static FileSystem *GetByName(const char *name);
 
     static void PutINode(INode *inode);
     static DEntry *LookupDEntry(DEntry *parent, const char *name);
@@ -49,11 +53,11 @@ public:
     static void PutDEntry(DEntry *dentry);
 
     INode *GetINode(ino_t number);
-    int GetID();
+    int GetId();
     void SetRoot(DEntry *dentry);
     DEntry *GetRoot();
 
-    virtual bool GetLabel(char *buffer, size_t bufSize);
+    virtual const char *GetLabel();
     virtual UUID GetUUID();
     virtual INode *ReadINode(ino_t number);
     virtual bool WriteINode(INode *inode);

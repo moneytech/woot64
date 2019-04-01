@@ -6,6 +6,8 @@ PHDRS
 SECTIONS
 {
     KERNEL_BASE = 0xFFFF800000000000;
+    .headers : AT(ADDR(.headers) - KERNEL_BASE) { *(.headers*) } : text
+    __kernel_base = .;
     . = KERNEL_BASE + 0x00100000;
     . += SIZEOF_HEADERS;
 

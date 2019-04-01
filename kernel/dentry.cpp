@@ -17,29 +17,28 @@ void DEntry::getPath(DEntry *dentry, StringBuilder &sb)
             getPath(dentry->Parent, sb);
         else
         {
-            char label[MAX_FS_LABEL_LENGTH + 1] = { 0 }; int id = -1;
-            dentry->getFSLabelAndID(label, MAX_FS_LABEL_LENGTH, &id);
-            if(label[0]) sb.WriteFmt("%s:", label);
-            else sb.WriteFmt("%d", id);
+            const char *label = dentry->getFSLabel();
+            if(label) sb.WriteFmt("%s%c", label, FS_SEPARATOR);
+            else sb.WriteFmt("%d", dentry->getFSId());
         }
         sb.WriteFmt("/%s", dentry->Name);
     }
     else
     {
-        char label[MAX_FS_LABEL_LENGTH + 1] = { 0 }; int id = -1;
-        dentry->getFSLabelAndID(label, MAX_FS_LABEL_LENGTH, &id);
-        if(label[0]) sb.WriteFmt("%s:%s", label, dentry->Name);
-        else sb.WriteFmt("%d:%s", id, dentry->Name);
+        const char *label = dentry->getFSLabel();
+        if(label) sb.WriteFmt("%s%c%s", label, FS_SEPARATOR, dentry->Name);
+        else sb.WriteFmt("%d%c%s", dentry->getFSId(), FS_SEPARATOR, dentry->Name);
     }
 }
 
-void DEntry::getFSLabelAndID(char *buf, size_t bufSize, int *id)
+const char *DEntry::getFSLabel()
 {
-    if(INode->FS)
-    {
-        INode->FS->GetLabel(buf, bufSize);
-        if(id) *id = INode->FS->GetID();
-    }
+    return INode->FS ? INode->FS->GetLabel() : nullptr;
+}
+
+int DEntry::getFSId()
+{
+    return INode->FS ? INode->FS->GetId() : -1;
 }
 
 DEntry::DEntry(const char *name, DEntry *parent, class INode *inode) :

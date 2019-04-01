@@ -6,14 +6,18 @@
 #include <heap.hpp>
 #include <irqs.hpp>
 #include <misc.hpp>
+#include <module.hpp>
 #include <multiboot.h>
 #include <paging.hpp>
 #include <partvolume.hpp>
 #include <pci.hpp>
+#include <process.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
 #include <time.hpp>
 #include <types.h>
+
+#include <elf.hpp>
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
@@ -38,6 +42,12 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     Volume::DetectAll();
     FileSystem::DetectAll();
+
+    ELF *kernelImage = ELF::Load("WOOT_OS:/system/kernel", false, true, false);
+    if(!kernelImage) DEBUG("[kmain] Couldn't load kernel image. Modules won't load properly.\n");
+
+    int res = Module::Load("WOOT_OS:/system/testmodule");
+    DEBUG("[kmain] Module::Load returned %d\n", res);
 
     DEBUG("> ");
     char line[64] = { 0 };
@@ -69,6 +79,7 @@ extern "C" void _init(multiboot_info_t *mbootInfo)
         (*func)();
 
     Thread::Initialize();
+    Process::Initialize();
 }
 
 extern "C" void _fini(void)

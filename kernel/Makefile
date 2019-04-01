@@ -1,4 +1,5 @@
 OUTFILE = kernel
+MODULES = testmodule
 OBJS = boot/boot.o boot/boot64.o \
 	ahci/ahcidrive.o \
 	bitmap.o \
@@ -14,7 +15,9 @@ OBJS = boot/boot.o boot/boot64.o \
 	device.o \
 	directoryentry.o \
 	drive.o \
+	elf.o \
 	ext2/ext2.o \
+	file.o \
 	filesystem.o \
 	filesystemtype.o \
 	heap.o \
@@ -27,10 +30,13 @@ OBJS = boot/boot.o boot/boot64.o \
 	memory.o \
 	memorystream.o \
 	misc.o \
+	module.o \
 	mutex.o \
+	namedobject.o \
 	paging.o \
 	partvolume.o \
 	pci.o \
+	process.o \
 	random.o \
 	semaphore.o \
 	stream.o \
@@ -38,6 +44,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	stringbuilder.o \
 	thread.o \
 	time.o \
+	tokenizer.o \
 	typeinfo.o \
 	uuid.o \
 	volume.o \
@@ -52,6 +59,7 @@ LD ?= ld
 COMPILE_FLAGS = \
 	-masm=intel \
 	-ffreestanding \
+	-nostdinc \
 	-mcmodel=large \
 	-mno-red-zone \
 	-O0 \
@@ -60,16 +68,18 @@ COMPILE_FLAGS = \
 	-Ulinux \
 	-D__WOOT__ \
 	-ggdb \
-	-I$(TOP_DIR)/kernel/include
+	-I$(TOP_DIR)/kernel/include \
+	-fno-pic
 	
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions
-ASMFLAGS ?= -f elf64 -g dwarf2 -w
-LDFLAGS = -Tlink.ld -z max-page-size=4096
+ASMFLAGS = -f elf64 -g dwarf2 -w
+LDFLAGS = -Tlink.ld -z max-page-size=4096 -shared -Bsymbolic -z noreloc-overflow
 
 DEPS = link.ld
 
 all: $(OUTFILE)
+	for dir in $(MODULES); do $(MAKE) -C $$dir; done
 
 $(OUTFILE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(OUTFILE)
@@ -83,6 +93,7 @@ $(TOP_DIR)/root/system/$(OUTFILE): $(OUTFILE)
 	cp $(OUTFILE) $(TOP_DIR)/root/system/$(OUTFILE)
 
 install: $(TOP_DIR)/root/boot/grub/grub.cfg $(TOP_DIR)/root/system/$(OUTFILE)
+	for dir in $(MODULES); do $(MAKE) -C $$dir install; done
 
 clean:
 	rm -f $(OBJS) $(OUTFILE)

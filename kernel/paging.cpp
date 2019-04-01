@@ -65,6 +65,16 @@ void Paging::Initialize(multiboot_info_t *mboot)
     cpuSetCR3(kernelAddressSpace);
 }
 
+void Paging::BuildAddressSpace(AddressSpace as)
+{
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
+    uintptr_t *kernelPml4 = (uintptr_t *)(kernelAddressSpace + KERNEL_BASE);
+    Memory::Zero(pml4, PAGE_SIZE);
+
+    // copy all kernel pml4 entries
+    Memory::Move(pml4 + 256, kernelPml4 + 256, 2048);
+}
+
 AddressSpace Paging::GetCurrentAddressSpace()
 {
     return (AddressSpace)cpuGetCR3();
@@ -144,7 +154,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     if(!(pml4[pml4idx] & 1))
         return false;
 
-    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
     if(!(pml3[pml3idx] & 1))
     {
         bool freePML3 = true;
@@ -158,7 +168,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
     if(!(pml2[pml2idx] & 1))
     {
         bool freePML2 = true;
@@ -172,7 +182,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
     pml1[pml1idx] = 0;
 
     bool freePML1 = true;
@@ -193,13 +203,16 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         FreeFrame((uintptr_t)pml2);
     }
 
-    bool freePML3 = true;
-    for(uint i = 0; i < 512 && freePML3; ++i)
-        freePML3 = !(pml3[i] & 1);
-    if(freePML3)
+    if(va < KERNEL_BASE)
     {
-        pml4[pml4idx] = 0;
-        FreeFrame((uintptr_t)pml3);
+        bool freePML3 = true;
+        for(uint i = 0; i < 512 && freePML3; ++i)
+            freePML3 = !(pml3[i] & 1);
+        if(freePML3)
+        {
+            pml4[pml4idx] = 0;
+            FreeFrame((uintptr_t)pml3);
+        }
     }
 
     InvalidatePage(va);
@@ -232,6 +245,52 @@ bool Paging::UnMapPages(AddressSpace as, uintptr_t va, size_t n)
     return true;
 }
 
+void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
+{
+    if(as == PG_CURRENT_ADDR_SPC)
+        as = GetCurrentAddressSpace();
+
+    uintptr_t endVA = startVA + rangeSize;
+    uintptr_t scanStartVA = ((startVA >> 39) & 511) << 39;
+    uintptr_t scanEndVA = align(endVA, (1ull << 39));
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
+    for(uintptr_t scanVA = scanStartVA; scanVA < scanEndVA; scanVA += (1ull << 39))
+    {
+        if(scanVA >= KERNEL_BASE)
+            return; // never unmap kernel memory
+
+        uintptr_t pml4idx = (scanVA >> 39) & 511;
+        if(!(pml4[pml4idx] & 1))
+            continue;
+
+        uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+        for(uintptr_t pml3idx = 0; pml3idx < 511; ++pml3idx)
+        {
+            if(!(pml3[pml3idx] & 1))
+                continue;
+
+            uintptr_t *pml2 = (uintptr_t *)((pml3[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+            for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
+            {
+                if(!(pml2[pml2idx] & 1))
+                    continue;
+
+                uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
+                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                {
+                    uintptr_t va = pml4idx << 39 | pml3idx << 30 | pml2idx << 21 | pml1idx << 12;
+                    if(va < startVA || va >= endVA)
+                        continue;
+                    if(!(pml1[pml1idx] & 1))
+                        continue;
+                    FreeFrame(pml1[pml1idx] & ~PAGE_MASK);
+                    InvalidatePage(va);
+                }
+            }
+        }
+    }
+}
+
 uintptr_t Paging::GetPhysicalAddress(AddressSpace as, uintptr_t va)
 {
     if(as == PG_CURRENT_ADDR_SPC)
@@ -247,13 +306,13 @@ uintptr_t Paging::GetPhysicalAddress(AddressSpace as, uintptr_t va)
     uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
     if(!(pml4[pml4idx] & 1))
         return PG_INVALID_ADDRESS;
-    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
     if(!(pml3[pml3idx] & 1))
         return PG_INVALID_ADDRESS;
-    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
     if(!(pml2[pml2idx] & 1))
         return PG_INVALID_ADDRESS;
-    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
+    uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
     if(!(pml1[pml1idx] & 1))
         return PG_INVALID_ADDRESS;
     return pml1[pml1idx] & ~PAGE_MASK;

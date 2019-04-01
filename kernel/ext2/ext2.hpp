@@ -273,6 +273,7 @@ private:
     bool initialized;
     bool superDirty;
     uint8_t *blockOfZeros;
+    char *fsLabel;
 
     static uint8_t modeToFileType(uint32_t mode);
     static bool isValidFileName(const char *name);
@@ -300,7 +301,7 @@ public:
     static void Initialize();
     static void Cleanup();
 
-    virtual bool GetLabel(char *buffer, size_t bufSize);
+    virtual const char *GetLabel();
     virtual UUID GetUUID();
     virtual ::INode *ReadINode(ino_t number);
     virtual bool WriteINode(::INode *inode);

@@ -44,6 +44,7 @@ bool FileSystem::remove(FileSystem *fs)
 FileSystem::FileSystem(Volume *volume, FileSystemType *type) :
     id(ids.GetNext()), volume(volume), type(type)
 {
+    append(this);
 }
 
 void FileSystem::Initialize()
@@ -115,6 +116,30 @@ void FileSystem::RemoveDEntry(DEntry *dentry)
     Lock();
     dentryCache.Remove(dentry, nullptr, false);
     UnLock();
+}
+
+FileSystem *FileSystem::GetByName(const char *name)
+{
+    if(!lockList()) return nullptr;
+    FileSystem *res = nullptr;
+    for(FileSystem *fs : fileSystems)
+    {
+        const char *label = fs->GetLabel();
+        bool match = label && !String::Compare(name, label);
+        if(!match)
+        {
+            StringBuilder sb(31);
+            sb.WriteFmt("%d", fs->GetId());
+            match = !String::Compare(name, sb.String());
+        }
+        if(match)
+        {
+            res = fs;
+            break;
+        }
+    }
+    unLockList();
+    return res;
 }
 
 void FileSystem::PutINode(INode *inode)
@@ -204,7 +229,7 @@ INode *FileSystem::GetINode(ino_t number)
     return inode;
 }
 
-int FileSystem::GetID()
+int FileSystem::GetId()
 {
     return id;
 }
@@ -221,9 +246,9 @@ DEntry *FileSystem::GetRoot()
     return root;
 }
 
-bool FileSystem::GetLabel(char *buf, size_t bufSize)
+const char *FileSystem::GetLabel()
 {
-    return false;
+    return nullptr;
 }
 
 UUID FileSystem::GetUUID()
@@ -253,5 +278,6 @@ int FileSystem::Synchronize()
 
 FileSystem::~FileSystem()
 {
+    remove(this);
     if(root) PutDEntry(root);
 }

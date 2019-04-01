@@ -2,6 +2,7 @@
 #include <debug.hpp>
 #include <ints.hpp>
 #include <irqs.hpp>
+#include <process.hpp>
 #include <thread.hpp>
 
 #define VECTOR_COUNT 256
@@ -49,14 +50,11 @@ extern "C" void intsCommonHandler(Ints::State *state)
     Ints::CommonHandler(state);
 }
 
-class Process;
-class Thread;
-
 void Ints::CommonHandler(Ints::State *state)
 {
     int irq = state->InterruptNumber - IRQs::Base;
     bool isIRQ = irq >= 0 && irq < IRQs::Count;
-    Process *cp = nullptr;//Process::GetCurrent();
+    Process *cp = Process::GetCurrent();
     Thread *ct = Thread::GetCurrent();
 
     // handle spurious irqs
@@ -99,7 +97,7 @@ void Ints::CommonHandler(Ints::State *state)
                   state->InterruptNumber,
                   state->InterruptNumber < IRQs::Base ? excNames[state->InterruptNumber] : "hardware interrupt");
 
-            //if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
+            if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
             if(ct)
             {
                 ++ct->ExcCount;
@@ -116,13 +114,13 @@ void Ints::CommonHandler(Ints::State *state)
         }
         DumpState(state);
 
-        /*if(ct && ct->ExcCount > 1)
+        if(ct && ct->ExcCount > 1)
         {
             DEBUG("Something went wrong when building stack trace. Killing thread.\n");
             Thread::Finalize(ct, 127);
         }
 
-        DEBUG("Stack trace:\n");
+        /*DEBUG("Stack trace:\n");
         uintptr_t *rbp = (uintptr_t *)state->RBP;
         for(int i = 0; i < 5; ++i)
         {

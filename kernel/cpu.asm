@@ -1335,6 +1335,15 @@ cpuWriteMSR:
     wrmsr
     ret
 
+global cpuEnterUserMode
+cpuEnterUserMode:
+    push 0x0043 ; ss - 64 bit user data selector
+    push rdi    ; rsp
+    push 0x0202 ; rflags
+    push 0x003B ; cs - 64 bit user code selector
+    push rsi    ; rip
+    iret
+
 global cpuReadTSC
 cpuReadTSC:
     rdtsc

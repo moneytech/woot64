@@ -151,6 +151,8 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
         return;
     }
 
+    if(sblock->s_volume_name[0])
+        fsLabel = String::Duplicate(sblock->s_volume_name);
     SetRoot(new DEntry("/", nullptr, rootINode));
     superBlock->s_mtime = Time::GetTime();
     ++superBlock->s_mnt_count;
@@ -701,6 +703,7 @@ EXT2::~EXT2()
     volume->Synchronize();
     delete superBlock;
     delete[] BGDT;
+    if(fsLabel) delete[] fsLabel;
 }
 
 void EXT2::Initialize()
@@ -713,13 +716,9 @@ void EXT2::Cleanup()
     if(fsType) delete fsType;
 }
 
-bool EXT2::GetLabel(char *buffer, size_t bufSize)
+const char *EXT2::GetLabel()
 {
-    if(!superBlock->s_volume_name[0])
-        return false;
-    Memory::Zero(buffer, bufSize);
-    Memory::Move(buffer, superBlock->s_volume_name, min(16, bufSize - 1));
-    return true;
+    return fsLabel;
 }
 
 UUID EXT2::GetUUID()

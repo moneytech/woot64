@@ -15,6 +15,10 @@ typedef __INTPTR_TYPE__ intptr_t;
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 typedef __SIZE_TYPE__ size_t;
 
+#ifdef __cplusplus
+typedef decltype(nullptr) nullptr_t;
+#endif // __cplusplus
+
 // define natural integer size for this architecture
 #if(__SIZE_WIDTH__ == 64)
 typedef int64_t intn;
