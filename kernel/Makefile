@@ -1,5 +1,5 @@
 OUTFILE = kernel
-MODULES = testmodule
+MODULES = ps2input testmodule
 OBJS = boot/boot.o boot/boot64.o \
 	ahci/ahcidrive.o \
 	bitmap.o \
@@ -18,11 +18,13 @@ OBJS = boot/boot.o boot/boot64.o \
 	elf.o \
 	ext2/ext2.o \
 	file.o \
+	filestream.o \
 	filesystem.o \
 	filesystemtype.o \
 	heap.o \
 	ide/idedrive.o \
 	inode.o \
+	inputdevice.o \
 	ints.o \
 	irqs.o \
 	isrs.o \
@@ -92,7 +94,11 @@ $(TOP_DIR)/root/system/$(OUTFILE): $(OUTFILE)
 	mkdir -p $(TOP_DIR)/root/system
 	cp $(OUTFILE) $(TOP_DIR)/root/system/$(OUTFILE)
 
-install: $(TOP_DIR)/root/boot/grub/grub.cfg $(TOP_DIR)/root/system/$(OUTFILE)
+$(TOP_DIR)/root/system/modulelist: modulelist
+	mkdir -p $(TOP_DIR)/root/system
+	cp $< $@
+
+install: $(TOP_DIR)/root/boot/grub/grub.cfg $(TOP_DIR)/root/system/$(OUTFILE) $(TOP_DIR)/root/system/modulelist
 	for dir in $(MODULES); do $(MAKE) -C $$dir install; done
 
 clean:

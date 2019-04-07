@@ -27,6 +27,9 @@ public:
 
     static Module *GetByName(const char *name);
     static int Load(const char *filename);
+    static void LoadBootModules();
+    static void ProbeAll();
+    static void CleanupAll();
 
     Module(const char *name, ProbeCallback probe, CleanupCallback clean);
     int Probe();

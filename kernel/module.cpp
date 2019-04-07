@@ -1,12 +1,14 @@
 #include <debug.hpp>
 #include <elf.hpp>
 #include <errno.h>
+#include <file.hpp>
+#include <filestream.hpp>
 #include <misc.hpp>
 #include <module.hpp>
 #include <string.hpp>
 
 List<Module *> Module::modules;
-Mutex Module::listLock(false, "Module::listLock");
+Mutex Module::listLock(true, "Module::listLock");
 
 bool Module::lockList()
 {
@@ -52,6 +54,7 @@ Module *Module::GetByName(const char *name)
 
 int Module::Load(const char *filename)
 {
+    DEBUG("[module] Loading '%s'\n", filename);
     ELF *module = ELF::Load(filename, false, false, true);
     if(!module) return errno ? -errno : -EINVAL;
     int res = module->EntryPoint();
@@ -62,6 +65,62 @@ int Module::Load(const char *filename)
         delete module;
     }
     return res;
+}
+
+void Module::LoadBootModules()
+{
+    File *listFile = File::Open("/system/modulelist", O_RDONLY);
+    if(!listFile)
+    {
+        DEBUG("[module] Couldn't open boot module list\n");
+        return;
+    }
+    FileStream *listStream = new FileStream(listFile);
+    char line[128];
+    while(listStream->ReadLine(line, sizeof(line)) > 0)
+    {
+        // remove comments
+        for(int i = 0; i < sizeof(line); ++i)
+        {
+            if(line[i] == '#')
+            {
+                line[i] = 0;
+                break;
+            }
+        }
+
+        // trim leading and trailing whitespaces
+        char *lineTrimmed = String::Trim(line, " \t");
+        if(!String::Length(lineTrimmed))
+            continue;
+
+        // load the module
+        Load(lineTrimmed);
+    }
+    delete listStream;
+    delete listFile;
+}
+
+void Module::ProbeAll()
+{
+    if(!lockList()) return;
+    for(Module *mod : modules)
+    {
+        if(mod->CallbackProbe)
+            mod->CallbackProbe(mod);
+    }
+    unLockList();
+}
+
+void Module::CleanupAll()
+{
+    if(!lockList()) return;
+    for(Module *mod : modules)
+    {
+        if(mod->CallbackCleanup)
+            mod->CallbackCleanup(mod);
+    }
+    unLockList();
 }
 
 Module::Module(const char *name, ProbeCallback probe, CleanupCallback clean) :

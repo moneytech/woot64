@@ -387,3 +387,50 @@ double String::ToDouble(const char *str, char **endptr)
     result = result * sign * Misc::PowMax(10, ev * esign);
     return result;
 }
+
+char *String::TrimStart(char *str, const char *chars)
+{
+    size_t charCount = String::Length(chars);
+    for(; *str; ++str)
+    {
+        bool found = false;
+        for(decltype(charCount) i = 0; i < charCount; ++i)
+        {
+            if(*str == chars[i])
+            {
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) break;
+    }
+    return str;
+}
+
+char *String::TrimEnd(char *str, const char *chars)
+{
+    size_t strLen = String::Length(str);
+    size_t charCount = String::Length(chars);
+    for(decltype(strLen) i = strLen - 1; i >= 0; --i)
+    {
+        bool found = false;
+        for(decltype(charCount) j = 0; j < charCount; ++j)
+        {
+            if(str[i] == chars[j])
+            {
+                str[i] = 0;
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) break;
+    }
+    return str;
+}
+
+char *String::Trim(char *str, const char *chars)
+{
+    return TrimStart(TrimEnd(str, chars), chars);
+}

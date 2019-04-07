@@ -3,6 +3,7 @@
 #include <../ide/idedrive.hpp>
 #include <cpu.hpp>
 #include <debug.hpp>
+#include <file.hpp>
 #include <heap.hpp>
 #include <irqs.hpp>
 #include <misc.hpp>
@@ -43,17 +44,30 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Volume::DetectAll();
     FileSystem::DetectAll();
 
-    ELF *kernelImage = ELF::Load("WOOT_OS:/system/kernel", false, true, false);
+    // get main kernel process
+    Process *kernelProc = Process::GetCurrent();
+
+    // initialize current directory for kernel process
+    File *rootDir = File::Open("WOOT_OS:/", O_RDONLY);
+    if(rootDir)
+    {
+        kernelProc->CurrentDirectory = FileSystem::GetDEntry(rootDir->DEntry);
+        delete rootDir;
+    }
+
+    ELF *kernelImage = ELF::Load("/system/kernel", false, true, false);
     if(!kernelImage) DEBUG("[kmain] Couldn't load kernel image. Modules won't load properly.\n");
 
-    int res = Module::Load("WOOT_OS:/system/testmodule");
-    DEBUG("[kmain] Module::Load returned %d\n", res);
+    Module::LoadBootModules();
+    Module::ProbeAll();
 
-    DEBUG("> ");
-    char line[64] = { 0 };
-    DEBUG_IN(line, sizeof(line));
-    DEBUG("\n%s\n", line);
+    //DEBUG("> ");
+    //char line[64] = { 0 };
+    //DEBUG_IN(line, sizeof(line));
+    //DEBUG("\n%s\n", line);
     //for(;;) cpuWaitForInterrupt(0);
+
+    Module::CleanupAll();
 
     EXT2::Cleanup();
     PartVolume::Cleanup();

@@ -24,4 +24,7 @@ public:
     static long long ToLLong(const char *str, char **endptr = nullptr, int base = 0);
     static unsigned long long ToULLong(const char *str, char **endptr = nullptr, int base = 0);
     static double ToDouble(const char *str, char **endptr = nullptr);
+    static char *TrimStart(char *str, const char *chars);
+    static char *TrimEnd(char *str, const char *chars);
+    static char *Trim(char *str, const char *chars);
 };

@@ -24,3 +24,4 @@ extern int *__errno_location();
 #define EISDIR      9
 #define EBADF       10
 #define ERANGE      11
+#define ETIMEOUT    12
