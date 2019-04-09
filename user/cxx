@@ -1,0 +1,6 @@
+#!/bin/sh
+
+COMMAND=clang++
+ARGS="-Wno-unused-command-line-argument -ggdb -nostdinc"
+$COMMAND $ARGS "$@"
+

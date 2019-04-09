@@ -1,4 +1,4 @@
-SUBDIRS = usertest
+SUBDIRS = libsyscalls usertest
 
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done

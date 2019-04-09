@@ -412,6 +412,10 @@ bool ELF::ApplyRelocations()
             case R_X86_64_64:
                 *val = symAddr + A;
                 break;
+            case R_X86_64_GLOB_DAT:
+            case R_X86_64_JUMP_SLOT:
+                *val = symAddr + A;
+                break;
             case R_X86_64_RELATIVE:
                 *val = baseDelta + A;
                 break;
