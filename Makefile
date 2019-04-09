@@ -3,7 +3,7 @@ LOOP_DEVICE = /dev/loop7
 QEMU = /usr/bin/qemu-system-x86_64
 IMGFILE = hdd.img
 
-SUBDIRS = kernel
+SUBDIRS = kernel user
 
 # tools used
 CC = clang
@@ -49,8 +49,16 @@ distclean: clean clean-$(IMGFILE)
 clean-$(IMGFILE):
 	rm -f $(IMGFILE)
 
-run:
-	$(QEMU) -s -m 256 -M q35 -drive format=raw,file=hdd.img -debugcon vc
+QEMU_ARGS = -s -m 256 -M q35 -drive format=raw,file=hdd.img -debugcon vc
 
-.PHONY: clean distclean clean-$(IMGFILE) run install
+run:
+	$(QEMU) $(QEMU_ARGS)
+
+run-dint:
+	$(QEMU) $(QEMU_ARGS) -d int
+
+run-kvm:
+	$(QEMU) $(QEMU_ARGS)
+
+.PHONY: clean distclean clean-$(IMGFILE) run run-qemu install
 

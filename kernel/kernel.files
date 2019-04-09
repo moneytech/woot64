@@ -23,6 +23,7 @@ include/module.hpp
 include/namedobject.hpp
 include/partvolume.hpp
 include/process.hpp
+include/syscalls.hpp
 include/tokenizer.hpp
 include/virtualkey.hpp
 inode.cpp
@@ -41,6 +42,7 @@ ps2input/ps2kbd.cpp
 ps2input/ps2kbd.hpp
 ps2input/ps2mouse.cpp
 ps2input/ps2mouse.hpp
+syscalls.cpp
 testmodule/Makefile
 testmodule/module.cpp
 tokenizer.cpp

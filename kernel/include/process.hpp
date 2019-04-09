@@ -106,7 +106,7 @@ public:
 
     static void Initialize();
     static Process *GetByID(pid_t pid);
-    static Process *Create(const char *filename, Semaphore *finished, bool noAutoRelocs);
+    static Process *Create(const char *filename, Semaphore *finished, bool noAutoRelocs, int *retVal);
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static bool Finalize(pid_t pid, int retVal);

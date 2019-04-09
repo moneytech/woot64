@@ -29,7 +29,9 @@ _start64:
 
 ; call _init
     pop rdi
+    push rdi
     call _init
+    pop rdi
     pop rdi
 
 ; call kmain
@@ -37,7 +39,9 @@ _start64:
     push rax
 
 ; call _fini
+    push rax
     call _fini
+    pop rax
     pop rax
     cli
     hlt

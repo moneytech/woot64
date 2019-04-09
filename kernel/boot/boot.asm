@@ -72,7 +72,7 @@ _start:
 .enable_long_mode:
     mov ecx, 0xC0000080
     rdmsr
-    or eax, 1 << 8
+    or eax, 1 << 8 | 1 << 0
     wrmsr
 
     ; enable paging
@@ -104,7 +104,7 @@ _start:
 .setup_tss:
     cld
     mov rax, KERNEL_BASE
-    add rax, tss - KERNEL_BASE
+    add rax, mainTSS - KERNEL_BASE
     mov rdi, KERNEL_BASE
     add rdi, gdt - KERNEL_BASE + 0x48 + 2
     stosw
@@ -192,11 +192,11 @@ gdt:
 
     dq 0x00AF9A000000FFFF   ; kernel64 code 0x0028
     dq 0x00AF92000000FFFF   ; kernel64 data 0x0030
-    dq 0x00AFFA000000FFFF   ; user64 code 0x0038
-    dq 0x00AFF2000000FFFF   ; user64 data 0x0040
+    dq 0x00AFF2000000FFFF   ; user64 data 0x0038
+    dq 0x00AFFA000000FFFF   ; user64 code 0x0040
 
     ; tss 0x0048
-    dq 0x0040890000000000 | (tss.end - tss)
+    dq 0x0040890000000000 | (mainTSS.end - mainTSS)
     dq 0x0000000000000000
 .end:
 
@@ -212,7 +212,8 @@ align PAGE_SIZE
 pdp:
     resb PAGE_SIZE
 
-tss:
+global mainTSS
+mainTSS:
     resb 0x68
 .end:
 

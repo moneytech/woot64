@@ -44,6 +44,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	stream.o \
 	string.o \
 	stringbuilder.o \
+	syscalls.o \
 	thread.o \
 	time.o \
 	tokenizer.o \
@@ -72,7 +73,7 @@ COMPILE_FLAGS = \
 	-ggdb \
 	-I$(TOP_DIR)/kernel/include \
 	-fno-pic
-	
+		
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions
 ASMFLAGS = -f elf64 -g dwarf2 -w

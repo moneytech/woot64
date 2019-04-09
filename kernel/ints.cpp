@@ -108,11 +108,12 @@ void Ints::CommonHandler(Ints::State *state)
         // print extra info for PF
         if(state->InterruptNumber == 14)
         {
-            DEBUG("%s when %s address %#.8x\n", state->ErrorCode & 1 ? "Page protection violation" : "Page not present",
+            DEBUG("%s when %s address %p\n", state->ErrorCode & 1 ? "Page protection violation" : "Page not present",
                   state->ErrorCode & 16 ? "executing code at" : (state->ErrorCode & 2 ? "writing to" : "reading from"),
                   cpuGetCR2());
         }
-        DumpState(state);
+        if(ct->ExcCount <= 1)
+            DumpState(state);
 
         if(ct && ct->ExcCount > 1)
         {
@@ -120,7 +121,7 @@ void Ints::CommonHandler(Ints::State *state)
             Thread::Finalize(ct, 127);
         }
 
-        /*DEBUG("Stack trace:\n");
+        DEBUG("Stack trace:\n");
         uintptr_t *rbp = (uintptr_t *)state->RBP;
         for(int i = 0; i < 5; ++i)
         {
@@ -128,7 +129,7 @@ void Ints::CommonHandler(Ints::State *state)
             if(!rip) break;
             rbp = (uintptr_t *)(*rbp);
             DEBUG("%p\n", rip);
-        }*/
+        }
 
         if(ct && ct->ID != 1) Thread::Finalize(ct, 127);
         else cpuSystemHalt(state->InterruptNumber);

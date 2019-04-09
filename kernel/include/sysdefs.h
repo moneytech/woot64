@@ -1,5 +1,7 @@
 #pragma once
 
+#define USER_BASE           0x0000000000000000
+#define USER_END            0x0000800000000000
 #define KERNEL_BASE         0xFFFF800000000000
 #define KERNEL_HEAP_BASE    0xFFFFE00000000000
 #define KERNEL_HEAP_END     0xFFFFE80000000000
@@ -21,6 +23,8 @@
 
 #define SEG_KERNEL_CODE 0x0028
 #define SEG_KERNEL_DATA 0x0030
+#define SEG_USER_DATA   0x003b
+#define SEG_USER_CODE   0x0043
 
 #define INLINE_ASM_SYNTAX   ".intel_syntax noprefix\n"
 #define NORMAL_ASM_SYNTAX   ".intel_syntax noprefix\n"

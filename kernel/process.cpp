@@ -136,7 +136,7 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
     stackPtr = stackPush(stackPtr, &argCount, sizeof argCount);
     return stackPtr;
 #endif
-    return 0;
+    return stackPtr;
 }
 
 int Process::processEntryPoint(const char *cmdline)
@@ -153,22 +153,22 @@ int Process::processEntryPoint(const char *cmdline)
         proc->MinBrk = max(proc->MinBrk, align(elf->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
-    proc->MaxBrk = 0x80000000;
+    proc->MaxBrk = 0x0000780000000000ull;
     proc->MemoryLock.Release();
 
     Thread *ct = Thread::GetCurrent();
 
     // allocate and initialize user stack
-    uintptr_t esp = ct->AllocStack(&ct->UserStack, ct->UserStackSize);
+    uintptr_t stackPointer = ct->AllocStack(&ct->UserStack, ct->UserStackSize);
     const char *envVars[] =
     {
         "PATH=WOOT_OS:/bin;WOOT_OS:/system",
         "TEST=value"
     };
-    esp = buildUserStack(esp, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
+    stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
 
     proc->lock.Release();
-    cpuEnterUserMode(esp, (uintptr_t)elf->EntryPoint);
+    cpuEnterUserMode(stackPointer, (uintptr_t)elf->EntryPoint);
     return 0;
 }
 
@@ -260,6 +260,7 @@ void Process::Initialize()
 
 Process *Process::GetByID(pid_t pid)
 {
+    if(!pid) return Process::GetCurrent();
     for(Process *proc : processList)
     {
         if(pid == proc->ID)
@@ -268,7 +269,7 @@ Process *Process::GetByID(pid_t pid)
     return nullptr;
 }
 
-Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoRelocs)
+Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoRelocs, int *retVal)
 {
     if(!filename) return nullptr;
     bool deleteFinished = false;
@@ -279,7 +280,7 @@ Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoR
     }
     char *cmdLine = String::Duplicate(filename);
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)cmdLine,
-                                DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, nullptr, finished);
+                                DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, finished);
     Process *proc = new Process(filename, thread, 0, finished);
     proc->noAutoRelocs = noAutoRelocs;
     proc->Finished = finished;
@@ -372,7 +373,7 @@ int Process::ForEach(bool (*handler)(Process *proc, void *arg), void *arg)
 
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :
     lock(true, "processLock"),
-    UserStackPtr(KERNEL_BASE),
+    UserStackPtr(USER_END),
     Handles(8, 8, MAX_HANDLES),
     ID(id.GetNext()),
     //Messages(64),
@@ -694,7 +695,7 @@ int Process::AbortThread(int handle, int retVal)
 int Process::NewProcess(const char *cmdline)
 {
     if(!Lock()) return -errno;
-    Process *p = Process::Create(cmdline, nullptr, false);
+    Process *p = Process::Create(cmdline, nullptr, false, nullptr);
     int res = allocHandleSlot(Handle(p));
     if(res < 0)
     {

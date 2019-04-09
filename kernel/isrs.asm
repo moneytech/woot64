@@ -348,7 +348,15 @@ isrCommonStub:
 
     push rsp
     mov rdi, rsp
+
+    ; align stack and call common handler
+    push r12
+    mov r12, rsp
+    and rsp, 0xFFFFFFFFFFFFFFF0
     call intsCommonHandler
+    mov rsp, r12
+    pop r12
+
     pop rsp
 
     pop gs

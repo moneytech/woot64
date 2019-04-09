@@ -1,11 +1,12 @@
 #include <cpu.hpp>
+#include <debug.hpp>
 //#include <gdt.hpp>
 #include <irqs.hpp>
 #include <misc.hpp>
 #include <mutex.hpp>
 #include <new.hpp>
 #include <paging.hpp>
-//#include <process.hpp>
+#include <process.hpp>
 #include <semaphore.hpp>
 #include <string.hpp>
 #include <sysdefs.h>
@@ -15,6 +16,20 @@
 extern "C" void *kmain;
 extern "C" uint8_t mainKernelThreadStack[];
 extern "C" uint8_t mainKernelThreadStackEnd[];
+extern "C" struct TSS mainTSS;
+
+#pragma pack(push, 1)
+struct TSS
+{
+    uint32_t Reserved1;
+    uint64_t RSP[3];
+    uint64_t Reserved2;
+    uint64_t IST[7];
+    uint64_t Reserved3;
+    uint16_t Reserved4;
+    uint16_t IOBMAddr;
+};
+#pragma pack(pop)
 
 extern "C" void threadFinalize(Thread *thread, int returnValue)
 {
@@ -104,7 +119,14 @@ void Thread::threadQueueAppend(ThreadQueue *queue, Thread *thread)
         *queue = thread;
         return;
     }
-    for(; last->next; last = last->next);
+    for(; last->next; last = last->next)
+    {
+        if(last == thread)
+        {
+            DEBUG("[thread] %s(): Thread %d already on queue.", __FUNCTION__, thread->ID);
+            return;
+        }
+    }
     last->next = thread;
 }
 
@@ -117,7 +139,11 @@ void Thread::threadQueuePrepend(Thread::ThreadQueue *queue, Thread *thread)
 Thread *Thread::threadQueueRead(Thread::ThreadQueue *queue)
 {
     Thread *first = *queue;
-    if(first) *queue = first->next;
+    if(first)
+    {
+        *queue = first->next;
+        first->next = nullptr;
+    }
     return first;
 }
 
@@ -128,17 +154,17 @@ void Thread::kernelPush(uintptr_t value)
 
 void Thread::freeStack(uintptr_t stack, size_t size)
 {
-//    if(!Process) return;
-//    uintptr_t as = Process->AddressSpace;
-//    size_t pageCount = size >> PAGE_SHIFT;
-//    for(uint i = 0; i < pageCount; ++i)
-//    {
-//        uintptr_t va = (i << PAGE_SHIFT) + stack;
-//        uintptr_t pa = Paging::GetPhysicalAddress(as, va);
-//        if(pa == ~0) continue;
-//        Paging::UnMapPage(as, va);
-//        Paging::FreeFrame(pa);
-//    }
+    if(!Process) return;
+    uintptr_t as = Process->AddressSpace;
+    size_t pageCount = size >> PAGE_SHIFT;
+    for(uint i = 0; i < pageCount; ++i)
+    {
+        uintptr_t va = (i << PAGE_SHIFT) + stack;
+        uintptr_t pa = Paging::GetPhysicalAddress(as, va);
+        if(pa == ~0) continue;
+        Paging::UnMapPage(as, va);
+        Paging::FreeFrame(pa);
+    }
 }
 
 void Thread::Initialize()
@@ -203,7 +229,7 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     Argument(argument),
     State(State::Unknown),
     KernelStackSize(kernelStackSize ? kernelStackSize : DEFAULT_STACK_SIZE),
-    KernelStack(kernelStackSize == PG_INVALID_ADDRESS ? nullptr : new uint8_t[KernelStackSize]),
+    KernelStack(kernelStackSize == PG_INVALID_ADDRESS ? nullptr : new (PAGE_SIZE) uint8_t[KernelStackSize]),
     UserStackSize(userStackSize ? userStackSize : DEFAULT_USER_STACK_SIZE),
     UserStack(nullptr),
     StackPointer(KernelStackSize + (uintptr_t)KernelStack),
@@ -221,8 +247,8 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     WaitingSemaphore(nullptr),
     WakeCount(0)
 {
-    //if(!Process) Process = Process::GetCurrent();
-    //else process->AddThread(this);
+    if(!Process) Process = Process::GetCurrent();
+    else process->AddThread(this);
 
     cpuFXSave(FXSaveData);                  // FIXME: should be initialized to known good state
 
@@ -230,7 +256,8 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
         return;
 
     // initialize stack
-    kernelPush((uintptr_t)this);
+    kernelPush(0x0000000000000000);         // stack alignment (for SSE)
+    kernelPush((uintptr_t)this);            // for threadReturn
     kernelPush((uintptr_t)threadReturn);    // return address
     uintptr_t entryStackPointer = StackPointer;
 
@@ -381,18 +408,16 @@ void Thread::Switch(Ints::State *state, Thread *thread)
     state->SwitchRSP = thread->StackPointer;
 
     uintptr_t kernelRSP = thread->KernelStackSize + (uintptr_t)thread->KernelStack;
-    //GDT::MainTSS->ESP0 = kernelRSP; // without that stack overflow happens
-    //cpuWriteMSR(0x175, kernelRSP); // set up kernel esp for sysenter
+    mainTSS.RSP[0] = kernelRSP; // without that stack overflow happens
 
     cpuSetCR0(cpuGetCR0() | 0x08); // set TS bit
-//    if(thread->Process)
-//    {
-//        uintptr_t _cr3 = cpuGetCR3();
-//        uintptr_t newCr3 = thread->Process->AddressSpace;
-//        GDT::MainTSS->CR3 = newCr3;
-//        if(_cr3 != newCr3) // avoid unnecesary tlb flushing
-//            cpuSetCR3(newCr3);
-//    }
+    if(thread->Process)
+    {
+        uintptr_t _cr3 = cpuGetCR3();
+        uintptr_t newCr3 = thread->Process->AddressSpace;
+        if(_cr3 != newCr3) // avoid unnecesary tlb flushing
+            cpuSetCR3(newCr3);
+    }
 
     currentThread = thread;
     currentThread->State = State::Active;
@@ -525,29 +550,28 @@ uint Thread::Sleep(uint millis, bool interruptible)
 
 uintptr_t Thread::AllocStack(uint8_t **stackAddr, size_t size)
 {
-//    if(!size) return ~0;
-//    uintptr_t as = Process->AddressSpace;
-//    uintptr_t res = Process->UserStackPtr;
-//    size_t pageCount = align(size, PAGE_SIZE) / PAGE_SIZE;
-//    uintptr_t startPtr = align(res, PAGE_SIZE) - pageCount * PAGE_SIZE;
-//    *stackAddr = (uint8_t *)startPtr;
-//    for(uint i = 0; i < pageCount; ++i)
-//    {
-//        uintptr_t pa = Paging::AllocFrame();
-//        if(pa == ~0)
-//        {
-//            freeStack((uintptr_t)*stackAddr, size);
-//            return ~0;
-//        }
-//        if(!Paging::MapPage(as, startPtr + i * PAGE_SIZE, pa, true, true))
-//        {
-//            freeStack((uintptr_t)*stackAddr, size);
-//            return ~0;
-//        }
-//    }
-//    Process->UserStackPtr = (uintptr_t)*stackAddr;
-//    return res;
-    return PG_INVALID_ADDRESS;
+    if(!size) return ~0;
+    uintptr_t as = Process->AddressSpace;
+    uintptr_t res = Process->UserStackPtr;
+    size_t pageCount = align(size, PAGE_SIZE) / PAGE_SIZE;
+    uintptr_t startPtr = align(res, PAGE_SIZE) - pageCount * PAGE_SIZE;
+    *stackAddr = (uint8_t *)startPtr;
+    for(uint i = 0; i < pageCount; ++i)
+    {
+        uintptr_t pa = Paging::AllocFrame();
+        if(pa == ~0)
+        {
+            freeStack((uintptr_t)*stackAddr, size);
+            return ~0;
+        }
+        if(!Paging::MapPage(as, startPtr + i * PAGE_SIZE, pa, true, true))
+        {
+            freeStack((uintptr_t)*stackAddr, size);
+            return ~0;
+        }
+    }
+    Process->UserStackPtr = (uintptr_t)*stackAddr;
+    return res;
 }
 
 Thread::~Thread()

@@ -13,12 +13,14 @@
 #include <partvolume.hpp>
 #include <pci.hpp>
 #include <process.hpp>
+#include <syscalls.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
 #include <time.hpp>
 #include <types.h>
 
 #include <elf.hpp>
+#include <semaphore.hpp>
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
@@ -40,9 +42,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     AHCIDrive::Initialize();
     PartVolume::Initialize();
     EXT2::Initialize();
-
     Volume::DetectAll();
     FileSystem::DetectAll();
+    SysCalls::Initialize();
 
     // get main kernel process
     Process *kernelProc = Process::GetCurrent();
@@ -60,6 +62,18 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
     Module::LoadBootModules();
     Module::ProbeAll();
+
+    const char *procExec = "/bin/usertest";
+    Semaphore done(0);
+    int res;
+    Process *proc = Process::Create(procExec, &done, false, &res);
+    if(proc)
+    {
+        proc->Start();
+        done.Wait(0, false, false);
+        DEBUG("'%s' returned %d\n", proc->Name, res);
+    }
+    else DEBUG("Couldn't start '%s'\n", procExec);
 
     //DEBUG("> ");
     //char line[64] = { 0 };
