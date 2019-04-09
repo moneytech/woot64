@@ -1,6 +1,7 @@
 #include <cpu.hpp>
 #include <debug.hpp>
 #include <errno.h>
+#include <file.hpp>
 #include <memory.hpp>
 #include <process.hpp>
 #include <syscalls.hpp>
@@ -8,7 +9,6 @@
 #include <thread.hpp>
 
 extern "C" void syscallHandler();
-
 asm(
 INLINE_ASM_SYNTAX
 ".extern mainTSS\n"
@@ -38,7 +38,7 @@ INLINE_ASM_SYNTAX
 "mov r11, [r11 + rax * 8]\n"                // calculate handler address
 "or r11, r11\n"                             // validate handler address
 "jnz 1f\n"                                  //   and skip InvalidHandler call if handler is valid
-"call _ZN8SysCalls14InvalidHandlerEPm\n"    // call InvalidHandler
+"call _ZN8SysCalls14InvalidHandlerEv\n"    // call InvalidHandler
 "jmp 2f\n"                                  //   and return
 "1: call r11\n"                             // call actual handler
 "2: pop r11\n"                              // restore flags
@@ -65,12 +65,45 @@ NORMAL_ASM_SYNTAX
 
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
-intn SysCalls::InvalidHandler(uintn args[6])
+intn SysCalls::InvalidHandler()
 {
     // not sure if this is stable
     uintn number; asm volatile("": "=a"(number));
     DEBUG("[syscalls] Unknown syscall %d\n", number);
     return -ENOSYS;
+}
+
+intn SysCalls::sys_read(unsigned int fd, char *buf, size_t count)
+{
+    if(fd < 3) return Debug::DebugRead(buf, count); // temporary hack
+    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
+    if(!f) return -EBADF;
+    return f->Read(buf, count);
+}
+
+intn SysCalls::sys_write(unsigned int fd, const char *buf, size_t count)
+{
+    if(fd < 3) return Debug::DebugWrite(buf, count); // temporary hack
+    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
+    if(!f) return -EBADF;
+    return f->Write(buf, count);
+}
+
+intn SysCalls::sys_open(const char *filename, int flags, int mode)
+{
+    //DEBUG("sys_open(\"%s\", %p)\n", args[1], args[2]);
+    return Process::GetCurrent()->Open(filename, flags);
+}
+
+intn SysCalls::sys_close(unsigned int fd)
+{
+    return Process::GetCurrent()->Close(fd);
+}
+
+intn SysCalls::sys_exit(intn retVal)
+{
+    Thread::Finalize(nullptr, retVal);
+    return ESUCCESS;
 }
 
 intn SysCalls::sysExitThread(intn retVal)
@@ -88,6 +121,13 @@ intn SysCalls::sysExitProcess(intn retVal)
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
+
+    Handlers[SYS_read] = (SysCallHandler)sys_read;
+    Handlers[SYS_write] = (SysCallHandler)sys_write;
+    Handlers[SYS_open] = (SysCallHandler)sys_open;
+    Handlers[SYS_close] = (SysCallHandler)sys_close;
+    Handlers[SYS_exit] = (SysCallHandler)sys_exit;
+
     Handlers[SYS_EXIT_THREAD] = (SysCallHandler)sysExitThread;
     Handlers[SYS_EXIT_PROCESS] = (SysCallHandler)sysExitProcess;
 

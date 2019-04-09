@@ -11,7 +11,7 @@ static int64_t debugRead(void *buffer, int64_t n);
 static int64_t debugWrite(const void *buffer, int64_t n);
 
 static CallBackStream DebugStream(debugRead, debugWrite);
-static Mutex DebugStreamLock(false, "DebugStreamLock");
+static Mutex DebugStreamLock(true, "DebugStreamLock");
 
 #define USE_VGA_TEXT        1
 #define USE_SERIAL          1
@@ -153,7 +153,26 @@ void Debug::DebugFmt(const char *fmt, ...)
 
 int Debug::DebugIn(void *buffer, size_t bufSize)
 {
-    return DebugStream.ReadLine((char *)buffer, bufSize);
+    DebugStreamLock.Acquire(1000, false);
+    int res = DebugStream.ReadLine((char *)buffer, bufSize);
+    DebugStreamLock.Release();
+    return res;
+}
+
+int Debug::DebugRead(void *buffer, size_t count)
+{
+    DebugStreamLock.Acquire(1000, false);
+    int res = DebugStream.Read(buffer, count);
+    DebugStreamLock.Release();
+    return res;
+}
+
+int Debug::DebugWrite(const void *buffer, size_t count)
+{
+    DebugStreamLock.Acquire(1000, false);
+    int res = DebugStream.Write(buffer, count);
+    DebugStreamLock.Release();
+    return res;
 }
 
 void Debug::BufferDump(void *ptr, size_t n)

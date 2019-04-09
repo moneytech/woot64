@@ -5,6 +5,6 @@ ARGS="-Wno-unused-command-line-argument \
 -ggdb -nostdinc -nostdlib \
 -Wl,-z,max-page-size=4096 \
 -T$TOP_DIR/user/user.ld \
--I$TOP_DIR/user/libsyscalls/syscalls \
+-I$TOP_DIR/user/libsyscalls \
 -L$TOP_DIR/user/libsyscalls"
 $COMMAND $ARGS "$@"
