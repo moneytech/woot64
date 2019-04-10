@@ -3,6 +3,8 @@
 #include <errno.h>
 #include <file.hpp>
 #include <memory.hpp>
+#include <misc.hpp>
+#include <paging.hpp>
 #include <process.hpp>
 #include <syscalls.hpp>
 #include <sysdefs.h>
@@ -65,7 +67,7 @@ NORMAL_ASM_SYNTAX
 
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
-intn SysCalls::InvalidHandler()
+long SysCalls::InvalidHandler()
 {
     // not sure if this is stable
     uintn number; asm volatile("": "=a"(number));
@@ -73,7 +75,7 @@ intn SysCalls::InvalidHandler()
     return -ENOSYS;
 }
 
-intn SysCalls::sys_read(unsigned int fd, char *buf, size_t count)
+long SysCalls::sys_read(int fd, char *buf, size_t count)
 {
     if(fd < 3) return Debug::DebugRead(buf, count); // temporary hack
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
@@ -81,7 +83,7 @@ intn SysCalls::sys_read(unsigned int fd, char *buf, size_t count)
     return f->Read(buf, count);
 }
 
-intn SysCalls::sys_write(unsigned int fd, const char *buf, size_t count)
+long SysCalls::sys_write(int fd, const char *buf, size_t count)
 {
     if(fd < 3) return Debug::DebugWrite(buf, count); // temporary hack
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
@@ -89,30 +91,89 @@ intn SysCalls::sys_write(unsigned int fd, const char *buf, size_t count)
     return f->Write(buf, count);
 }
 
-intn SysCalls::sys_open(const char *filename, int flags, int mode)
+long SysCalls::sys_open(const char *filename, int flags, int mode)
 {
     //DEBUG("sys_open(\"%s\", %p)\n", args[1], args[2]);
     return Process::GetCurrent()->Open(filename, flags);
 }
 
-intn SysCalls::sys_close(unsigned int fd)
+long SysCalls::sys_close(int fd)
 {
     return Process::GetCurrent()->Close(fd);
 }
 
-intn SysCalls::sys_exit(intn retVal)
+long SysCalls::sys_lseek(int fd, off_t offset, unsigned int origin)
+{
+    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
+    if(!f) return -errno;
+    return f->Seek(offset, origin);
+}
+
+long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, int fd, off_t off)
+{
+    len = align(len, PAGE_SIZE);
+    uintptr_t pgoffset = off << PAGE_SHIFT;
+
+    //DEBUG("sys_mmap(%p, %p, %p, %p, %d, %p)\n", addr, length, prot, flags, handle, pgoffset);
+
+    if(addr >= KERNEL_BASE)
+        return -EINVAL;
+
+    if(!addr)
+    {
+        Process *cp = Process::GetCurrent();
+        addr = cp->MMapSBrk(len, true);
+    }
+    else
+    {
+        for(uintptr_t va = addr; va < (addr + len); va += PAGE_SIZE)
+        {
+            uintptr_t pa = Paging::GetPhysicalAddress(PG_CURRENT_ADDR_SPC, va);
+            if(pa == PG_INVALID_ADDRESS)
+            {
+                pa = Paging::AllocFrame();
+                if(pa == PG_INVALID_ADDRESS) return -ENOMEM;
+                if(!Paging::MapPage(PG_CURRENT_ADDR_SPC, va, pa, true, true))
+                    return -1;
+            }
+            Memory::Zero((void *)va, PAGE_SIZE);    // zero mmapped memory to avoid
+                                                    // information leak from kernel to userspace
+        }
+    }
+
+    if(fd < 0)
+        return addr;
+
+    Process *cp = Process::GetCurrent();
+    File *f = (File *)cp->GetHandleData(fd, Process::Handle::HandleType::File);
+    if(f)
+    {
+        f->Seek((pgoffset + 0ULL) * PAGE_SIZE, SEEK_SET);
+        f->Read((void *)addr, len);
+    }
+
+    return addr;
+}
+
+long SysCalls::sys_munmap(uintptr_t addr, size_t len)
+{
+    Paging::UnmapRange(PG_CURRENT_ADDR_SPC, addr, len);
+    return 0;
+}
+
+long SysCalls::sys_brk(uintptr_t brk)
+{
+    //DEBUG("sys_brk(%p)\n", args[1]);
+    return Process::GetCurrent()->Brk(brk, true);
+}
+
+long SysCalls::sys_exit(intn retVal)
 {
     Thread::Finalize(nullptr, retVal);
     return ESUCCESS;
 }
 
-intn SysCalls::sysExitThread(intn retVal)
-{
-    Thread::Finalize(nullptr, retVal);
-    return ESUCCESS;
-}
-
-intn SysCalls::sysExitProcess(intn retVal)
+long SysCalls::sys_exit_group(intn retVal)
 {
     Process::Finalize(0, retVal);
     return ESUCCESS;
@@ -126,10 +187,12 @@ void SysCalls::Initialize()
     Handlers[SYS_write] = (SysCallHandler)sys_write;
     Handlers[SYS_open] = (SysCallHandler)sys_open;
     Handlers[SYS_close] = (SysCallHandler)sys_close;
+    Handlers[SYS_lseek] = (SysCallHandler)sys_lseek;
+    Handlers[SYS_mmap] = (SysCallHandler)sys_mmap;
+    Handlers[SYS_munmap] = (SysCallHandler)sys_munmap;
+    Handlers[SYS_brk] = (SysCallHandler)sys_brk;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
-
-    Handlers[SYS_EXIT_THREAD] = (SysCallHandler)sysExitThread;
-    Handlers[SYS_EXIT_PROCESS] = (SysCallHandler)sysExitProcess;
+    Handlers[SYS_exit_group] = (SysCallHandler)sys_exit_group;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

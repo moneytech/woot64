@@ -4,12 +4,14 @@
 #define SYS_write           1
 #define SYS_open            2
 #define SYS_close           3
+#define SYS_lseek           8
+#define SYS_mmap            9
+#define SYS_munmap          11
+#define SYS_brk             12
 #define SYS_exit            60
 
-#define SYS_EXIT_THREAD     0x200
-#define SYS_EXIT_PROCESS    0x201
-
 typedef __SIZE_TYPE__ size_t;
+typedef __SIZE_TYPE__ off_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,14 +72,15 @@ static __inline long __syscall6(long n, long a1, long a2, long a3, long a4, long
 	return ret;
 }
 
-size_t sys_read(unsigned int fd, char *buf, size_t count);
-size_t sys_write(unsigned int fd, const char *buf, size_t count);
+size_t sys_read(int fd, char *buf, size_t count);
+size_t sys_write(int fd, const char *buf, size_t count);
 int sys_open(const char *filename, int flags, int mode);
-int sys_close(unsigned int fd);
+int sys_close(int fd);
+off_t sys_lseek(int fd, off_t offset, unsigned int origin);
+void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off);
+int sys_munmap(void *addr, size_t len);
+void *sys_brk(void *brk);
 long sys_exit(long error_code);
-
-void sysExitThread(long result);
-void sysExitProcess(long result);
 
 #ifdef __cplusplus
 }
