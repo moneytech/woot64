@@ -10,10 +10,10 @@
 
 %define MULTIBOOT_MAGIC     0x1BADB002
 %define MULTIBOOT_FLAGS     0x00000007
-%define VIDEO_USE_TEXT      1
-%define VIDEO_WIDTH         80
-%define VIDEO_HEIGHT        25
-%define VIDEO_BPP           0
+%define VIDEO_USE_TEXT      0
+%define VIDEO_WIDTH         1024
+%define VIDEO_HEIGHT        768
+%define VIDEO_BPP           32
 
 segment .text.boot
 align 4
@@ -206,6 +206,8 @@ idt_descr:
     dq idt
 
 segment .bss
+global __multibootInfo
+__multibootInfo:
 multiboot_info_ptr:
     resd 1
 

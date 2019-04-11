@@ -4,6 +4,7 @@ directoryentry.cpp
 elf.cpp
 ext2/ext2.cpp
 ext2/ext2.hpp
+fbfont.cpp
 file.cpp
 filestream.cpp
 filesystem.cpp
@@ -13,6 +14,7 @@ include/dentry.hpp
 include/directoryentry.hpp
 include/elf.hpp
 include/errno.h
+include/fbfont.h
 include/file.hpp
 include/filestream.hpp
 include/filesystem.hpp
@@ -23,6 +25,7 @@ include/module.hpp
 include/namedobject.hpp
 include/partvolume.hpp
 include/process.hpp
+include/sharedmem.hpp
 include/syscalls.hpp
 include/tokenizer.hpp
 include/virtualkey.hpp
@@ -42,6 +45,7 @@ ps2input/ps2kbd.cpp
 ps2input/ps2kbd.hpp
 ps2input/ps2mouse.cpp
 ps2input/ps2mouse.hpp
+sharedmem.cpp
 syscalls.cpp
 testmodule/Makefile
 testmodule/module.cpp

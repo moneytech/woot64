@@ -17,6 +17,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	drive.o \
 	elf.o \
 	ext2/ext2.o \
+	fbfont.o \
 	file.o \
 	filestream.o \
 	filesystem.o \
@@ -41,6 +42,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	process.o \
 	random.o \
 	semaphore.o \
+	sharedmem.o \
 	stream.o \
 	string.o \
 	stringbuilder.o \

@@ -226,7 +226,7 @@ long SysCalls::sys_lseek(int fd, off_t offset, unsigned int origin)
 
 long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, int fd, off_t off)
 {
-    DEBUG("sys_mmap(%p, %p, %p, %p, %d, %p)\n", addr, len, prot, flags, fd, off);
+    //DEBUG("sys_mmap(%p, %p, %p, %p, %d, %p)\n", addr, len, prot, flags, fd, off);
 
     len = align(len, PAGE_SIZE);
     uintptr_t pgoffset = off << PAGE_SHIFT;

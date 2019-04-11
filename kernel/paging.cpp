@@ -430,6 +430,23 @@ bool Paging::FreeFrames(uintptr_t pa, size_t n)
     return true;
 }
 
+void Paging::ReserveFrame(uintptr_t pa)
+{
+    uintptr_t bit = pa >> PAGE_SHIFT;
+    bool cs = cpuDisableInterrupts();
+    pageFrameBitmap->SetBit(bit, true);
+    cpuRestoreInterrupts(cs);
+}
+
+void Paging::ReserveFrames(uintptr_t pa, size_t n)
+{
+    uintptr_t pg = pa >> PAGE_SHIFT;
+    bool cs = cpuDisableInterrupts();
+    for(uintptr_t bit = pg; bit < (pg + n); ++bit)
+        pageFrameBitmap->SetBit(bit, true);
+    cpuRestoreInterrupts(cs);
+}
+
 void *Paging::AllocDMA(size_t size)
 {
     return AllocDMA(size, PAGE_SIZE);

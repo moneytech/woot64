@@ -13,8 +13,9 @@ static int64_t debugWrite(const void *buffer, int64_t n);
 static CallBackStream DebugStream(debugRead, debugWrite);
 static Mutex DebugStreamLock(true, "DebugStreamLock");
 
-#define USE_VGA_TEXT        1
+#define USE_VGA_TEXT        0
 #define USE_SERIAL          1
+#define USE_FRAMEBUFFER     1
 #define DEBUG_SERIAL_BASE   0x03F8
 
 #if USE_SERIAL
@@ -30,6 +31,61 @@ extern "C" char debugSerialIn()
     return _inb(DEBUG_SERIAL_BASE);
 }
 #endif // USE_SERIAL
+
+#if USE_FRAMEBUFFER
+
+#include <fbfont.h>
+#include <multiboot.h>
+#include <paging.hpp>
+
+extern "C" multiboot_info_t *__multibootInfo;
+static multiboot_info_t *multibootInfo;
+
+static uint8_t *fbPixels;
+static size_t fbSize;
+static uint32_t backColor = 0x000000;
+static uint32_t foreColor = 0xFFFFFF;
+static const uint fbCharWidth = 8;
+static const uint fbCharHeight = FONT_SCANLINES;
+static uint fbConsoleWidth = 80;
+static uint fbConsoleHeight = 25;
+static uint fbX = 0;
+static uint fbY = 0;
+
+static inline uint32_t fbMakeColor(uint8_t r, uint8_t g, uint8_t b)
+{
+    uint32_t color = 0;
+    color |= ((uint32_t)r) << multibootInfo->framebuffer_red_field_position;
+    color |= ((uint32_t)g) << multibootInfo->framebuffer_green_field_position;
+    color |= ((uint32_t)b) << multibootInfo->framebuffer_blue_field_position;
+    return color;
+}
+
+static inline void fbSetPixel(uint x, uint y, uint32_t color)
+{
+    *((uint32_t *)(fbPixels + multibootInfo->framebuffer_pitch * y + 4 * x)) = color;
+}
+
+static inline void fbPutChar(uint x, uint y, int chr, uint32_t color)
+{
+    uint8_t *glyph = fbFont[chr];
+    for(uint iy = 0; iy < FONT_SCANLINES; ++iy)
+    {
+        for(uint ix = 0; ix < 8; ++ix)
+        {
+            if((*glyph << ix) & 0x80)
+                fbSetPixel(x + ix, y + iy, color);
+        }
+        ++glyph;
+    }
+}
+
+static inline void fbClearScreen(uint32_t color)
+{
+    Memory::Set32(fbPixels, color, fbSize / 4);
+}
+
+#endif // USE_FRAMEBUFFER
 
 #if USE_VGA_TEXT
 static uint16_t *const vgaTextMem = (uint16_t *)(KERNEL_BASE + 0xB8000);
@@ -117,6 +173,38 @@ int64_t debugWrite(const void *buffer, int64_t n)
         vgaOffs = vgaCurY * vgaTextWidth + vgaCurX;
         vgaSetCursorPos(vgaOffs);
 #endif // USE_VGA_TEXT
+#if USE_FRAMEBUFFER
+        uint chrX = fbX * fbCharWidth;
+        uint chrY = fbY * fbCharHeight;
+        if(c == '\n')
+        {
+            fbX = 0;
+            ++fbY;
+        }
+        else if(c == '\t')
+            fbX = align(fbX + 1, 8);
+        else
+        {
+            fbPutChar(chrX, chrY, c, foreColor);
+            ++fbX;
+        }
+        if(fbX >= fbConsoleWidth)
+        {
+            fbX = 0;
+            ++fbY;
+        }
+        if(fbY >= fbConsoleHeight)
+        {
+            Memory::Move(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
+                         multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight));
+            Memory::Set32(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
+                          backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
+            fbX = 0;
+            --fbY;
+        }
+
+
+#endif // USE_FRAMEBUFFER
 
         if(c == '\n')
         {
@@ -139,6 +227,19 @@ void Debug::Initialize()
     vgaClearScreen();
     vgaSetCursorSize(13, 14);
 #endif // USE_VGA_TEXT
+#if USE_FRAMEBUFFER
+    multibootInfo = (multiboot_info_t *)(KERNEL_BASE + (uintptr_t)__multibootInfo);
+    fbPixels = (uint8_t *)(multibootInfo->framebuffer_addr + KERNEL_BASE);
+    fbSize = multibootInfo->framebuffer_pitch * multibootInfo->framebuffer_height;
+    size_t pageCount = (fbSize + PAGE_SIZE - 1) >> PAGE_SHIFT;
+    Paging::ReserveFrames(multibootInfo->framebuffer_addr, pageCount);
+    Paging::MapPages(PG_CURRENT_ADDR_SPC, (uintptr_t)fbPixels, multibootInfo->framebuffer_addr, false, true, pageCount);
+    backColor = fbMakeColor(24, 32, 64);
+    foreColor = fbMakeColor(128, 168, 224);
+    fbConsoleWidth = multibootInfo->framebuffer_width / fbCharWidth;
+    fbConsoleHeight = multibootInfo->framebuffer_height / fbCharHeight;
+    fbClearScreen(backColor);
+#endif // USE_FRAMEBUFFER
 }
 
 void Debug::DebugFmt(const char *fmt, ...)

@@ -51,6 +51,8 @@ public:
     static uintptr_t AllocFrames(size_t n, size_t alignment);
     static bool FreeFrame(uintptr_t pa);
     static bool FreeFrames(uintptr_t pa, size_t n);
+    static void ReserveFrame(uintptr_t pa);
+    static void ReserveFrames(uintptr_t pa, size_t n);
     static void *AllocDMA(size_t size);
     static void *AllocDMA(size_t size, size_t alignment);
     static uintptr_t GetDMAPhysicalAddress(void *ptr);

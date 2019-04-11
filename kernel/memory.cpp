@@ -26,7 +26,7 @@ void Memory::Set16(void *dst, uint16_t val, size_t n)
 
 void Memory::Set32(void *dst, uint64_t val, size_t n)
 {
-    uint64_t *buf = (uint64_t *)dst;
+    uint32_t *buf = (uint32_t *)dst;
     while(n--) *buf++ = val;
 }
 
