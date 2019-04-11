@@ -22,6 +22,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	filestream.o \
 	filesystem.o \
 	filesystemtype.o \
+	framebuffer.o \
 	heap.o \
 	ide/idedrive.o \
 	inode.o \

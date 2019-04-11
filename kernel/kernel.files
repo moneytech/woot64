@@ -9,6 +9,7 @@ file.cpp
 filestream.cpp
 filesystem.cpp
 filesystemtype.cpp
+framebuffer.cpp
 include/bufferedvolume.hpp
 include/dentry.hpp
 include/directoryentry.hpp
@@ -19,6 +20,7 @@ include/file.hpp
 include/filestream.hpp
 include/filesystem.hpp
 include/filesystemtype.hpp
+include/framebuffer.hpp
 include/inode.hpp
 include/inputdevice.hpp
 include/ipc.hpp
