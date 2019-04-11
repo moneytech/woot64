@@ -27,6 +27,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	inode.o \
 	inputdevice.o \
 	ints.o \
+	ipc.o \
 	irqs.o \
 	isrs.o \
 	kmain.o \

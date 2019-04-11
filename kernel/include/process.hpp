@@ -1,9 +1,9 @@
 #pragma once
 
 #include <elf.hpp>
+#include <ipc.hpp>
 #include <list.hpp>
-//#include <messagequeue.hpp>
-//#include <msgnums.h>
+#include <messagequeue.hpp>
 #include <mutex.hpp>
 #include <sequencer.hpp>
 #include <types.h>
@@ -127,7 +127,7 @@ public:
     uintptr_t UserStackPtr;
     Vector<Handle> Handles;
     uintptr_t V86PageZeroPhAddr;
-    //MessageQueue<ipcMessage> Messages;
+    MessageQueue<ipcMessage> Messages;
 
     // used for brk() syscall
     Mutex MemoryLock;
@@ -201,7 +201,5 @@ public:
     Semaphore *GetSemaphore(int idx);
     int DeleteSemaphore(int idx);
 
-    virtual bool KeyCheck(const char *name);
-    virtual void GetDisplayName(char *buf, size_t bufSize);
-    virtual ~Process();
+    ~Process();
 };

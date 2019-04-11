@@ -386,7 +386,7 @@ Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, b
     UserStackPtr(USER_END),
     Handles(8, 8, MAX_HANDLES),
     ID(id.GetNext()),
-    //Messages(64),
+    Messages(64),
     Parent(Process::GetCurrent()),
     Name(String::Duplicate(name)),
     AddressSpace(addressSpace),
@@ -860,19 +860,6 @@ int Process::DeleteSemaphore(int idx)
     }
     lock.Release();
     return res;*/
-}
-
-bool Process::KeyCheck(const char *name)
-{
-    StringBuilder sb(15);
-    sb.WriteFmt("%d", ID);
-    return !String::Compare(sb.String(), name);
-}
-
-void Process::GetDisplayName(char *buf, size_t bufSize)
-{
-    StringBuilder sb(buf, bufSize);
-    sb.WriteFmt("%d (%s)", ID, Name);
 }
 
 Process::~Process()

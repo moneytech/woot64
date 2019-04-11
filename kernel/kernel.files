@@ -21,6 +21,8 @@ include/filesystem.hpp
 include/filesystemtype.hpp
 include/inode.hpp
 include/inputdevice.hpp
+include/ipc.hpp
+include/messagequeue.hpp
 include/module.hpp
 include/namedobject.hpp
 include/partvolume.hpp
@@ -31,6 +33,7 @@ include/tokenizer.hpp
 include/virtualkey.hpp
 inode.cpp
 inputdevice.cpp
+ipc.cpp
 module.cpp
 module.ld
 modulelist
