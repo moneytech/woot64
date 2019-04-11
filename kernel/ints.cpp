@@ -101,7 +101,7 @@ void Ints::CommonHandler(Ints::State *state)
             if(ct)
             {
                 ++ct->ExcCount;
-                DEBUG("Thread: %d (%s)\n", ct->ID, ct->Name);
+                DEBUG("Thread: %d (%s)\n", ct->Id, ct->Name);
             }
         }
 
@@ -112,7 +112,7 @@ void Ints::CommonHandler(Ints::State *state)
                   state->ErrorCode & 16 ? "executing code at" : (state->ErrorCode & 2 ? "writing to" : "reading from"),
                   cpuGetCR2());
         }
-        if(ct->ExcCount <= 1)
+        if(!ct || ct->ExcCount <= 1)
             DumpState(state);
 
         if(ct && ct->ExcCount > 1)
@@ -121,17 +121,20 @@ void Ints::CommonHandler(Ints::State *state)
             Thread::Finalize(ct, 127);
         }
 
-        DEBUG("Stack trace:\n");
-        uintptr_t *rbp = (uintptr_t *)state->RBP;
-        for(int i = 0; i < 5; ++i)
+        if(ct)
         {
-            uintptr_t rip = rbp[1];
-            if(!rip) break;
-            rbp = (uintptr_t *)(*rbp);
-            DEBUG("%p\n", rip);
+            DEBUG("Stack trace:\n");
+            uintptr_t *rbp = (uintptr_t *)state->RBP;
+            for(int i = 0; i < 10; ++i)
+            {
+                uintptr_t rip = rbp[1];
+                if(!rip) break;
+                rbp = (uintptr_t *)(*rbp);
+                DEBUG("%p\n", rip);
+            }
         }
 
-        if(ct && ct->ID != 1) Thread::Finalize(ct, 127);
+        if(ct && ct->Id != 1) Thread::Finalize(ct, 127);
         else cpuSystemHalt(state->InterruptNumber);
     }
 
@@ -190,4 +193,5 @@ void Ints::DumpState(Ints::State *state)
     DEBUG("CR3: %.16X CR4: %.16X\n", cpuGetCR3(), cpuGetCR4());
     DEBUG(" CS: %.4x    DS: %.4x  ES: %.4x    FS: %.4x\n", state->CS, state->DS, state->ES, state->FS);
     DEBUG(" GS: %.4x    SS: %.4x RIP: %.16X\n", state->GS, state->SS, state->RIP);
+    DEBUG("FSB: %.16X GSB: %.16X\n", cpuReadMSR(0xC0000100), cpuReadMSR(0xC0000101));
 }

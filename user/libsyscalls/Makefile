@@ -7,7 +7,7 @@ LIB_DIR ?= $(TOP_DIR)/root/lib
 
 CC = $(TOP_DIR)/user/cc
 
-LDFLAGS = -shared -Wl,-Ttext=0x0000000040000000,-soname=$(SHARED_LIB)
+LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
 
 export TOP_DIR
 
@@ -19,7 +19,9 @@ $(STATIC_LIB): $(OBJS)
 $(SHARED_LIB): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB)
 
-install:
+install: $(LIB_DIR)/$(SHARED_LIB)
+
+$(LIB_DIR)/$(SHARED_LIB): $(SHARED_LIB)
 	mkdir -p $(LIB_DIR)
 	cp $(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB)
 

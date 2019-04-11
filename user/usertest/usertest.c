@@ -1,8 +1,18 @@
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <syscalls/syscalls.h>
+#include <unistd.h>
 
-void _start()
+#define offsetof __builtin_offsetof
+
+int main(int argc, char *argv[])
 {
+    struct stat st;
+    stat(argv[0], &st);
+    printf("%zd\n", st.st_size);
     for(int i = 0; i < 3; ++i)
-        sys_write(1, "I like trains.\n", 15);
-    sys_exit(9001);
+        printf("I like trains. %d\n", i);
+    return 9001;
 }

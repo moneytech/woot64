@@ -92,13 +92,14 @@ _start:
     ; load new GDT with 64 bit address
     lgdt [gdt_descr - KERNEL_BASE]
 
-    ; setup dsta/stack segment registers
-    mov ax, 0x0030
+    ; setup data/stack segment registers
+    mov ax, 0x0030  ; kernel data
     mov ds, ax
     mov es, ax
+    mov ss, ax
+    mov ax, 0x003b  ; user data
     mov fs, ax
     mov gs, ax
-    mov ss, ax
 
 ; set up TSS
 .setup_tss:

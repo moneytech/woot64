@@ -123,7 +123,7 @@ void Thread::threadQueueAppend(ThreadQueue *queue, Thread *thread)
     {
         if(last == thread)
         {
-            DEBUG("[thread] %s(): Thread %d already on queue.", __FUNCTION__, thread->ID);
+            DEBUG("[thread] %s(): Thread %d already on queue.", __FUNCTION__, thread->Id);
             return;
         }
     }
@@ -222,7 +222,7 @@ void Thread::Finalize(Thread *thread, int returnValue)
 }
 
 Thread::Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished) :
-    ID(id.GetNext()),
+    Id(id.GetNext()),
     Name(String::Duplicate(name)),
     Process(process),
     EntryPoint(entryPoint),
@@ -297,7 +297,7 @@ Thread *Thread::GetByID(pid_t id)
 {
     bool ints = cpuDisableInterrupts();
     Thread *res = nullptr;
-    if(currentThread->ID == id)
+    if(currentThread->Id == id)
     {
         res = currentThread;
         cpuRestoreInterrupts(ints);
@@ -306,7 +306,7 @@ Thread *Thread::GetByID(pid_t id)
 
     for(Thread *t = (Thread *)readyThreads; t; t = (Thread *)t->next)
     {
-        if(t->ID == id)
+        if(t->Id == id)
         {
             cpuRestoreInterrupts(ints);
             return t;
@@ -314,7 +314,7 @@ Thread *Thread::GetByID(pid_t id)
     }
     for(Thread *t = (Thread *)suspendedThreads; t; t = (Thread *)t->next)
     {
-        if(t->ID == id)
+        if(t->Id == id)
         {
             cpuRestoreInterrupts(ints);
             return t;
@@ -322,7 +322,7 @@ Thread *Thread::GetByID(pid_t id)
     }
     for(Thread *t = (Thread *)sleepingThreads; t; t = (Thread *)t->next)
     {
-        if(t->ID == id)
+        if(t->Id == id)
         {
             cpuRestoreInterrupts(ints);
             return t;
@@ -403,12 +403,16 @@ void Thread::Switch(Ints::State *state, Thread *thread)
     {
         currentThread->StackPointer = state->SwitchRSP;
         //currentThread->State = State::Ready;
+        currentThread->FS = cpuReadMSR(0xC0000100);
+        currentThread->GS = cpuReadMSR(0xC0000101);
     }
 
     state->SwitchRSP = thread->StackPointer;
 
     uintptr_t kernelRSP = thread->KernelStackSize + (uintptr_t)thread->KernelStack;
     mainTSS.RSP[0] = kernelRSP; // without that stack overflow happens
+    cpuWriteMSR(0xC0000100, thread->FS);
+    cpuWriteMSR(0xC0000101, thread->GS);
 
     cpuSetCR0(cpuGetCR0() | 0x08); // set TS bit
     if(thread->Process)

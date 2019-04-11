@@ -74,7 +74,6 @@ typedef struct AuxVector
 
 uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer)
 {
-#if(0)
     auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
     {
         stackPtr -= size;
@@ -84,7 +83,7 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
     };
 
     Tokenizer cmd(cmdLine, " ", 0);
-    int argCount = cmd.Tokens.Count();
+    long argCount = cmd.Tokens.Count();
 
     uintptr_t envPtrs[32];
     uintptr_t argPtrs[32];
@@ -135,8 +134,6 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
         stackPtr = stackPush(stackPtr, &argPtrs[argCount - i - 1], sizeof(uintptr_t));
     stackPtr = stackPush(stackPtr, &argCount, sizeof argCount);
     return stackPtr;
-#endif
-    return stackPtr;
 }
 
 int Process::processEntryPoint(const char *cmdline)
@@ -166,6 +163,19 @@ int Process::processEntryPoint(const char *cmdline)
         "TEST=value"
     };
     stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
+
+    ct->AllocStack((uint8_t **)&ct->PThread, PAGE_SIZE);
+    ct->PThread->self = ct->PThread;
+    ct->PThread->detach_state = 1; // DT_JOINABLE
+    ct->PThread->tid = ct->Id;
+    ct->PThread->robust_list.head = &ct->PThread->robust_list.head;
+    ct->PThread->next = ct->PThread;
+
+    //ct->PThread->map_base = (unsigned char *)0x1234;
+
+    ct->FS = (uintptr_t)ct->PThread;
+    cpuWriteMSR(0xC0000100, ct->FS);
+    cpuWriteMSR(0xC0000101, ct->GS);
 
     proc->lock.Release();
     cpuEnterUserMode(stackPointer, (uintptr_t)elf->EntryPoint);
@@ -347,7 +357,7 @@ void Process::Dump()
                   "   st %s\n"
                   "   mtx %p(%s; %d)\n"
                   "   sem %p(%s; %d)\n",
-                  t->Name, t->ID, t,
+                  t->Name, t->Id, t,
                   Thread::StateNames[(int)t->State],
                   t->WaitingMutex,
                   t->WaitingMutex ? t->WaitingMutex->Name : "none",
@@ -559,9 +569,9 @@ uintptr_t Process::MMapSBrk(intptr_t incr, bool allocPages)
 int Process::Open(const char *filename, int flags)
 {
     if(!filename) return -EINVAL;
-    if(!Lock()) return -errno;
+    if(!Lock()) return -EBUSY;
     File *f = File::Open(filename, flags);
-    if(!f) return -errno;
+    if(!f) return -ENOENT;
     int res = allocHandleSlot(Handle(f));
     if(res < 0) delete f;
     UnLock();
@@ -570,7 +580,7 @@ int Process::Open(const char *filename, int flags)
 
 int Process::Close(int handle)
 {
-    if(!Lock()) return -errno;
+    if(!Lock()) return -EBUSY;
     Handle h = Handles.Get(handle);
     freeHandleSlot(handle);
     if(h.Type == Handle::HandleType::Object)
@@ -625,7 +635,7 @@ void *Process::GetHandleData(int handle, Process::Handle::HandleType type)
 
 int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal)
 {
-    if(!Lock()) return -errno;
+    if(!Lock()) return -EBUSY;
     Thread *t = new Thread(name, this, (void *)userThreadEntryPoint, 0, DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, nullptr);
     t->UserEntryPoint = entry;
     t->UserArgument = arg;
@@ -694,7 +704,7 @@ int Process::AbortThread(int handle, int retVal)
 
 int Process::NewProcess(const char *cmdline)
 {
-    if(!Lock()) return -errno;
+    if(!Lock()) return -EBUSY;
     Process *p = Process::Create(cmdline, nullptr, false, nullptr);
     int res = allocHandleSlot(Handle(p));
     if(res < 0)
@@ -742,7 +752,7 @@ int Process::AbortProcess(int handle, int result)
 
 int Process::CreateNamedObjectHandle(NamedObject *no)
 {
-    if(!Lock()) return -errno;
+    if(!Lock()) return -EBUSY;
     int res = allocHandleSlot(Handle(no));
     if(res < 0)
         return res;

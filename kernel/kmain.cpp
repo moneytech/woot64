@@ -64,6 +64,10 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Module::ProbeAll();
 
     const char *procExec = "/bin/usertest";
+    //const char *procExec = "/bin/usertest_static";
+    //const char *procExec = "/lib/libc.so /bin/usertest";
+    //const char *procExec = "/lib/libc.so";
+    //const char *procExec = "/lib/libc.so /bin/usertest_static";
     Semaphore done(0);
     int res;
     Process *proc = Process::Create(procExec, &done, false, &res);

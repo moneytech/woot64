@@ -359,8 +359,8 @@ isrCommonStub:
 
     pop rsp
 
-    pop gs
-    pop fs
+    pop rax ; gs
+    pop rax ; fs
     pop rax
     mov es, ax
     pop rax

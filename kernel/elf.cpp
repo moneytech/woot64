@@ -158,6 +158,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
         }
         elf->base += elf->baseDelta;
         elf->top += elf->baseDelta;
+        DEBUG("[elf] Loading '%s' at %p\n", elf->Name, elf->base);
 
         // load the data
         for(uint i = 0; i < ehdr->e_phnum; ++i)

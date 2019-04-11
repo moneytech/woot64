@@ -49,7 +49,7 @@ public:
     static const char *StateNames[];
 
     // thread info
-    pid_t ID;
+    pid_t Id;
     char *Name;
     ::Process *Process;
     void *EntryPoint;
@@ -61,6 +61,7 @@ public:
     State State;
     int ErrNo;
     int ExcCount;
+    uintptr_t FS, GS;
 
     // stacks
     size_t KernelStackSize;
@@ -97,6 +98,7 @@ public:
 
     // pthread
     struct pthread *PThread;
+    int *tidPtr;
 
     static void Initialize();
     static Thread *GetIdleThread();

@@ -1,10 +1,13 @@
 #!/bin/sh
 
 COMMAND=clang
+
 ARGS="-Wno-unused-command-line-argument \
 -ggdb -nostdinc -nostdlib \
 -Wl,-z,max-page-size=4096 \
--T$TOP_DIR/user/user.ld \
 -I$TOP_DIR/user/libsyscalls \
--L$TOP_DIR/user/libsyscalls"
+-I$TOP_DIR/user/libc/include \
+-L$TOP_DIR/user/libsyscalls \
+-L$TOP_DIR/user/libc/lib"
+
 $COMMAND $ARGS "$@"
