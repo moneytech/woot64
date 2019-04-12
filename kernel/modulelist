@@ -1,3 +1,4 @@
 # modules to load at boot time
 /system/testmodule
 /system/ps2input
+/system/mbootfb

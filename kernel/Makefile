@@ -1,5 +1,5 @@
 OUTFILE = kernel
-MODULES = ps2input testmodule
+MODULES = mbootfb ps2input testmodule
 OBJS = boot/boot.o boot/boot64.o \
 	ahci/ahcidrive.o \
 	bitmap.o \

@@ -36,6 +36,10 @@ include/virtualkey.hpp
 inode.cpp
 inputdevice.cpp
 ipc.cpp
+mbootfb/Makefile
+mbootfb/mbootfb.cpp
+mbootfb/mbootfb.hpp
+mbootfb/module.cpp
 module.cpp
 module.ld
 modulelist
