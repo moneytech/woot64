@@ -12,6 +12,7 @@
 class DEntry;
 class ELF;
 class File;
+class FrameBuffer;
 class NamedMutex;
 class NamedObject;
 class Semaphore;
@@ -73,12 +74,12 @@ public:
             Free = 0,
             Unknown,
             File,
-            Object,
             Thread,
             Process,
             NamedObject,
             Mutex,
-            Semaphore
+            Semaphore,
+            FrameBuffer
         } Type;
         union
         {
@@ -89,13 +90,16 @@ public:
             ::NamedObject *NamedObject;
             ::Mutex *Mutex;
             ::Semaphore *Semaphore;
+            ::FrameBuffer *FrameBuffer;
         };
         Handle();
         Handle(nullptr_t);
+        Handle(void *obj);
         Handle(::File *file);
         Handle(::Thread *thread);
         Handle(::Process *process);
         Handle(::NamedObject *namedObject);
+        Handle(::FrameBuffer *frameBuffer);
     };
 private:
     static Sequencer<pid_t> id;
@@ -162,14 +166,22 @@ public:
     ELF *GetELF(const char *name);
     bool RemoveELF(ELF *elf);
     Elf_Sym *FindSymbol(const char *name, ELF *skip, ELF **elf);
+    const char *GetSymbolName_nolock(uintptr_t addr, ptrdiff_t *delta);
+    const char *GetSymbolName(uintptr_t addr, ptrdiff_t *delta);
     bool ApplyRelocations();
     uintptr_t Brk(uintptr_t brk, bool allocPages);
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
 
     int Open(const char *filename, int flags);
-    int OpenObject(const char *name);
     int Close(int handle);
+    template<class T> int NewHandle(T obj)
+    {
+        if(!Lock()) return -EBUSY;
+        int res = allocHandleSlot(Handle(obj));
+        UnLock();
+        return res;
+    }
     void *GetHandleData(int handle, Handle::HandleType type);
 
     // thread syscall support routines

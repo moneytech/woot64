@@ -10,7 +10,7 @@
 #include <stringbuilder.hpp>
 #include <sysdefs.h>
 
-static const char *libDir = "WOOT_OS:/lib";
+static const char *libDir = "WOOT_OS~/lib";
 
 ELF::ELF(const char *name, Elf_Ehdr *ehdr, uint8_t *phdrData, uint8_t *shdrData, bool user) :
     Name(String::Duplicate(name)), ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), user(user),
@@ -329,6 +329,41 @@ Elf_Sym *ELF::FindSymbol(const char *name)
     return nullptr;
 }
 
+const char *ELF::GetSymbolName(uintptr_t addr, ptrdiff_t *delta)
+{
+    if(addr < base || addr >= top)
+        return nullptr;
+
+    ptrdiff_t minDelta = __PTRDIFF_MAX__;
+    const char *minSymName = nullptr;
+    for(uint i = 0; i < ehdr->e_shnum; ++i)
+    {
+        Elf_Shdr *shdr = getShdr(i);
+        if(shdr->sh_type != SHT_DYNSYM && shdr->sh_type != SHT_SYMTAB)
+            continue;
+        if(!shdr->sh_addr)
+            continue;
+        char *strtab = (char *)(getShdr(shdr->sh_link)->sh_addr + baseDelta);
+        uint8_t *symtab = (uint8_t *)(shdr->sh_addr + baseDelta);
+        for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
+        {
+            Elf_Sym *sym = (Elf_Sym *)(symtab + coffs);
+            if(!sym->st_shndx || !sym->st_name)
+                continue;
+            const char *symName = strtab + sym->st_name;
+            ptrdiff_t delta = addr - (sym->st_value + baseDelta);
+            if(delta >= 0 && delta < minDelta)
+            {
+                minDelta = delta;
+                minSymName = symName;
+                if(!minDelta) break;
+            }
+        }
+    }
+    if(delta) *delta = minDelta;
+    return minSymName;
+}
+
 bool ELF::ApplyRelocations()
 {
     for(uint i = 0; i < ehdr->e_shnum; ++i)
@@ -412,6 +447,9 @@ bool ELF::ApplyRelocations()
                 break;
             case R_X86_64_64:
                 *val = symAddr + A;
+                break;
+            case R_X86_64_COPY:
+                Memory::Move(val, (void *)symAddr, symbol->st_size);
                 break;
             case R_X86_64_GLOB_DAT:
             case R_X86_64_JUMP_SLOT:

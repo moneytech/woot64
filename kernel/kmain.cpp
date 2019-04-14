@@ -24,10 +24,7 @@
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
-    DEBUG("Starting WOOT v%d.%d (%s)\n",
-          KERNEL_VERSION_MAJOR,
-          KERNEL_VERSION_MINOR,
-          KERNEL_VERSION_DESCR);
+    DEBUG("Starting WOOT v%d.%d (%s)\n", KERNEL_VERSION_MAJOR, KERNEL_VERSION_MINOR, KERNEL_VERSION_DESCR);
     IRQs::Initialize();
     Time::Initialize();
     Time::DateTime bootDateTime;
@@ -50,7 +47,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Process *kernelProc = Process::GetCurrent();
 
     // initialize current directory for kernel process
-    File *rootDir = File::Open("WOOT_OS:/", O_RDONLY);
+    File *rootDir = File::Open("WOOT_OS~/", O_RDONLY);
     if(rootDir)
     {
         kernelProc->CurrentDirectory = FileSystem::GetDEntry(rootDir->DEntry);
@@ -63,9 +60,9 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Module::LoadBootModules();
     Module::ProbeAll();
 
-    //const char *procExec = "/bin/usertest";
+    const char *procExec = "/bin/usertest";
     //const char *procExec = "/bin/usertest_static";
-    const char *procExec = "/lib/libc.so /bin/usertest";
+    //const char *procExec = "/lib/libc.so /bin/usertest";
     //const char *procExec = "/lib/libc.so";
     //const char *procExec = "/lib/libc.so /bin/usertest_static";
     Semaphore done(0);

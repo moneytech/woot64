@@ -3,11 +3,14 @@
 #include <dentry.hpp>
 #include <errno.h>
 #include <file.hpp>
+#include <framebuffer.hpp>
 #include <inode.hpp>
 #include <memory.hpp>
 #include <misc.hpp>
 #include <paging.hpp>
 #include <process.hpp>
+#include <string.hpp>
+#include <stringbuilder.hpp>
 #include <syscalls.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
@@ -136,6 +139,18 @@ struct stat
 	long __unused[3];
 };
 #endif // __x86_64__
+
+// USER_MATCH: libwoot/woot/video.h struct vidModeInfo
+typedef struct vidModeInfo
+{
+    int Width, Height;
+    int BitsPerPixel;
+    int RefreshRate;
+    int Pitch;
+    int Flags;
+    int AlphaBits, RedBits, GreenBits, BlueBits;
+    int AlphaShift, RedShift, GreenShift, BlueShift;
+} vidModeInfo_t;
 
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
@@ -378,6 +393,131 @@ long SysCalls::sys_exit_group(intn retVal)
     return ESUCCESS;
 }
 
+long SysCalls::sysFBGetCount()
+{
+    return FrameBuffer::GetCount();
+}
+
+long SysCalls::sysFBGetDefault()
+{
+    return FrameBuffer::GetDefaultId();
+}
+
+long SysCalls::sysFBListIds(int *buf, size_t bufSize)
+{
+    return FrameBuffer::ListIds(buf, bufSize);
+}
+
+long SysCalls::sysFBGetName(int id, char *buf, size_t bufSize)
+{
+    FrameBuffer *fb = FrameBuffer::GetById(id);
+    if(!fb) return -ENODEV;
+    const char *fbName = fb->GetName();
+    if(!fbName) fbName = "";
+    StringBuilder sb(buf, bufSize);
+    sb.WriteFmt("%s", fbName);
+    return sb.Length();
+}
+
+long SysCalls::sysFBOpen(int id)
+{
+    FrameBuffer *fb = FrameBuffer::GetById(id);
+    if(!fb) return -ENODEV;
+    int res = fb->Open();
+    if(res < 0) return res;
+    Process *cp = Process::GetCurrent();
+    res = cp->NewHandle(fb);
+    if(res < 0) fb->Close();
+    return res;
+}
+
+long SysCalls::sysFBClose(int fd)
+{
+    return Process::GetCurrent()->Close(fd);
+}
+
+long SysCalls::sysFBGetModeCount(int fd)
+{
+    FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
+    if(!fb) return -EBADF;
+    return fb->GetModeCount();
+}
+
+long SysCalls::sysFBGetModeInfo(int fd, int mode, struct vidModeInfo *modeInfo)
+{
+    if(!modeInfo) return -EINVAL;
+
+    FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
+    if(!fb) return -EBADF;
+
+    FrameBuffer::ModeInfo mi;
+    int res = fb->GetModeInfo(mode, &mi);
+    if(res < 0) return res;
+
+    modeInfo->Width = mi.Width;
+    modeInfo->Height = mi.Height;
+    modeInfo->BitsPerPixel = mi.BitsPerPixel;
+    modeInfo->RefreshRate = mi.RefreshRate;
+    modeInfo->Pitch = mi.Pitch;
+    modeInfo->Flags = mi.Flags; // that's a bit dodgy
+    modeInfo->AlphaBits = mi.AlphaBits;
+    modeInfo->RedBits = mi.RedBits;
+    modeInfo->GreenBits = mi.GreenBits;
+    modeInfo->BlueBits = mi.BlueBits;
+    modeInfo->AlphaShift = mi.AlphaShift;
+    modeInfo->RedShift = mi.RedShift;
+    modeInfo->GreenShift = mi.GreenShift;
+    modeInfo->BlueShift = mi.BlueShift;
+
+    return ESUCCESS;
+}
+
+long SysCalls::sysFBSetMode(int fd, int mode)
+{
+    FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
+    if(!fb) return -EBADF;
+
+    return fb->SetMode(mode);
+}
+
+long SysCalls::sysFBMapPixels(int fd, uintptr_t hint)
+{
+    FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
+    if(!fb) return -EBADF;
+
+    uintptr_t startVA = hint;
+
+    FrameBuffer::ModeInfo mi;
+    fb->GetModeInfo(fb->GetCurrentMode(), &mi);
+    size_t fbSize = align(mi.Pitch * mi.Height, PAGE_SIZE);
+
+    Process *cp = Process::GetCurrent();
+    cp->MemoryLock.Acquire(0, false);
+
+    if(!startVA)
+        startVA = cp->SBrk(fbSize, false);
+    uintptr_t endVA = startVA + fbSize;
+
+    uintptr_t pa = fb->GetBuffer();
+
+    for(uintptr_t va = startVA; va < endVA; va += PAGE_SIZE, pa += PAGE_SIZE)
+    {
+        if(va >= USER_END)
+            break;
+        Paging::MapPage(cp->AddressSpace, va, pa, true, true);
+    }
+    cp->MemoryLock.Release();
+    return startVA;
+}
+
+long SysCalls::sysFBGetCurrentMode(int fd)
+{
+    FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
+    if(!fb) return -EBADF;
+
+    return fb->GetCurrentMode();
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -398,6 +538,18 @@ void SysCalls::Initialize()
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;
     Handlers[SYS_exit_group] = (SysCallHandler)sys_exit_group;
+
+    Handlers[SYS_FB_GET_COUNT] = (SysCallHandler)sysFBGetCount;
+    Handlers[SYS_FB_GET_DEFAULT] = (SysCallHandler)sysFBGetDefault;
+    Handlers[SYS_FB_LIST_IDS] = (SysCallHandler)sysFBListIds;
+    Handlers[SYS_FB_GET_NAME] = (SysCallHandler)sysFBGetName;
+    Handlers[SYS_FB_OPEN] = (SysCallHandler)sysFBOpen;
+    Handlers[SYS_FB_CLOSE] = (SysCallHandler)sysFBClose;
+    Handlers[SYS_FB_GET_MODE_COUNT] = (SysCallHandler)sysFBGetModeCount;
+    Handlers[SYS_FB_GET_MODE_INFO] = (SysCallHandler)sysFBGetModeInfo;
+    Handlers[SYS_FB_SET_MODE] = (SysCallHandler)sysFBSetMode;
+    Handlers[SYS_FB_MAP_PIXELS] = (SysCallHandler)sysFBMapPixels;
+    Handlers[SYS_FB_GET_CURRENT_MODE] = (SysCallHandler)sysFBGetCurrentMode;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

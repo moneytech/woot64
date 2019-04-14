@@ -35,7 +35,7 @@ int MultiBootFB::GetModeInfo(int mode, FrameBuffer::ModeInfo *info)
 {
     if(mode != 0 || !info)
         return -EINVAL;
-    Memory::Move(info, &mode, sizeof(ModeInfo));
+    Memory::Move(info, &this->mode, sizeof(ModeInfo));
     return ESUCCESS;
 }
 
@@ -54,4 +54,9 @@ int MultiBootFB::GetCurrentMode()
 uintptr_t MultiBootFB::GetBuffer()
 {
     return multibootInfo->framebuffer_addr;
+}
+
+const char *MultiBootFB::GetName()
+{
+    return "Multiboot framebuffer";
 }

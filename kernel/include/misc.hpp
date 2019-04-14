@@ -20,4 +20,16 @@ class Misc
 public:
     static void InitializeDebugStream();
     static uint64_t PowMax(uint64_t base, uint64_t exp);
+
+    template<class T>
+    static T TestAndSet(T *lock, T val)
+    {
+        return __sync_lock_test_and_set(lock, val);
+    }
+
+    template<class T>
+    static void Release(T *lock)
+    {
+        return __sync_lock_release(lock);
+    }
 };

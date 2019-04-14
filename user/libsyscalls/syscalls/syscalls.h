@@ -1,21 +1,41 @@
 #pragma once
 
-#define SYS_read            0
-#define SYS_write           1
-#define SYS_open            2
-#define SYS_close           3
-#define SYS_stat            4
-#define SYS_fstat           5
-#define SYS_lseek           8
-#define SYS_mmap            9
-#define SYS_munmap          11
-#define SYS_brk             12
-#define SYS_readv           19
-#define SYS_writev          20
-#define SYS_exit            60
-#define SYS_arch_prctl      158
-#define SYS_set_tid_address 218
-#define SYS_exit_group      231
+#define SYS_read                0
+#define SYS_write               1
+#define SYS_open                2
+#define SYS_close               3
+#define SYS_stat                4
+#define SYS_fstat               5
+#define SYS_lseek               8
+#define SYS_mmap                9
+#define SYS_munmap              11
+#define SYS_brk                 12
+#define SYS_readv               19
+#define SYS_writev              20
+#define SYS_exit                60
+#define SYS_arch_prctl          158
+#define SYS_set_tid_address     218
+#define SYS_exit_group          231
+
+#define SYS_FB_GET_COUNT        0x300
+#define SYS_FB_GET_DEFAULT      0x301
+#define SYS_FB_LIST_IDS         0x302
+#define SYS_FB_GET_NAME         0x303
+#define SYS_FB_OPEN             0x304
+#define SYS_FB_CLOSE            0x305
+#define SYS_FB_GET_MODE_COUNT   0x306
+#define SYS_FB_GET_MODE_INFO    0x307
+#define SYS_FB_SET_MODE         0x308
+#define SYS_FB_MAP_PIXELS       0x309
+#define SYS_FB_GET_CURRENT_MODE 0x30A
+
+#define SYS_INDEV_GET_COUNT     0x310
+#define SYS_INDEV_LIST_IDS      0x311
+#define SYS_INDEV_GET_TYPE      0x312
+#define SYS_INDEV_GET_NAME      0x313
+#define SYS_INDEV_OPEN          0x314
+#define SYS_INDEV_CLOSE         0x315
+#define SYS_INDEV_GET_EVENT     0x316
 
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
@@ -96,6 +116,18 @@ long sys_exit(long error_code);
 int sys_arch_prctl(int code, uintptr_t addr);
 int sys_set_tid_address(int *tidptr);
 long sys_exit_group(long error_code);
+
+long sysFBGetCount();
+long sysFBGetDefault();
+long sysFBListIds(int *buf, unsigned bufSize);
+long sysFBGetName(int id, char *buf, unsigned bufSize);
+long sysFBOpen(int id);
+long sysFBClose(int fd);
+long sysFBGetModeCount(int fd);
+long sysFBGetModeInfo(int fd, int mode, void *modeInfo);
+long sysFBSetMode(int fd, int mode);
+void *sysFBMapPixels(int fd, void *hint);
+long sysFBGetCurrentMode(int fd);
 
 #ifdef __cplusplus
 }

@@ -108,6 +108,7 @@ install: $(TOP_DIR)/root/boot/grub/grub.cfg $(TOP_DIR)/root/system/$(OUTFILE) $(
 
 clean:
 	rm -f $(OBJS) $(OUTFILE)
+	for dir in $(MODULES); do $(MAKE) -C $$dir clean; done
 
 %.o: %.asm
 	$(ASM) $(ASMFLAGS) -o $@ $<

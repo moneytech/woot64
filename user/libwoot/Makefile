@@ -1,6 +1,6 @@
-SHARED_LIB = libsyscalls.so
-STATIC_LIB = libsyscalls.a
-OBJS = syscalls.o
+SHARED_LIB = libwoot.so
+STATIC_LIB = libwoot.a
+OBJS = input.o video.o
 
 TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(TOP_DIR)/root/lib
@@ -8,7 +8,8 @@ LIB_DIR ?= $(TOP_DIR)/root/lib
 CC = $(TOP_DIR)/user/cc
 
 CFLAGS += -fPIC
-LDFLAGS = -shared
+LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
+LIBS = -lc -lsyscalls
 
 export TOP_DIR
 
@@ -18,7 +19,7 @@ $(STATIC_LIB): $(OBJS)
 	$(AR) rc $@ $(OBJS)
 
 $(SHARED_LIB): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB)
+	$(CC) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB) $(LIBS)
 
 install: $(LIB_DIR)/$(SHARED_LIB)
 
@@ -30,3 +31,4 @@ clean:
 	rm -f $(OBJS) $(STATIC_LIB) $(SHARED_LIB)
 
 .PHONY: clean install
+

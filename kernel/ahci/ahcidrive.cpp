@@ -546,9 +546,6 @@ AHCIDrive::Controller::Controller(Device *parent, uintptr_t base, uint8_t irq) :
     interruptHandler { nullptr, interrupt, this },
     Registers((HBA_MEM *)base), IRQ(irq)
 {
-    uintptr_t pageAddr = base & PAGE_MASK;
-    Paging::MapPage(~0, pageAddr, pageAddr, false, true);
-
     Memory::Zero(Ports, sizeof(Ports));
     IRQs::RegisterHandler(irq, &interruptHandler);
     IRQs::Enable(irq);

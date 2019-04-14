@@ -437,6 +437,7 @@ public:
     static ELF *Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs);
 
     Elf_Sym *FindSymbol(const char *Name);
+    const char *GetSymbolName(uintptr_t addr, ptrdiff_t *delta);
     bool ApplyRelocations();
     uintptr_t GetBase();
     uintptr_t GetEndPtr();

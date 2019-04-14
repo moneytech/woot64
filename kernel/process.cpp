@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <file.hpp>
 #include <filesystem.hpp>
+#include <framebuffer.hpp>
 #include <memory.hpp>
 #include <misc.hpp>
 #include <mutex.hpp>
@@ -13,7 +14,6 @@
 #include <string.hpp>
 #include <stringbuilder.hpp>
 #include <sysdefs.h>
-//#include <syscalls.h>
 #include <thread.hpp>
 #include <tokenizer.hpp>
 
@@ -71,6 +71,7 @@ typedef struct AuxVector
 #define AT_GID          13              /* Real gid */
 #define AT_EGID         14              /* Effective gid */
 #define AT_CLKTCK       17              /* Frequency of times() */
+#define AT_SECURE       23
 
 uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer)
 {
@@ -109,10 +110,14 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
 
     AuxVector auxVectors[] =
     {
-        //{ AT_SECURE, (uintptr_t)1 },
+        { AT_SECURE, 0 },
+        { AT_UID, 0 },
+        { AT_GID, 0 },
+        { AT_EUID, 0 },
+        { AT_EGID, 0 },
         { AT_ENTRY, (uintptr_t)elf->EntryPoint },
-        { AT_BASE, (uintptr_t)(elf->base) },
-        { AT_PAGESZ, (uintptr_t)PAGE_SIZE },
+        { AT_BASE, elf->base },
+        { AT_PAGESZ, PAGE_SIZE },
         { AT_PHNUM, (uintptr_t)elf->ehdr->e_phnum },
         { AT_PHENT, (uintptr_t)elf->ehdr->e_phentsize },
         { AT_PHDR, (uintptr_t)elf->phdrData }
@@ -159,7 +164,8 @@ int Process::processEntryPoint(const char *cmdline)
     uintptr_t stackPointer = ct->AllocStack(&ct->UserStack, ct->UserStackSize);
     const char *envVars[] =
     {
-        "PATH=WOOT_OS:/bin;WOOT_OS:/system",
+        "PATH=WOOT_OS~/bin:WOOT_OS~/system",
+        "LD_LIBRARY_PATH=WOOT_OS~/lib",
         "TEST=value"
     };
     stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
@@ -513,6 +519,24 @@ Elf_Sym *Process::FindSymbol(const char *name, ELF *skip, ELF **elf)
     return nullptr;
 }
 
+const char *Process::GetSymbolName_nolock(uintptr_t addr, ptrdiff_t *delta)
+{
+    for(ELF *elf : Images)
+    {
+        const char *name = elf->GetSymbolName(addr, delta);
+        if(name) return name;
+    }
+    return nullptr;
+}
+
+const char *Process::GetSymbolName(uintptr_t addr, ptrdiff_t *delta)
+{
+    if(!Lock()) return nullptr;
+    const char *res = GetSymbolName_nolock(addr, delta);
+    UnLock();
+    return res;
+}
+
 bool Process::ApplyRelocations()
 {
     if(!Lock()) return false;
@@ -583,12 +607,7 @@ int Process::Close(int handle)
     if(!Lock()) return -EBUSY;
     Handle h = Handles.Get(handle);
     freeHandleSlot(handle);
-    if(h.Type == Handle::HandleType::Object)
-    {
-        UnLock();
-        return ESUCCESS;
-    }
-    else if(h.Type == Handle::HandleType::File)
+    if(h.Type == Handle::HandleType::File)
     {
         if(h.File) delete h.File;
         UnLock();
@@ -612,6 +631,12 @@ int Process::Close(int handle)
     else if(h.Type == Handle::HandleType::NamedObject)
     {
         int res = h.NamedObject->Put();
+        UnLock();
+        return res;
+    }
+    else if(h.Type == Handle::HandleType::FrameBuffer)
+    {
+        int res = h.FrameBuffer->Close();
         UnLock();
         return res;
     }
@@ -916,5 +941,11 @@ Process::Handle::Handle(::Process *process) :
 Process::Handle::Handle(::NamedObject *namedObject) :
     Type(HandleType::NamedObject),
     NamedObject(namedObject)
+{
+}
+
+Process::Handle::Handle(::FrameBuffer *frameBuffer) :
+    Type(HandleType::FrameBuffer),
+    FrameBuffer(frameBuffer)
 {
 }

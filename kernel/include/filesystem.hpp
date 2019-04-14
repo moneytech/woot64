@@ -8,7 +8,7 @@
 
 #define MAX_FS_LABEL_LENGTH 128
 #define MAX_PATH_LENGTH     4095
-#define FS_SEPARATOR        ':'
+#define FS_SEPARATOR        '~'
 #define PATH_SEPARATORS     "/\\"
 
 class DEntry;

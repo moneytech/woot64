@@ -6,7 +6,11 @@ TOP_DIR ?= $(shell realpath ../..)
 BIN_DIR ?= $(TOP_DIR)/root/bin
 
 CC = $(TOP_DIR)/user/cc
-LIBS = $(TOP_DIR)/user/libc/lib/Scrt1.o $(TOP_DIR)/user/libc/lib/crti.o $(TOP_DIR)/user/libc/lib/crtn.o -lc -lsyscalls
+LIBS = \
+	$(TOP_DIR)/user/libc/lib/Scrt1.o \
+	$(TOP_DIR)/user/libc/lib/crti.o \
+	$(TOP_DIR)/user/libc/lib/crtn.o \
+	-lc -lwoot -lsyscalls
 
 export TOP_DIR
 

@@ -13,4 +13,5 @@ public:
     virtual int SetMode(int mode);
     virtual int GetCurrentMode();
     virtual uintptr_t GetBuffer(); // returns physical address
+    virtual const char *GetName();
 };

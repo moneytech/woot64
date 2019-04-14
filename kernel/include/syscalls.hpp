@@ -21,6 +21,25 @@
 #define SYS_exit_group      231
 
 // woot specific syscalls
+#define SYS_FB_GET_COUNT        0x300
+#define SYS_FB_GET_DEFAULT      0x301
+#define SYS_FB_LIST_IDS         0x302
+#define SYS_FB_GET_NAME         0x303
+#define SYS_FB_OPEN             0x304
+#define SYS_FB_CLOSE            0x305
+#define SYS_FB_GET_MODE_COUNT   0x306
+#define SYS_FB_GET_MODE_INFO    0x307
+#define SYS_FB_SET_MODE         0x308
+#define SYS_FB_MAP_PIXELS       0x309
+#define SYS_FB_GET_CURRENT_MODE 0x30A
+
+#define SYS_INDEV_GET_COUNT     0x310
+#define SYS_INDEV_LIST_IDS      0x311
+#define SYS_INDEV_GET_TYPE      0x312
+#define SYS_INDEV_GET_NAME      0x313
+#define SYS_INDEV_OPEN          0x314
+#define SYS_INDEV_CLOSE         0x315
+#define SYS_INDEV_GET_EVENT     0x316
 
 class SysCalls
 {
@@ -45,6 +64,18 @@ class SysCalls
     static long sys_arch_prctl(int code, uintptr_t addr);
     static long sys_set_tid_address(int *tidptr);
     static long sys_exit_group(intn retVal);
+
+    static long sysFBGetCount();
+    static long sysFBGetDefault();
+    static long sysFBListIds(int *buf, size_t bufSize);
+    static long sysFBGetName(int id, char *buf, size_t bufSize);
+    static long sysFBOpen(int id);
+    static long sysFBClose(int fd);
+    static long sysFBGetModeCount(int fd);
+    static long sysFBGetModeInfo(int fd, int mode, struct vidModeInfo *modeInfo);
+    static long sysFBSetMode(int fd, int mode);
+    static long sysFBMapPixels(int fd, uintptr_t hint);
+    static long sysFBGetCurrentMode(int fd);
 public:
     static void Initialize();
 };

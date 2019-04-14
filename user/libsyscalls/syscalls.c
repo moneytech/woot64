@@ -79,3 +79,59 @@ long sys_exit_group(long error_code)
 {
     return __syscall1(SYS_exit_group, error_code);
 }
+
+long sysFBGetCount()
+{
+    return __syscall0(SYS_FB_GET_COUNT);
+}
+
+long sysFBGetDefault()
+{
+    return __syscall0(SYS_FB_GET_DEFAULT);
+}
+
+long sysFBListIds(int *buf, unsigned bufSize)
+{
+    return __syscall2(SYS_FB_LIST_IDS, (long)buf, bufSize);
+}
+
+long sysFBGetName(int id, char *buf, unsigned bufSize)
+{
+    return __syscall3(SYS_FB_GET_NAME, id, (long)buf, bufSize);
+}
+
+long sysFBOpen(int id)
+{
+    return __syscall1(SYS_FB_OPEN, id);
+}
+
+long sysFBClose(int fd)
+{
+    return __syscall1(SYS_FB_CLOSE, fd);
+}
+
+long sysFBGetModeCount(int fd)
+{
+    return __syscall1(SYS_FB_GET_MODE_COUNT, fd);
+}
+
+
+long sysFBGetModeInfo(int fd, int mode, void *modeInfo)
+{
+    return __syscall3(SYS_FB_GET_MODE_INFO, fd, mode, (long)modeInfo);
+}
+
+long sysFBSetMode(int fd, int mode)
+{
+    return __syscall2(SYS_FB_SET_MODE, fd, mode);
+}
+
+void *sysFBMapPixels(int fd, void *hint)
+{
+    return (void *)__syscall2(SYS_FB_MAP_PIXELS, fd, (long)hint);
+}
+
+long sysFBGetCurrentMode(int fd)
+{
+    return __syscall1(SYS_FB_GET_CURRENT_MODE, fd);
+}

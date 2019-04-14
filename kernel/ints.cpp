@@ -124,18 +124,34 @@ void Ints::CommonHandler(Ints::State *state)
         if(ct)
         {
             DEBUG("Stack trace:\n");
+            if(cp)
+            {
+                intptr_t delta = 0;
+                const char *symName = cp->GetSymbolName_nolock(state->RIP, &delta);
+                DEBUG("%p %s + %d <-\n", state->RIP, symName, delta);
+            }
             uintptr_t *rbp = (uintptr_t *)state->RBP;
-            for(int i = 0; i < 10; ++i)
+            for(int i = 0; i < 15 && rbp; ++i)
             {
                 uintptr_t rip = rbp[1];
                 if(!rip) break;
                 rbp = (uintptr_t *)(*rbp);
-                DEBUG("%p\n", rip);
+                if(cp)
+                {
+                    intptr_t delta = 0;
+                    const char *symName = cp->GetSymbolName_nolock(rip, &delta);
+                    DEBUG("%p %s + %d\n", rip, symName, delta);
+                }
+                else DEBUG("%p\n", rip);
             }
         }
 
         if(ct && ct->Id != 1) Thread::Finalize(ct, 127);
-        else cpuSystemHalt(state->InterruptNumber);
+        else
+        {
+            DEBUG("Main kernel thread died. System halted.\n");
+            cpuSystemHalt(state->InterruptNumber);
+        }
     }
 
     if(isIRQ) IRQs::SendEOI(irq);
