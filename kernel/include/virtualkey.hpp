@@ -2,7 +2,7 @@
 
 #include <types.h>
 
-enum class VirtualKey : uint8_t
+enum class VirtualKey : uint32_t
 {
     Null = 0x00, LeftButton, RightButton, Cancel, MiddleButton, ExtraButton, ExtraButton2, Undefined07,
     Back, Tab, Undefined0A, Undefined0B, Clear, Return, Undefined0E, Undefined0F,

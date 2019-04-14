@@ -3,6 +3,7 @@
 #include <inputdevice.hpp>
 #include <memory.hpp>
 #include <misc.hpp>
+#include <process.hpp>
 #include <string.hpp>
 #include <stringbuilder.hpp>
 
@@ -43,6 +44,14 @@ InputDevice::InputDevice(InputDevice::Type type) :
     append(this);
 }
 
+size_t InputDevice::GetCount()
+{
+    lockList();
+    size_t res = devices.Count();
+    unLockList();
+    return res;
+}
+
 InputDevice *InputDevice::GetDefault(Type type)
 {
     if(!lockList()) return nullptr;
@@ -66,7 +75,10 @@ InputDevice *InputDevice::GetById(int id)
     for(InputDevice *dev : devices)
     {
         if(dev->id == id)
+        {
+            res = dev;
             break;
+        }
     }
     unLockList();
     return res;
@@ -84,20 +96,36 @@ bool InputDevice::ForEach(bool (*callback)(InputDevice *, void *), void *arg)
     return true;
 }
 
+int InputDevice::ListIds(int *buf, size_t bufSize)
+{
+    if(!buf || !bufSize)
+        return -EINVAL;
+    if(!lockList()) return -EBUSY;
+    int res = 0;
+    for(InputDevice *dev : devices)
+    {
+        if(res >= bufSize)
+            break;
+        buf[res++] = dev->id;
+    }
+    unLockList();
+    return res;
+}
+
 InputDevice::Type InputDevice::GetType() const
 {
     return type;
 }
 
-int InputDevice::GetEvent(Event *event, uint timeout)
+int InputDevice::GetEvent(Event *event, int timeout)
 {
     if(!mutex.Acquire(timeout >= 0 ? timeout : 0, false))
         return -EBUSY;
-    int timeleft = eventSem.Wait(timeout, false, true);
+    int timeleft = eventSem.Wait(timeout < 0 ? 0 : timeout, timeout == 0, true);
     if(timeleft < 0)
     {
         mutex.Release();
-        return ETIMEOUT;
+        return -ETIMEOUT;
     }
     bool ok = false;
     if(event) *event = events.Read(&ok);
@@ -105,6 +133,25 @@ int InputDevice::GetEvent(Event *event, uint timeout)
     cpuEnableInterrupts();
     mutex.Release();
     return ok ? timeleft : -EIO;
+}
+
+int InputDevice::Open()
+{
+    Process *cp = Process::GetCurrent();
+    if(Misc::TestAndSet(&owner, cp))
+        return -EBUSY;
+    return ESUCCESS;
+}
+
+int InputDevice::Close()
+{
+    Misc::Release(&owner);
+    return ESUCCESS;
+}
+
+const char *InputDevice::GetName()
+{
+    return "Generic input device";
 }
 
 InputDevice::~InputDevice()

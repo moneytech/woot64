@@ -226,6 +226,11 @@ PS2Keyboard::PS2Keyboard() :
     IRQs::Enable(1);
 }
 
+const char *PS2Keyboard::GetName()
+{
+    return "PS/2 keyboard";
+}
+
 PS2Keyboard::~PS2Keyboard()
 {
     bool ints = cpuDisableInterrupts();

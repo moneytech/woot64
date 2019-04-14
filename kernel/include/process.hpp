@@ -79,7 +79,8 @@ public:
             NamedObject,
             Mutex,
             Semaphore,
-            FrameBuffer
+            FrameBuffer,
+            InputDevice
         } Type;
         union
         {
@@ -91,6 +92,7 @@ public:
             ::Mutex *Mutex;
             ::Semaphore *Semaphore;
             ::FrameBuffer *FrameBuffer;
+            ::InputDevice *InputDevice;
         };
         Handle();
         Handle(nullptr_t);
@@ -100,6 +102,7 @@ public:
         Handle(::Process *process);
         Handle(::NamedObject *namedObject);
         Handle(::FrameBuffer *frameBuffer);
+        Handle(::InputDevice *inputDevice);
     };
 private:
     static Sequencer<pid_t> id;

@@ -1,46 +1,37 @@
-#include <errno.h>
 #include <woot/input.h>
-#include <sys/syscall.h>
-#include <unistd.h>
+#include <syscalls/syscalls.h>
 
 int inpGetDeviceCount()
 {
-    //return syscall(SYS_INDEV_GET_COUNT);
-    return -ENOSYS;
+    return sysInDevGetCount();
 }
 
-int inpDeviceList(char *buf, size_t bufSize)
+int inpDeviceListIds(int *buf, size_t bufSize)
 {
-    //return syscall(SYS_INDEV_LIST, buf, bufSize);
-    return -ENOSYS;
+    return sysInDevListIds(buf, bufSize);
 }
 
-int inpOpenDevice(const char *name)
+int inpGetDeviceType(int id)
 {
-    //return syscall(SYS_INDEV_OPEN, name);
-    return -ENOSYS;
+    return sysInDevGetType(id);
 }
 
-int inpCloseDevice(int handle)
+int inpGetDeviceName(int id, char *buf, size_t bufSize)
 {
-    //return syscall(SYS_INDEV_CLOSE, handle);
-    return -ENOSYS;
+    return sysInDevGetName(id, buf, bufSize);
 }
 
-int inpGetDeviceType(int handle)
+int inpOpenDevice(int id)
 {
-    //return syscall(SYS_INDEV_GET_TYPE, handle);
-    return -ENOSYS;
+    return sysInDevOpen(id);
 }
 
-int inpGetDeviceName(int handle, char *buf, size_t bufSize)
+int inpCloseDevice(int fd)
 {
-    //return syscall(SYS_INDEV_GET_NAME, handle, buf, bufSize);
-    return -ENOSYS;
+    return sysInDevClose(fd);
 }
 
-int inpGetEvent(int handle, int timeout, void *buf)
+int inpGetEvent(int fd, int timeout, void *buf)
 {
-    //return syscall(SYS_INDEV_GET_EVENT, handle, timeout, buf);
-    return -ENOSYS;
+    return sysInDevGetEvent(fd, timeout, buf);
 }

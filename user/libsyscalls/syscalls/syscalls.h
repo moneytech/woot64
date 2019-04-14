@@ -129,6 +129,14 @@ long sysFBSetMode(int fd, int mode);
 void *sysFBMapPixels(int fd, void *hint);
 long sysFBGetCurrentMode(int fd);
 
+long sysInDevGetCount();
+long sysInDevListIds(int *buf, unsigned bufSize);
+long sysInDevGetType(int id);
+long sysInDevGetName(int id, char *buf, unsigned bufSize);
+long sysInDevOpen(int id);
+long sysInDevClose(int fd);
+long sysInDevGetEvent(int fd, int timeout, void *buf);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

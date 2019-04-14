@@ -135,3 +135,38 @@ long sysFBGetCurrentMode(int fd)
 {
     return __syscall1(SYS_FB_GET_CURRENT_MODE, fd);
 }
+
+long sysInDevGetCount()
+{
+    return __syscall0(SYS_INDEV_GET_COUNT);
+}
+
+long sysInDevListIds(int *buf, unsigned bufSize)
+{
+    return __syscall2(SYS_INDEV_LIST_IDS, (long)buf, bufSize);
+}
+
+long sysInDevGetType(int id)
+{
+    return __syscall1(SYS_INDEV_GET_TYPE, id);
+}
+
+long sysInDevGetName(int id, char *buf, unsigned bufSize)
+{
+    return __syscall3(SYS_INDEV_GET_NAME, id, (long)buf, bufSize);
+}
+
+long sysInDevOpen(int id)
+{
+    return __syscall1(SYS_INDEV_OPEN, id);
+}
+
+long sysInDevClose(int fd)
+{
+    return __syscall1(SYS_INDEV_CLOSE, fd);
+}
+
+long sysInDevGetEvent(int fd, int timeout, void *buf)
+{
+    return __syscall3(SYS_INDEV_GET_EVENT, fd, timeout, (long)buf);
+}

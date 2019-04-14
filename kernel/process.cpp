@@ -640,6 +640,12 @@ int Process::Close(int handle)
         UnLock();
         return res;
     }
+    else if(h.Type == Handle::HandleType::InputDevice)
+    {
+        int res = h.InputDevice->Close();
+        UnLock();
+        return res;
+    }
     UnLock();
     return -EBADF;
 }
@@ -947,5 +953,11 @@ Process::Handle::Handle(::NamedObject *namedObject) :
 Process::Handle::Handle(::FrameBuffer *frameBuffer) :
     Type(HandleType::FrameBuffer),
     FrameBuffer(frameBuffer)
+{
+}
+
+Process::Handle::Handle(::InputDevice *inputDevice) :
+    Type(HandleType::InputDevice),
+    InputDevice(inputDevice)
 {
 }

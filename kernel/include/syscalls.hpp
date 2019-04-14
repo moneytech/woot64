@@ -76,6 +76,14 @@ class SysCalls
     static long sysFBSetMode(int fd, int mode);
     static long sysFBMapPixels(int fd, uintptr_t hint);
     static long sysFBGetCurrentMode(int fd);
+
+    static long sysInDevGetCount();
+    static long sysInDevListIds(int *buf, size_t bufSize);
+    static long sysInDevGetType(int id);
+    static long sysInDevGetName(int id, char *buf, size_t bufSize);
+    static long sysInDevOpen(int id);
+    static long sysInDevClose(int fd);
+    static long sysInDevGetEvent(int fd, int timeout, struct inpEvent *event);
 public:
     static void Initialize();
 };

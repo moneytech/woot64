@@ -152,6 +152,13 @@ typedef struct vidModeInfo
     int AlphaShift, RedShift, GreenShift, BlueShift;
 } vidModeInfo_t;
 
+// USER_MATCH: libwoot/woot/input.h
+#define INP_MAX_RAW_BYTES           64
+#define INP_MAX_MOUSE_AXES          13
+#define INP_MAX_TABLET_COORDS       7
+#define INP_MAX_TABLET_AXES         6
+#define INP_MAX_CONTROLLER_COORDS   13
+
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
 long SysCalls::InvalidHandler()
@@ -518,6 +525,61 @@ long SysCalls::sysFBGetCurrentMode(int fd)
     return fb->GetCurrentMode();
 }
 
+long SysCalls::sysInDevGetCount()
+{
+    return InputDevice::GetCount();
+}
+
+long SysCalls::sysInDevListIds(int *buf, size_t bufSize)
+{
+    return InputDevice::ListIds(buf, bufSize);
+}
+
+long SysCalls::sysInDevGetType(int id)
+{
+    InputDevice *dev = InputDevice::GetById(id);
+    return dev ? (long)dev->GetType() : -ENODEV;
+}
+
+long SysCalls::sysInDevGetName(int id, char *buf, size_t bufSize)
+{
+    InputDevice *dev = InputDevice::GetById(id);
+    if(!dev) return -ENODEV;
+    const char *devName = dev->GetName();
+    if(!devName) devName = "";
+    StringBuilder sb(buf, bufSize);
+    sb.WriteFmt("%s", devName);
+    return sb.Length();
+}
+
+long SysCalls::sysInDevOpen(int id)
+{
+    InputDevice *dev = InputDevice::GetById(id);
+    if(!dev) return -ENODEV;
+    int res = dev->Open();
+    if(res < 0) return res;
+    Process *cp = Process::GetCurrent();
+    res = cp->NewHandle(dev);
+    if(res < 0) dev->Close();
+    return res;
+}
+
+long SysCalls::sysInDevClose(int fd)
+{
+    return Process::GetCurrent()->Close(fd);
+}
+
+long SysCalls::sysInDevGetEvent(int fd, int timeout, struct inpEvent *event)
+{
+    if(!event) return -EINVAL;
+    InputDevice *dev = (InputDevice *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::InputDevice);
+    if(!dev) return -EBADF;
+    InputDevice::Event ev;
+    int res = dev->GetEvent(&ev, timeout);
+    if(res >= 0) Memory::Move(event, &ev.RawData, sizeof(ev.RawData));
+    return res;
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -550,6 +612,14 @@ void SysCalls::Initialize()
     Handlers[SYS_FB_SET_MODE] = (SysCallHandler)sysFBSetMode;
     Handlers[SYS_FB_MAP_PIXELS] = (SysCallHandler)sysFBMapPixels;
     Handlers[SYS_FB_GET_CURRENT_MODE] = (SysCallHandler)sysFBGetCurrentMode;
+
+    Handlers[SYS_INDEV_GET_COUNT] = (SysCallHandler)sysInDevGetCount;
+    Handlers[SYS_INDEV_LIST_IDS] = (SysCallHandler)sysInDevListIds;
+    Handlers[SYS_INDEV_GET_TYPE] = (SysCallHandler)sysInDevGetType;
+    Handlers[SYS_INDEV_GET_NAME] = (SysCallHandler)sysInDevGetName;
+    Handlers[SYS_INDEV_OPEN] = (SysCallHandler)sysInDevOpen;
+    Handlers[SYS_INDEV_CLOSE] = (SysCallHandler)sysInDevClose;
+    Handlers[SYS_INDEV_GET_EVENT] = (SysCallHandler)sysInDevGetEvent;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

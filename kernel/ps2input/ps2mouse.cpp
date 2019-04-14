@@ -46,6 +46,11 @@ PS2Mouse::PS2Mouse() :
     IRQs::Enable(12);
 }
 
+const char *PS2Mouse::GetName()
+{
+    return "PS/2 mouse";
+}
+
 PS2Mouse::~PS2Mouse()
 {
     bool ints = cpuDisableInterrupts();

@@ -12,5 +12,6 @@ class PS2Keyboard : public InputDevice
     static bool interrupt(Ints::State *state, void *context);
 public:
     PS2Keyboard();
+    virtual const char *GetName();
     virtual ~PS2Keyboard();
 };

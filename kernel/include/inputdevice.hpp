@@ -7,20 +7,17 @@
 #include <sequencer.hpp>
 #include <virtualkey.hpp>
 
+// USER_MATCH: libwoot/woot/input.h
 #define INP_MAX_RAW_BYTES           64
 #define INP_MAX_MOUSE_AXES          13
 #define INP_MAX_TABLET_COORDS       7
 #define INP_MAX_TABLET_AXES         6
 #define INP_MAX_CONTROLLER_COORDS   13
 
-#define INP_DEV_TYPE_UNKNOWN        0
-#define INP_DEV_TYPE_OTHER          1
-#define INP_DEV_TYPE_KEYBOARD       2
-#define INP_DEV_TYPE_MOUSE          3
-#define INP_DEV_TYPE_TABLET         4
-#define INP_DEV_TYPE_CONTROLLER     5
-
+// USER_MATCH: libwoot/woot/input.h
 #define INP_KBD_EVENT_FLAG_RELEASE  1
+
+class Process;
 
 class InputDevice
 {
@@ -33,6 +30,7 @@ class InputDevice
     static bool append(InputDevice *dev);
     static bool remove(InputDevice *dev);
 public:
+    // USER_MATCH: libwoot/woot/input.h
     enum class Type
     {
         Unknown = 0,
@@ -49,41 +47,42 @@ public:
         InputDevice *Device;
         union
         {
-            union
+            // USER_MATCH: libwoot/woot/input.h struct inpKeyboardEvent
+            struct
             {
-                struct
-                {
-                    VirtualKey Key;
-                    bool Release;
-                } Keyboard;
+                VirtualKey Key;
+                bool Release;
+            } Keyboard;
 
-                struct
-                {
-                    uint32_t ButtonsPressed;
-                    uint32_t ButtonsHeld;
-                    uint32_t ButtonsReleased;
-                    int32_t Delta[INP_MAX_MOUSE_AXES];
-                } Mouse;
+            // USER_MATCH: libwoot/woot/input.h struct inpMouseEvent
+            struct
+            {
+                uint32_t ButtonsPressed;
+                uint32_t ButtonsHeld;
+                uint32_t ButtonsReleased;
+                int32_t Delta[INP_MAX_MOUSE_AXES];
+            } Mouse;
 
-                struct
-                {
-                    uint32_t ButtonsPressed;
-                    uint32_t ButtonsHeld;
-                    uint32_t ButtonsReleased;
-                    int32_t Coords[INP_MAX_TABLET_COORDS];
-                    int32_t Delta[INP_MAX_TABLET_AXES];
-                } Tablet;
+            // USER_MATCH: libwoot/woot/input.h struct inpTabletEvent
+            struct
+            {
+                uint32_t ButtonsPressed;
+                uint32_t ButtonsHeld;
+                uint32_t ButtonsReleased;
+                int32_t Coords[INP_MAX_TABLET_COORDS];
+                int32_t Delta[INP_MAX_TABLET_AXES];
+            } Tablet;
 
-                struct
-                {
-                    uint32_t ButtonsPressed;
-                    uint32_t ButtonsHeld;
-                    uint32_t ButtonsReleased;
-                    int32_t Coords[INP_MAX_CONTROLLER_COORDS];
-                } Controller;
+            // USER_MATCH: libwoot/woot/input.h struct inpControllerEvent
+            struct
+            {
+                uint32_t ButtonsPressed;
+                uint32_t ButtonsHeld;
+                uint32_t ButtonsReleased;
+                int32_t Coords[INP_MAX_CONTROLLER_COORDS];
+            } Controller;
 
-                uint8_t RawData[INP_MAX_RAW_BYTES];
-            };
+            uint8_t RawData[INP_MAX_RAW_BYTES];
         };
 
         Event();
@@ -96,15 +95,21 @@ protected:
     Mutex mutex;
     Semaphore eventSem;
     Queue<Event> events;
+    Process *owner;
 
     InputDevice(Type type);
 public:
+    static size_t GetCount();
     static InputDevice *GetDefault(InputDevice::Type type);
     static InputDevice *GetById(int id);
     static bool ForEach(bool (*callback)(InputDevice *type, void *arg), void *arg);
+    static int ListIds(int *buf, size_t bufSize);
 
     InputDevice::Type GetType() const;
-    int GetEvent(InputDevice::Event *event, uint timeout);
+    int GetEvent(InputDevice::Event *event, int timeout);
 
+    virtual int Open();
+    virtual int Close();
+    virtual const char *GetName();
     virtual ~InputDevice();
 };
