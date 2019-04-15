@@ -5,18 +5,12 @@ extern "C" {
 #endif // __cplusplus
 
 #include <sys/types.h>
+#include <woot/ipcmsgs.h>
 
 #define MSG_PAYLOAD_SIZE            112
 
 #define MSG_FLAG_NONE               0
 #define MSG_FLAG_ACK_REQ            1
-
-#define MSG_NULL                    0
-#define MSG_ACK                     1
-#define MSG_NACK                    2
-#define MSG_PING                    3
-#define MSG_PONG                    4
-#define MSG_QUIT                    5
 
 #define IPC_SHMEM_WRITE 1
 

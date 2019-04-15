@@ -7,6 +7,7 @@ OBJS = \
 	pixmap.o \
 	process.o \
 	rectangle.o \
+	rpc.o \
 	thread.o \
 	video.o
 

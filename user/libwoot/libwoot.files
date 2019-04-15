@@ -3,11 +3,14 @@ misc.c
 pixmap.c
 process.c
 rectangle.c
+rpc.c
 thread.c
 woot/ipc.h
+woot/ipcmsgs.h
 woot/pixmap.h
 woot/process.h
 woot/rectangle.h
+woot/rpc.h
 woot/thread.h
 woot/vkeys.h
 input.c
