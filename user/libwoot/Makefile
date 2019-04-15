@@ -1,13 +1,13 @@
 SHARED_LIB = libwoot.so
 STATIC_LIB = libwoot.a
-OBJS = input.o video.o
+OBJS = input.o misc.o pixmap.o rectangle.o video.o
 
 TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(TOP_DIR)/root/lib
 
 CC = $(TOP_DIR)/user/cc
 
-CFLAGS += -fPIC
+CFLAGS += -fPIC -Wno-undefined-internal
 LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
 LIBS = -lc -lsyscalls
 

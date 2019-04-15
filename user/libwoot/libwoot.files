@@ -1,3 +1,8 @@
+misc.c
+pixmap.c
+rectangle.c
+woot/pixmap.h
+woot/rectangle.h
 woot/vkeys.h
 input.c
 video.c

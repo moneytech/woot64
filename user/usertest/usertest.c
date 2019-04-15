@@ -7,8 +7,6 @@
 #include <woot/input.h>
 #include <woot/video.h>
 
-#define offsetof __builtin_offsetof
-
 static const char *devTypeNames[] =
 {
     "unknown input device",
