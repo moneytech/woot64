@@ -37,6 +37,16 @@
 #define SYS_INDEV_CLOSE         0x315
 #define SYS_INDEV_GET_EVENT     0x316
 
+#define SYS_THREAD_CREATE       0x320
+#define SYS_THREAD_DELETE       0x321
+#define SYS_THREAD_RESUME       0x322
+#define SYS_THREAD_SUSPEND      0x323
+#define SYS_THREAD_SLEEP        0x324
+#define SYS_THREAD_WAIT         0x325
+#define SYS_THREAD_ABORT        0x326
+#define SYS_THREAD_DAEMONIZE    0x327
+#define SYS_THREAD_GET_ID       0x328
+
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
@@ -136,6 +146,16 @@ long sysInDevGetName(int id, char *buf, unsigned bufSize);
 long sysInDevOpen(int id);
 long sysInDevClose(int fd);
 long sysInDevGetEvent(int fd, int timeout, void *buf);
+
+long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal);
+long sysThreadDelete(int fd);
+long sysThreadResume(int fd);
+long sysThreadSuspend(int fd);
+long sysThreadSleep(int fd, int ms);
+long sysThreadWait(int fd, int timeout);
+long sysThreadAbort(int fd, int retVal);
+long sysThreadDaemonize();
+long sysThreadGetId(int fd);
 
 #ifdef __cplusplus
 }

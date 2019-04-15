@@ -170,3 +170,48 @@ long sysInDevGetEvent(int fd, int timeout, void *buf)
 {
     return __syscall3(SYS_INDEV_GET_EVENT, fd, timeout, (long)buf);
 }
+
+long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
+{
+    return __syscall4(SYS_THREAD_CREATE, (long)name, (long)entry, arg, (long)retVal);
+}
+
+long sysThreadDelete(int fd)
+{
+    return __syscall1(SYS_THREAD_DELETE, fd);
+}
+
+long sysThreadResume(int fd)
+{
+    return __syscall1(SYS_THREAD_RESUME, fd);
+}
+
+long sysThreadSuspend(int fd)
+{
+    return __syscall1(SYS_THREAD_SUSPEND, fd);
+}
+
+long sysThreadSleep(int fd, int ms)
+{
+    return __syscall2(SYS_THREAD_SLEEP, fd, ms);
+}
+
+long sysThreadWait(int fd, int timeout)
+{
+    return __syscall2(SYS_THREAD_WAIT, fd, timeout);
+}
+
+long sysThreadAbort(int fd, int retVal)
+{
+    return __syscall2(SYS_THREAD_ABORT, fd, retVal);
+}
+
+long sysThreadDaemonize()
+{
+    return __syscall0(SYS_THREAD_DAEMONIZE);
+}
+
+long sysThreadGetId(int fd)
+{
+    return __syscall1(SYS_THREAD_GET_ID, fd);
+}

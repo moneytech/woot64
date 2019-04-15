@@ -10,7 +10,7 @@ LIBS = \
 	$(TOP_DIR)/user/libc/lib/Scrt1.o \
 	$(TOP_DIR)/user/libc/lib/crti.o \
 	$(TOP_DIR)/user/libc/lib/crtn.o \
-	-lc -lwoot -lsyscalls
+	-Wl,--start-group,-lc,-lwoot,-lsyscalls,--end-group
 
 export TOP_DIR
 

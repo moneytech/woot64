@@ -118,14 +118,14 @@ asm(
 // asm memory ops for x86-64
 asm(
 "wmemset:\n"
-"mov %rdi, %rax\n"
+"mov %rsi, %rax\n"
 "mov %rdx, %rcx\n"
 "rep stosw\n"
 "ret\n");
 
 asm(
 "lmemset:\n"
-"mov %rdi, %rax\n"
+"mov %rsi, %rax\n"
 "mov %rdx, %rcx\n"
 "rep stosl\n"
 "ret\n");
@@ -209,6 +209,21 @@ unsigned pmFormatPixelsToBytes(pmPixelFormat_t format, unsigned pixels)
 unsigned pmFormatPixelsToBytesP(pmPixelFormat_t *format, unsigned pixels)
 {
     return (pixels * format->BPP + 7) / 8;
+}
+
+pmPixelFormat_t pmFormatFromModeInfo(vidModeInfo_t *modeInfo)
+{
+    pmPixelFormat_t pf;
+    pf.BPP = modeInfo->BitsPerPixel;
+    pf.AlphaBits = modeInfo->AlphaBits;
+    pf.RedBits = modeInfo->RedBits;
+    pf.GreenBits = modeInfo->GreenBits;
+    pf.BlueBits = modeInfo->BlueBits;
+    pf.AlphaShift = modeInfo->AlphaShift;
+    pf.RedShift = modeInfo->RedShift;
+    pf.GreenShift = modeInfo->GreenShift;
+    pf.BlueShift = modeInfo->BlueShift;
+    return pf;
 }
 
 pmColor_t pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b)

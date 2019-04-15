@@ -5,6 +5,7 @@
 #include <syscalls/syscalls.h>
 #include <unistd.h>
 #include <woot/input.h>
+#include <woot/pixmap.h>
 #include <woot/video.h>
 
 static const char *devTypeNames[] =
@@ -61,17 +62,35 @@ int main(int argc, char *argv[])
     }
 
     int inpFd = inpOpenDevice(kbId);
-
     if(inpFd >= 0)
     {
-        printf("Press Escape to exit\n");
+        vidModeInfo_t mi;
+        vidGetModeInfo(displFd, vidGetCurrentMode(displFd), &mi);
+        pmPixelFormat_t pf = pmFormatFromModeInfo(&mi);
+        void *pixels = vidMapPixels(displFd, NULL);
+        pmPixMap_t *pm = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &pf, pixels, 0);
+
+        printf("Press escape to exit or 1 or 2 to do some testing\n");
         inpKeyboardEvent_t event;
         for(;;)
         {
             if(inpGetEvent(inpFd, INP_TIMEOUT_FOREVER, &event) < 0)
                 continue;
-            if(event.Key == VK_ESCAPE && (event.Flags & INP_KBD_EVENT_FLAG_RELEASE))
-                break;
+            if(!(event.Flags & INP_KBD_EVENT_FLAG_RELEASE))
+            {
+                if(event.Key == VK_ESCAPE)
+                    break;
+                else if(event.Key == VK_KEY1)
+                    pmClear(pm, pmColorFromRGB(rand(), rand(), rand()));
+                else if(event.Key == VK_KEY2)
+                {
+                    for(int i = 0; i < 100; ++i)
+                    {
+                        pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
+                        pmLine(pm, rand() % mi.Width, rand() % mi.Height, rand() % mi.Width, rand() % mi.Height, color);
+                    }
+                }
+            }
         }
     }
 

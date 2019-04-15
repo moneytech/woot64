@@ -6,6 +6,7 @@ extern "C" {
 
 #include <sys/types.h>
 #include <woot/rectangle.h>
+#include <woot/video.h>
 
 typedef struct pmPixelFormat
 {
@@ -64,6 +65,8 @@ int pmFormatEqual(pmPixelFormat_t a, pmPixelFormat_t b);
 int pmFormatEqualP(pmPixelFormat_t *a, pmPixelFormat_t *b);
 unsigned pmFormatPixelsToBytes(pmPixelFormat_t format, unsigned pixels);
 unsigned pmFormatPixelsToBytesP(pmPixelFormat_t *format, unsigned pixels);
+pmPixelFormat_t pmFormatFromModeInfo(vidModeInfo_t *modeInfo);
+
 pmColor_t pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b);
 pmColor_t pmColorFromARGB(unsigned char a, unsigned char r, unsigned char g, unsigned char b);
 unsigned pmColorToValue(pmPixelFormat_t *format, pmColor_t color);
@@ -71,6 +74,7 @@ pmColor_t pmColorFromValue(pmPixelFormat_t *format, unsigned value);
 pmColor_t pmColorFromIndex(pmPixMap_t *pixMap, unsigned index);
 pmColor_t *pmPaletteCreate(pmPixelFormat_t *format);
 void pmPaletteDelete(pmColor_t *palette);
+
 pmPixMap_t *pmCreate(int width, int height, pmPixelFormat_t *format);
 void pmDelete(pmPixMap_t *pixMap);
 void pmInvalidate(pmPixMap_t *pixMap, int x, int y, int w, int h);

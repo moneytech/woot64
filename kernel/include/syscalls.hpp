@@ -41,6 +41,16 @@
 #define SYS_INDEV_CLOSE         0x315
 #define SYS_INDEV_GET_EVENT     0x316
 
+#define SYS_THREAD_CREATE       0x320
+#define SYS_THREAD_DELETE       0x321
+#define SYS_THREAD_RESUME       0x322
+#define SYS_THREAD_SUSPEND      0x323
+#define SYS_THREAD_SLEEP        0x324
+#define SYS_THREAD_WAIT         0x325
+#define SYS_THREAD_ABORT        0x326
+#define SYS_THREAD_DAEMONIZE    0x327
+#define SYS_THREAD_GET_ID       0x328
+
 class SysCalls
 {
     typedef intn (*SysCallHandler)(...);
@@ -84,6 +94,16 @@ class SysCalls
     static long sysInDevOpen(int id);
     static long sysInDevClose(int fd);
     static long sysInDevGetEvent(int fd, int timeout, struct inpEvent *event);
+
+    static long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal);
+    static long sysThreadDelete(int fd);
+    static long sysThreadResume(int fd);
+    static long sysThreadSuspend(int fd);
+    static long sysThreadSleep(int fd, int ms);
+    static long sysThreadWait(int fd, int timeout);
+    static long sysThreadAbort(int fd, int retVal);
+    static long sysThreadDaemonize();
+    static long sysThreadGetId(int fd);
 public:
     static void Initialize();
 };

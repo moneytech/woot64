@@ -580,6 +580,62 @@ long SysCalls::sysInDevGetEvent(int fd, int timeout, struct inpEvent *event)
     return res;
 }
 
+long SysCalls::sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
+{
+    return Process::GetCurrent()->NewThread(name, entry, arg, retVal);
+}
+
+long SysCalls::sysThreadDelete(int fd)
+{
+    return Process::GetCurrent()->DeleteThread(fd);
+}
+
+long SysCalls::sysThreadResume(int fd)
+{
+    return Process::GetCurrent()->ResumeThread(fd);
+}
+
+long SysCalls::sysThreadSuspend(int fd)
+{
+    if(fd < 0)
+    {
+        Thread::GetCurrent()->Suspend();
+        return ESUCCESS;
+    }
+    return Process::GetCurrent()->SuspendThread(fd);
+}
+
+long SysCalls::sysThreadSleep(int fd, int ms)
+{
+    if(fd < 0) return Time::Sleep(ms, false);
+    return Process::GetCurrent()->SleepThread(fd, ms);
+}
+
+long SysCalls::sysThreadWait(int fd, int timeout)
+{
+    return Process::GetCurrent()->WaitThread(fd, timeout);
+}
+
+long SysCalls::sysThreadAbort(int fd, int retVal)
+{
+    if(fd < 0) Thread::Finalize(Thread::GetCurrent(), retVal);
+    return Process::GetCurrent()->AbortThread(fd, retVal);
+}
+
+long SysCalls::sysThreadDaemonize()
+{
+    Thread::GetCurrent()->Finished->Signal(nullptr);
+    return ESUCCESS;
+}
+
+long SysCalls::sysThreadGetId(int fd)
+{
+    if(fd < 0) return Thread::GetCurrent()->Id;
+    Thread *t = Process::GetCurrent()->GetThread(fd);
+    if(!t) return -EINVAL;
+    return t->Id;
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -620,6 +676,16 @@ void SysCalls::Initialize()
     Handlers[SYS_INDEV_OPEN] = (SysCallHandler)sysInDevOpen;
     Handlers[SYS_INDEV_CLOSE] = (SysCallHandler)sysInDevClose;
     Handlers[SYS_INDEV_GET_EVENT] = (SysCallHandler)sysInDevGetEvent;
+
+    Handlers[SYS_THREAD_CREATE] = (SysCallHandler)sysThreadCreate;
+    Handlers[SYS_THREAD_DELETE] = (SysCallHandler)sysThreadDelete;
+    Handlers[SYS_THREAD_RESUME] = (SysCallHandler)sysThreadResume;
+    Handlers[SYS_THREAD_SUSPEND] = (SysCallHandler)sysThreadSuspend;
+    Handlers[SYS_THREAD_SLEEP] = (SysCallHandler)sysThreadSleep;
+    Handlers[SYS_THREAD_WAIT] = (SysCallHandler)sysThreadWait;
+    Handlers[SYS_THREAD_ABORT] = (SysCallHandler)sysThreadAbort;
+    Handlers[SYS_THREAD_DAEMONIZE] = (SysCallHandler)sysThreadDaemonize;
+    Handlers[SYS_THREAD_GET_ID] = (SysCallHandler)sysThreadGetId;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);
