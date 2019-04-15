@@ -1,3 +1,5 @@
+wm.c
+woot/wm.h
 ipc.c
 misc.c
 pixmap.c

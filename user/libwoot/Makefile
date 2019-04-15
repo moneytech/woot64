@@ -9,7 +9,8 @@ OBJS = \
 	rectangle.o \
 	rpc.o \
 	thread.o \
-	video.o
+	video.o \
+	wm.o
 
 TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(TOP_DIR)/root/lib

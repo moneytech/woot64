@@ -77,12 +77,6 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     }
     else DEBUG("Couldn't start '%s'\n", procExec);
 
-    //DEBUG("> ");
-    //char line[64] = { 0 };
-    //DEBUG_IN(line, sizeof(line));
-    //DEBUG("\n%s\n", line);
-    //for(;;) cpuWaitForInterrupt(0);
-
     Module::CleanupAll();
 
     EXT2::Cleanup();
