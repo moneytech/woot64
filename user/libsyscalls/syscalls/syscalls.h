@@ -1,5 +1,6 @@
 #pragma once
 
+// KERNEL_MATCH: syscalls.hpp
 #define SYS_read                0
 #define SYS_write               1
 #define SYS_open                2
@@ -46,6 +47,11 @@
 #define SYS_THREAD_ABORT        0x326
 #define SYS_THREAD_DAEMONIZE    0x327
 #define SYS_THREAD_GET_ID       0x328
+
+#define SYS_PROCESS_CREATE      0x330
+#define SYS_PROCESS_DELETE      0x331
+#define SYS_PROCESS_WAIT        0x332
+#define SYS_PROCESS_ABORT       0x333
 
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
@@ -156,6 +162,11 @@ long sysThreadWait(int fd, int timeout);
 long sysThreadAbort(int fd, int retVal);
 long sysThreadDaemonize();
 long sysThreadGetId(int fd);
+
+long sysProcessCreate(const char *cmdline);
+long sysProcessDelete(int fd);
+long sysProcessWait(int fd, int timeout);
+long sysProcessAbort(int fd, int result);
 
 #ifdef __cplusplus
 }

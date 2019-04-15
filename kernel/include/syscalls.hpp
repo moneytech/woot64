@@ -2,6 +2,7 @@
 
 #include <types.h>
 
+// USER_MATCH: libsyscalls/syscalls.h
 // linux compatible syscalls
 #define SYS_read            0
 #define SYS_write           1
@@ -50,6 +51,11 @@
 #define SYS_THREAD_ABORT        0x326
 #define SYS_THREAD_DAEMONIZE    0x327
 #define SYS_THREAD_GET_ID       0x328
+
+#define SYS_PROCESS_CREATE      0x330
+#define SYS_PROCESS_DELETE      0x331
+#define SYS_PROCESS_WAIT        0x332
+#define SYS_PROCESS_ABORT       0x333
 
 class SysCalls
 {

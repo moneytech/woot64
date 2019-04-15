@@ -215,3 +215,23 @@ long sysThreadGetId(int fd)
 {
     return __syscall1(SYS_THREAD_GET_ID, fd);
 }
+
+long sysProcessCreate(const char *cmdline)
+{
+    return __syscall1(SYS_PROCESS_CREATE, (long)cmdline);
+}
+
+long sysProcessDelete(int fd)
+{
+    return __syscall1(SYS_PROCESS_DELETE, fd);
+}
+
+long sysProcessWait(int fd, int timeout)
+{
+    return __syscall2(SYS_PROCESS_WAIT, fd, timeout);
+}
+
+long sysProcessAbort(int fd, int result)
+{
+    return __syscall2(SYS_PROCESS_ABORT, fd, result);
+}
