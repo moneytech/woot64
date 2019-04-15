@@ -1,8 +1,10 @@
+ipc.c
 misc.c
 pixmap.c
 process.c
 rectangle.c
 thread.c
+woot/ipc.h
 woot/pixmap.h
 woot/process.h
 woot/rectangle.h

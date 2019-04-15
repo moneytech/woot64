@@ -2,6 +2,7 @@ SHARED_LIB = libwoot.so
 STATIC_LIB = libwoot.a
 OBJS = \
 	input.o \
+	ipc.o \
 	misc.o \
 	pixmap.o \
 	process.o \

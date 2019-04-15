@@ -53,6 +53,15 @@
 #define SYS_PROCESS_WAIT        0x332
 #define SYS_PROCESS_ABORT       0x333
 
+#define SYS_IPC_SEND_MESSAGE    0x340
+#define SYS_IPC_GET_MESSAGE     0x341
+#define SYS_IPC_CREATE_SHMEM    0x342
+#define SYS_IPC_OPEN_SHMEM      0x343
+#define SYS_IPC_CLOSE_SHMEM     0x344
+#define SYS_IPC_GET_SHMEM_SIZE  0x345
+#define SYS_IPC_MAP_SHMEM       0x346
+#define SYS_IPC_UNMAP_SHMEM     0x347
+
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
@@ -167,6 +176,15 @@ long sysProcessCreate(const char *cmdline);
 long sysProcessDelete(int fd);
 long sysProcessWait(int fd, int timeout);
 long sysProcessAbort(int fd, int result);
+
+long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
+long sysIPCGetMessage(void *msg, int timeout);
+long sysIPCCreateSharedMem(const char *name, unsigned size);
+long sysIPCOpenSharedMem(const char *name);
+long sysIPCCloseSharedMem(int fd);
+long sysIPCGetSharedMemSize(int fd);
+void *sysIPCMapSharedMem(int fd, void *hint, unsigned flags);
+long sysIPCUnMapSharedMem(int fd, void *addr);
 
 #ifdef __cplusplus
 }

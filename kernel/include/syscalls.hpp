@@ -4,22 +4,22 @@
 
 // USER_MATCH: libsyscalls/syscalls.h
 // linux compatible syscalls
-#define SYS_read            0
-#define SYS_write           1
-#define SYS_open            2
-#define SYS_close           3
-#define SYS_stat            4
-#define SYS_fstat           5
-#define SYS_lseek           8
-#define SYS_mmap            9
-#define SYS_munmap          11
-#define SYS_brk             12
-#define SYS_readv           19
-#define SYS_writev          20
-#define SYS_exit            60
-#define SYS_arch_prctl      158
-#define SYS_set_tid_address 218
-#define SYS_exit_group      231
+#define SYS_read                0
+#define SYS_write               1
+#define SYS_open                2
+#define SYS_close               3
+#define SYS_stat                4
+#define SYS_fstat               5
+#define SYS_lseek               8
+#define SYS_mmap                9
+#define SYS_munmap              11
+#define SYS_brk                 12
+#define SYS_readv               19
+#define SYS_writev              20
+#define SYS_exit                60
+#define SYS_arch_prctl          158
+#define SYS_set_tid_address     218
+#define SYS_exit_group          231
 
 // woot specific syscalls
 #define SYS_FB_GET_COUNT        0x300
@@ -56,6 +56,15 @@
 #define SYS_PROCESS_DELETE      0x331
 #define SYS_PROCESS_WAIT        0x332
 #define SYS_PROCESS_ABORT       0x333
+
+#define SYS_IPC_SEND_MESSAGE    0x340
+#define SYS_IPC_GET_MESSAGE     0x341
+#define SYS_IPC_CREATE_SHMEM    0x342
+#define SYS_IPC_OPEN_SHMEM      0x343
+#define SYS_IPC_CLOSE_SHMEM     0x344
+#define SYS_IPC_GET_SHMEM_SIZE  0x345
+#define SYS_IPC_MAP_SHMEM       0x346
+#define SYS_IPC_UNMAP_SHMEM     0x347
 
 class SysCalls
 {
@@ -115,6 +124,16 @@ class SysCalls
     static long sysProcessDelete(int fd);
     static long sysProcessWait(int fd, int timeout);
     static long sysProcessAbort(int fd, int result);
+
+    static long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
+    static long sysIPCGetMessage(void *msg, int timeout);
+    static long sysIPCCreateSharedMem(const char *name, unsigned size);
+    static long sysIPCOpenSharedMem(const char *name);
+    static long sysIPCCloseSharedMem(int fd);
+    static long sysIPCGetSharedMemSize(int fd);
+    static long sysIPCMapSharedMem(int fd, uintptr_t hint, unsigned flags);
+    static long sysIPCUnMapSharedMem(int fd, uintptr_t addr);
+
 public:
     static void Initialize();
 };

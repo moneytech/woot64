@@ -9,6 +9,7 @@
 #include <misc.hpp>
 #include <paging.hpp>
 #include <process.hpp>
+#include <sharedmem.hpp>
 #include <string.hpp>
 #include <stringbuilder.hpp>
 #include <syscalls.hpp>
@@ -656,6 +657,82 @@ long SysCalls::sysProcessAbort(int fd, int result)
     return Process::GetCurrent()->AbortProcess(fd, result);
 }
 
+long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
+{
+    return IPC::SendMessage(dst, num, flags, payload, payloadSize);
+}
+
+long SysCalls::sysIPCGetMessage(void *msg, int timeout)
+{
+    return IPC::GetMessage((ipcMessage *)msg, timeout);
+}
+
+long SysCalls::sysIPCCreateSharedMem(const char *name, unsigned size)
+{
+    if(!size) return -EINVAL;
+    NamedSharedMem *shm = new NamedSharedMem(name, align(size, PAGE_SIZE), false);
+    return Process::GetCurrent()->CreateNamedObjectHandle(shm);
+}
+
+long SysCalls::sysIPCOpenSharedMem(const char *name)
+{
+    NamedObject *no = NamedObject::Get(name);
+    if(!no) return -ENOENT;
+    NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);
+    if(!shm)
+    {
+        no->Put();
+        return -EINVAL;
+    }
+    int handle = Process::GetCurrent()->CreateNamedObjectHandle(shm);
+    if(handle < 0)
+        no->Put();
+    return handle;
+}
+
+long SysCalls::sysIPCCloseSharedMem(int fd)
+{
+    return Process::GetCurrent()->Close(fd);
+}
+
+long SysCalls::sysIPCGetSharedMemSize(int fd)
+{
+    NamedObject *no = Process::GetCurrent()->GetNamedObject(fd);
+    if(!no) return -EBADF;
+    NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);
+    if(!shm) return -EBADF;
+    return shm->GetSize();
+}
+
+long SysCalls::sysIPCMapSharedMem(int fd, uintptr_t hint, unsigned flags)
+{
+    uintptr_t va = hint;
+
+    Process *cp = Process::GetCurrent();
+    NamedObject *no = cp->GetNamedObject(fd);
+    if(!no) return -EBADF;
+    NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);
+    if(!shm) return -EBADF;
+
+    if(!va) va = cp->SBrk(shm->GetSize(), false);
+
+    int res = shm->Map(cp, va, true, flags & 1);
+    if(res < 0) return res;
+
+    return va;
+}
+
+long SysCalls::sysIPCUnMapSharedMem(int fd, uintptr_t addr)
+{
+    Process *cp = Process::GetCurrent();
+    NamedObject *no = cp->GetNamedObject(fd);
+    if(!no) return -EBADF;
+    NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);
+    if(!shm) return -EBADF;
+
+    return shm->UnMap(cp, addr);
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -711,6 +788,15 @@ void SysCalls::Initialize()
     Handlers[SYS_PROCESS_DELETE] = (SysCallHandler)sysProcessDelete;
     Handlers[SYS_PROCESS_WAIT] = (SysCallHandler)sysProcessWait;
     Handlers[SYS_PROCESS_ABORT] = (SysCallHandler)sysProcessAbort;
+
+    Handlers[SYS_IPC_SEND_MESSAGE] = (SysCallHandler)sysIPCSendMessage;
+    Handlers[SYS_IPC_GET_MESSAGE] = (SysCallHandler)sysIPCGetMessage;
+    Handlers[SYS_IPC_CREATE_SHMEM] = (SysCallHandler)sysIPCCreateSharedMem;
+    Handlers[SYS_IPC_OPEN_SHMEM] = (SysCallHandler)sysIPCOpenSharedMem;
+    Handlers[SYS_IPC_CLOSE_SHMEM] = (SysCallHandler)sysIPCCloseSharedMem;
+    Handlers[SYS_IPC_GET_SHMEM_SIZE] = (SysCallHandler)sysIPCGetSharedMemSize;
+    Handlers[SYS_IPC_MAP_SHMEM] = (SysCallHandler)sysIPCMapSharedMem;
+    Handlers[SYS_IPC_UNMAP_SHMEM] = (SysCallHandler)sysIPCUnMapSharedMem;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

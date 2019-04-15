@@ -235,3 +235,43 @@ long sysProcessAbort(int fd, int result)
 {
     return __syscall2(SYS_PROCESS_ABORT, fd, result);
 }
+
+long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
+{
+    return __syscall5(SYS_IPC_SEND_MESSAGE, dst, num, flags, (long)payload, payloadSize);
+}
+
+long sysIPCGetMessage(void *msg, int timeout)
+{
+    return __syscall2(SYS_IPC_GET_MESSAGE, (long)msg, timeout);
+}
+
+long sysIPCCreateSharedMem(const char *name, unsigned size)
+{
+    return __syscall2(SYS_IPC_CREATE_SHMEM, (long)name, size);
+}
+
+long sysIPCOpenSharedMem(const char *name)
+{
+    return __syscall1(SYS_IPC_OPEN_SHMEM, (long)name);
+}
+
+long sysIPCCloseSharedMem(int fd)
+{
+    return __syscall1(SYS_IPC_CLOSE_SHMEM, fd);
+}
+
+long sysIPCGetSharedMemSize(int fd)
+{
+    return __syscall1(SYS_IPC_GET_SHMEM_SIZE, fd);
+}
+
+void *sysIPCMapSharedMem(int fd, void *hint, unsigned flags)
+{
+    return (void *)__syscall3(SYS_IPC_MAP_SHMEM, fd, (long)hint, flags);
+}
+
+long sysIPCUnMapSharedMem(int fd, void *addr)
+{
+    return __syscall2(SYS_IPC_UNMAP_SHMEM, fd, (long)addr);
+}
