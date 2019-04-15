@@ -110,6 +110,11 @@ class SysCalls
     static long sysThreadAbort(int fd, int retVal);
     static long sysThreadDaemonize();
     static long sysThreadGetId(int fd);
+
+    static long sysProcessCreate(const char *cmdline);
+    static long sysProcessDelete(int fd);
+    static long sysProcessWait(int fd, int timeout);
+    static long sysProcessAbort(int fd, int result);
 public:
     static void Initialize();
 };

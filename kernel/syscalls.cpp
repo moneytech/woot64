@@ -636,6 +636,26 @@ long SysCalls::sysThreadGetId(int fd)
     return t->Id;
 }
 
+long SysCalls::sysProcessCreate(const char *cmdline)
+{
+    return Process::GetCurrent()->NewProcess(cmdline);
+}
+
+long SysCalls::sysProcessDelete(int fd)
+{
+    return Process::GetCurrent()->DeleteProcess(fd);
+}
+
+long SysCalls::sysProcessWait(int fd, int timeout)
+{
+    return Process::GetCurrent()->WaitProcess(fd, timeout);
+}
+
+long SysCalls::sysProcessAbort(int fd, int result)
+{
+    return Process::GetCurrent()->AbortProcess(fd, result);
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -686,6 +706,11 @@ void SysCalls::Initialize()
     Handlers[SYS_THREAD_ABORT] = (SysCallHandler)sysThreadAbort;
     Handlers[SYS_THREAD_DAEMONIZE] = (SysCallHandler)sysThreadDaemonize;
     Handlers[SYS_THREAD_GET_ID] = (SysCallHandler)sysThreadGetId;
+
+    Handlers[SYS_PROCESS_CREATE] = (SysCallHandler)sysProcessCreate;
+    Handlers[SYS_PROCESS_DELETE] = (SysCallHandler)sysProcessDelete;
+    Handlers[SYS_PROCESS_WAIT] = (SysCallHandler)sysProcessWait;
+    Handlers[SYS_PROCESS_ABORT] = (SysCallHandler)sysProcessAbort;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);
