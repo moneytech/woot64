@@ -16,6 +16,7 @@
 #define SYS_brk                 12
 #define SYS_readv               19
 #define SYS_writev              20
+#define SYS_getpid              39
 #define SYS_exit                60
 #define SYS_arch_prctl          158
 #define SYS_set_tid_address     218
@@ -85,6 +86,7 @@ class SysCalls
     static long sys_brk(uintptr_t brk);
     static long sys_readv(int fd, const struct iovec *vec, size_t vlen);
     static long sys_writev(int fd, const struct iovec *vec, size_t vlen);
+    static long sys_getpid();
     static long sys_exit(intn retVal);
     static long sys_arch_prctl(int code, uintptr_t addr);
     static long sys_set_tid_address(int *tidptr);

@@ -19,10 +19,10 @@ all: $(OUTFILE) $(OUTFILE_STATIC)
 static: $(OUTFILE_STATIC)
 
 $(OUTFILE_STATIC): $(OBJS)
-	$(CC) -static $(LDFLAGS) $? -o $@ $(LIBS)
+	$(CC) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 $(OUTFILE): $(OBJS)
-	$(CC) $(LDFLAGS) $? -o $@ $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 install: $(BIN_DIR)/$(OUTFILE) $(BIN_DIR)/$(OUTFILE_STATIC)
 

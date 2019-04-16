@@ -359,6 +359,11 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
     return res;
 }
 
+long SysCalls::sys_getpid()
+{
+    return Process::GetCurrent()->Id;
+}
+
 long SysCalls::sys_exit(intn retVal)
 {
     Thread::Finalize(nullptr, retVal);
@@ -749,6 +754,7 @@ void SysCalls::Initialize()
     Handlers[SYS_brk] = (SysCallHandler)sys_brk;
     Handlers[SYS_readv] = (SysCallHandler)sys_readv;
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
+    Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;

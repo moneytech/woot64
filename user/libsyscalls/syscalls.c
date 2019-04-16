@@ -60,6 +60,11 @@ long sys_writev(int fd, const void *vec, size_t vlen)
     return __syscall3(SYS_writev, fd, (long)vec, vlen);
 }
 
+long sys_getpid()
+{
+    return __syscall0(SYS_getpid);
+}
+
 long sys_exit(long error_code)
 {
     return __syscall1(SYS_exit, error_code);

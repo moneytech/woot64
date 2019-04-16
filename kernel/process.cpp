@@ -279,7 +279,7 @@ Process *Process::GetByID(pid_t pid)
     if(!pid) return Process::GetCurrent();
     for(Process *proc : processList)
     {
-        if(pid == proc->ID)
+        if(pid == proc->Id)
             return proc;
     }
     return nullptr;
@@ -354,10 +354,10 @@ void Process::Dump()
 {
     DEBUG("Process dump:\n");
     Process *cp = Process::GetCurrent();
-    DEBUG("Current process: %s (%d)\n", cp ? cp->Name : "no current process", cp ? cp->ID : -1);
+    DEBUG("Current process: %s (%d)\n", cp ? cp->Name : "no current process", cp ? cp->Id : -1);
     for(Process *p : processList)
     {
-        DEBUG("Process: %s (%d)\n", p->Name, p->ID);
+        DEBUG("Process: %s (%d)\n", p->Name, p->Id);
         for(Thread *t : p->Threads)
             DEBUG(" %s(%d; %p)\n"
                   "   st %s\n"
@@ -391,7 +391,7 @@ Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, b
     lock(true, "processLock"),
     UserStackPtr(USER_END),
     Handles(8, 8, MAX_HANDLES),
-    ID(id.GetNext()),
+    Id(id.GetNext()),
     Messages(64),
     Parent(Process::GetCurrent()),
     Name(String::Duplicate(name)),
@@ -740,7 +740,7 @@ int Process::NewProcess(const char *cmdline)
     int res = allocHandleSlot(Handle(p));
     if(res < 0)
     {
-        Process::Finalize(p->ID, -127);
+        Process::Finalize(p->Id, -127);
         delete p;
         return res;
     }
@@ -755,7 +755,7 @@ int Process::DeleteProcess(int handle)
     if(!p) return -EINVAL;
     int res = Close(handle);
     if(res) return res;
-    Process::Finalize(p->ID, -127);
+    Process::Finalize(p->Id, -127);
     delete p;
     return ESUCCESS;
 }
@@ -777,7 +777,7 @@ int Process::AbortProcess(int handle, int result)
 {
     Process *p = Process::GetProcess(handle);
     if(!p) return -EINVAL;
-    Process::Finalize(p->ID, result);
+    Process::Finalize(p->Id, result);
     return ESUCCESS;
 }
 
@@ -904,7 +904,7 @@ Process::~Process()
     bool lockAcquired = listLock.Acquire(0, true);
     for(ELF *elf : Images)
         if(elf) delete elf;
-    Paging::UnmapRange(AddressSpace, 0, KERNEL_BASE);
+    Paging::UnmapRange(AddressSpace, 0, USER_END);
     if(deleteAddressSpace) Paging::FreeFrame(AddressSpace);
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);
     processList.Remove(this, nullptr, false);

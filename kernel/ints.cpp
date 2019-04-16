@@ -97,7 +97,7 @@ void Ints::CommonHandler(Ints::State *state)
                   state->InterruptNumber,
                   state->InterruptNumber < IRQs::Base ? excNames[state->InterruptNumber] : "hardware interrupt");
 
-            if(cp) DEBUG("Process: %d (%s)\n", cp->ID, cp->Name);
+            if(cp) DEBUG("Process: %d (%s)\n", cp->Id, cp->Name);
             if(ct)
             {
                 ++ct->ExcCount;

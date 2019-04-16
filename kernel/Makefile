@@ -76,7 +76,8 @@ COMPILE_FLAGS = \
 	-D__WOOT__ \
 	-ggdb \
 	-I$(TOP_DIR)/kernel/include \
-	-fno-pic
+	-fno-pic \
+	-Wno-undefined-internal
 		
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions

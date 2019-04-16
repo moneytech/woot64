@@ -356,7 +356,8 @@ const char *ELF::GetSymbolName(uintptr_t addr, ptrdiff_t *delta)
             {
                 minDelta = delta;
                 minSymName = symName;
-                if(!minDelta) break;
+                if(!minDelta)
+                    break;
             }
         }
     }

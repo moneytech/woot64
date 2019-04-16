@@ -10,7 +10,7 @@ int IPC::SendMessage(pid_t dst, int number, int flags, void *payload, size_t pay
 {
     if(!dst)
     {   // broadcast message
-        ipcMessage msg = { number, flags, ids.GetNext(), Process::GetCurrent()->ID };
+        ipcMessage msg = { number, flags, ids.GetNext(), Process::GetCurrent()->Id };
         Memory::Zero(msg.Data, sizeof(msg.Data));
         if(payload) Memory::Move(msg.Data, payload, min(sizeof(msg.Data), payloadSize));
         Process::ForEach([](Process *proc, void *arg) -> bool
@@ -23,7 +23,7 @@ int IPC::SendMessage(pid_t dst, int number, int flags, void *payload, size_t pay
 
     Process *dstProc = Process::GetByID(dst);
     if(!dstProc) return -ESRCH;
-    ipcMessage msg = { number, flags, ids.GetNext(), Process::GetCurrent()->ID };
+    ipcMessage msg = { number, flags, ids.GetNext(), Process::GetCurrent()->Id };
     Memory::Zero(msg.Data, sizeof(msg.Data));
     if(payload) Memory::Move(msg.Data, payload, min(sizeof(msg.Data), payloadSize));
     int res = dstProc->Messages.Write(msg, 100);

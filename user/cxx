@@ -1,6 +1,17 @@
 #!/bin/sh
 
-COMMAND=clang++
-ARGS="-Wno-unused-command-line-argument -ggdb -nostdinc"
-$COMMAND $ARGS "$@"
+#!/bin/sh
 
+COMMAND=clang++
+
+ARGS="-Wno-unused-command-line-argument \
+-ggdb -nostdinc -nostdinc++ -nostdlib -fno-exceptions -fno-rtti \
+-Wl,-z,max-page-size=4096 \
+-I$TOP_DIR/user/libsyscalls \
+-I$TOP_DIR/user/libc/include \
+-I$TOP_DIR/user/libwoot \
+-L$TOP_DIR/user/libsyscalls \
+-L$TOP_DIR/user/libc/lib \
+-L$TOP_DIR/user/libwoot"
+
+$COMMAND $ARGS "$@"

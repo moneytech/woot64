@@ -81,14 +81,20 @@ int main(int argc, char *argv[])
                 if(event.Key == VK_ESCAPE)
                     break;
                 else if(event.Key == VK_KEY1)
-                    pmClear(pm, pmColorFromRGB(rand(), rand(), rand()));
+                {
+                    if(pm) pmClear(pm, pmColorFromRGB(rand(), rand(), rand()));
+                    else printf("doing nothing\n");
+                }
                 else if(event.Key == VK_KEY2)
                 {
-                    for(int i = 0; i < 100; ++i)
+                    if(pm)
                     {
-                        pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
-                        pmLine(pm, rand() % mi.Width, rand() % mi.Height, rand() % mi.Width, rand() % mi.Height, color);
-                    }
+                        for(int i = 0; i < 100; ++i)
+                        {
+                            pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
+                            pmLine(pm, rand() % mi.Width, rand() % mi.Height, rand() % mi.Width, rand() % mi.Height, color);
+                        }
+                    } else printf("doing nothing\n");
                 }
             }
         }

@@ -284,8 +284,24 @@ void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
                     if(!(pml1[pml1idx] & 1))
                         continue;
                     FreeFrame(pml1[pml1idx] & ~PAGE_MASK);
+                    pml1[pml1idx] = 0;
                     InvalidatePage(va);
                 }
+
+                /*bool freeIt = true;
+                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                {
+                    if(pml1[pml1idx] & 1)
+                    {
+                        freeIt = false;
+                        break;
+                    }
+                }
+                if(freeIt)
+                {
+                    FreeFrame(pml2[pml2idx] & ~PAGE_MASK);
+                    pml2[pml2idx] = 0;
+                }*/
             }
         }
     }

@@ -3,7 +3,8 @@ SUBDIRS = \
 	libc \
 	libwoot \
 	init \
-	usertest
+	usertest \
+	windowmanager
 
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done

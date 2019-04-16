@@ -13,6 +13,7 @@
 #define SYS_brk                 12
 #define SYS_readv               19
 #define SYS_writev              20
+#define SYS_getpid              39
 #define SYS_exit                60
 #define SYS_arch_prctl          158
 #define SYS_set_tid_address     218
@@ -137,6 +138,7 @@ int sys_munmap(void *addr, size_t len);
 void *sys_brk(void *brk);
 long sys_readv(int fd, const void *vec, size_t vlen);
 long sys_writev(int fd, const void *vec, size_t vlen);
+long sys_getpid();
 long sys_exit(long error_code);
 int sys_arch_prctl(int code, uintptr_t addr);
 int sys_set_tid_address(int *tidptr);

@@ -52,6 +52,29 @@ static uint fbConsoleHeight = 25;
 static uint fbX = 0;
 static uint fbY = 0;
 
+#if defined(__x86_64__) || defined(__amd64__)
+extern "C" void __qmemcpy(void *dst, void *src, size_t n);
+extern "C" void __lmemset(void *dst, unsigned val, size_t n);
+
+asm(INLINE_ASM_SYNTAX
+"__qmemcpy:\n"
+"cld\n"
+"mov rcx, rdx\n"
+"rep movsq\n"
+"ret\n"
+NORMAL_ASM_SYNTAX);
+
+asm(INLINE_ASM_SYNTAX
+"__lmemset:\n"
+"cld\n"
+"mov rax, rsi\n"
+"mov rcx, rdx\n"
+"rep stosd\n"
+"ret\n"
+NORMAL_ASM_SYNTAX);
+
+#endif // defined(__x86_64__) || defined(__amd64__)
+
 static inline uint32_t fbMakeColor(uint8_t r, uint8_t g, uint8_t b)
 {
     uint32_t color = 0;
@@ -195,10 +218,17 @@ int64_t debugWrite(const void *buffer, int64_t n)
         }
         if(fbY >= fbConsoleHeight)
         {
+#if defined(__x86_64__) || defined(__amd64__)
+            __qmemcpy(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
+                      (multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight)) / 8);
+            __lmemset(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
+                      backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
+#else
             Memory::Move(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
                          multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight));
             Memory::Set32(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
                           backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
+#endif // defined(__x86_64__) || defined(__amd64__)
             fbX = 0;
             --fbY;
         }

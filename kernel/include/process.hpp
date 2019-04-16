@@ -123,7 +123,7 @@ private:
 
     uintptr_t brk(uintptr_t brk, bool allocPages);
 public:
-    pid_t ID;
+    pid_t Id;
     Process *Parent;
     char *Name;
     uintptr_t AddressSpace;
