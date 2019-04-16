@@ -6,6 +6,8 @@
 #include <paging.hpp>
 #include <sysdefs.h>
 
+extern "C" void *_utext_start;
+extern "C" void *_utext_end;
 extern "C" void *_end;
 
 uintptr_t Paging::memoryTop = (uintptr_t)&_end;
@@ -58,6 +60,16 @@ void Paging::Initialize(multiboot_info_t *mboot)
 
     // map whole physical memory to kernel space
     MapPages(kernelAddressSpace, KERNEL_BASE, 0, false, true, ramSize >> PAGE_SHIFT);
+
+    // map .text.user section as user code
+    uintptr_t utext_start = (uintptr_t)&_utext_start;
+    uintptr_t utext_end = (uintptr_t)&_utext_end;
+    utext_start &= ~PAGE_MASK;
+    utext_end = align(utext_end, PAGE_SIZE);
+    size_t utext_pages = (utext_end - utext_start) >> PAGE_SHIFT;
+    MapPages(kernelAddressSpace, utext_start,
+             GetPhysicalAddress(kernelAddressSpace, utext_start),
+             true, false, utext_pages);
 
     // TODO: allocate ALL (and never release) kernel PML4 entries to ensure kernel
     //       address space coherency over all processes

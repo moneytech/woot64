@@ -13,11 +13,12 @@
 #include <semaphore.hpp>
 #include <string.hpp>
 #include <stringbuilder.hpp>
+#include <syscalls.hpp>
 #include <sysdefs.h>
 #include <thread.hpp>
 #include <tokenizer.hpp>
 
-extern "C" void userThreadReturn();
+extern "C" void userThreadReturn(int retVal);
 
 #define MAKE_STR(s) #s
 #define STRINGIFY(s) MAKE_STR(s)
@@ -36,12 +37,20 @@ INLINE_ASM_SYNTAX
 NORMAL_ASM_SYNTAX
 );
 #endif // __i386__
-#ifdef __amd64__
-extern "C" __attribute__((section(".text.user"))) void userThreadReturn()
-{
-
-}
-#endif // __amd64__
+#if defined(__x86_64__) || defined(__amd64__)
+asm(
+INLINE_ASM_SYNTAX
+".section .text.user\n"
+".globl userThreadReturn\n"
+"userThreadReturn:\n"
+"mov rsi, rax\n"
+"mov rdi, -1\n"
+"mov rax, " STRINGIFY(SYS_THREAD_ABORT) "\n"
+"syscall\n"
+".section .text\n"
+NORMAL_ASM_SYNTAX
+);
+#endif // defined(__x86_64__) || defined(__amd64__)
 
 
 Sequencer<pid_t> Process::id(1);
@@ -177,14 +186,12 @@ int Process::processEntryPoint(const char *cmdline)
     ct->PThread->robust_list.head = &ct->PThread->robust_list.head;
     ct->PThread->next = ct->PThread;
 
-    //ct->PThread->map_base = (unsigned char *)0x1234;
-
     ct->FS = (uintptr_t)ct->PThread;
     cpuWriteMSR(0xC0000100, ct->FS);
     cpuWriteMSR(0xC0000101, ct->GS);
 
     proc->lock.Release();
-    cpuEnterUserMode(stackPointer, (uintptr_t)elf->EntryPoint);
+    cpuEnterUserMode(ct->UserArgument, stackPointer, (uintptr_t)elf->EntryPoint);
     return 0;
 }
 
@@ -195,10 +202,9 @@ int Process::userThreadEntryPoint(void *arg)
     // allocate and initialize user stack
     uintptr_t *stack = (uintptr_t *)ct->AllocStack(&ct->UserStack, ct->UserStackSize);
     *(--stack) = 0; // dummy ebp
-    *(--stack) = ct->UserArgument;
     *(--stack) = (uintptr_t)userThreadReturn;
 
-    cpuEnterUserMode((uintptr_t)stack, (uintptr_t)ct->UserEntryPoint);
+    cpuEnterUserMode(ct->UserArgument, (uintptr_t)stack, (uintptr_t)ct->UserEntryPoint);
     return 0;
 }
 

@@ -276,7 +276,7 @@ void Debug::DebugFmt(const char *fmt, ...)
 {
     VarArgs args;
     VarArgStart(args, fmt);
-    DebugStreamLock.Acquire(1000, false);
+    DebugStreamLock.Acquire(5000, false);
     DebugStream.VWriteFmt(fmt, args);
     DebugStreamLock.Release();
     VarArgEnd(args);
@@ -284,7 +284,7 @@ void Debug::DebugFmt(const char *fmt, ...)
 
 int Debug::DebugIn(void *buffer, size_t bufSize)
 {
-    DebugStreamLock.Acquire(1000, false);
+    DebugStreamLock.Acquire(5000, false);
     int res = DebugStream.ReadLine((char *)buffer, bufSize);
     DebugStreamLock.Release();
     return res;
@@ -292,7 +292,7 @@ int Debug::DebugIn(void *buffer, size_t bufSize)
 
 int Debug::DebugRead(void *buffer, size_t count)
 {
-    DebugStreamLock.Acquire(1000, false);
+    DebugStreamLock.Acquire(5000, false);
     int res = DebugStream.Read(buffer, count);
     DebugStreamLock.Release();
     return res;
@@ -300,7 +300,7 @@ int Debug::DebugRead(void *buffer, size_t count)
 
 int Debug::DebugWrite(const void *buffer, size_t count)
 {
-    DebugStreamLock.Acquire(1000, false);
+    DebugStreamLock.Acquire(5000, false);
     int res = DebugStream.Write(buffer, count);
     DebugStreamLock.Release();
     return res;

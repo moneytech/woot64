@@ -10,7 +10,7 @@ int ipcSendMessage(pid_t dst, int num, int flags, void *payload, size_t payloadS
 
 int ipcGetMessage(ipcMessage_t *msg, int timeout)
 {
-    return syscall(SYS_IPC_GET_MESSAGE, msg, timeout);
+    return sysIPCGetMessage(msg, timeout);
 }
 
 int ipcProcessMessage(ipcMessage_t *msg)

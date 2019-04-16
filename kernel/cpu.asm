@@ -1340,13 +1340,11 @@ cpuEnterUserMode:
     mov rax, 0x003B ; 64 bit user data selector
     mov ds, ax
     mov es, ax
-    ;mov fs, ax
-    ;mov gs, ax
     push rax        ; ss
-    push rdi        ; rsp
+    push rsi        ; rsp
     push 0x0202     ; rflags
     push 0x0043     ; cs - 64 bit user code selector
-    push rsi        ; rip
+    push rdx        ; rip
     iretq
 
 global cpuReadTSC

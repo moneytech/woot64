@@ -3,6 +3,7 @@ SUBDIRS = \
 	libc \
 	libwoot \
 	init \
+	inputhandler \
 	usertest \
 	windowmanager
 

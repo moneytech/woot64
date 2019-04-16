@@ -85,16 +85,12 @@ void Mutex::Release()
     {
         Owner = nullptr;
         bool ok;
-        Thread *t = nullptr;
-        do
-        {
-            t = Waiters->Read(&ok);
-            if(!ok)
-            { // no waiting threads in queue
-                cpuRestoreInterrupts(is);
-                return;
-            }
-        } while(!t);
+        Thread *t = Waiters->Read(&ok);
+        if(!ok)
+        { // no waiting threads in queue
+            cpuRestoreInterrupts(is);
+            return;
+        }
 
         // make last unqueued thread an owner
         Owner = t;

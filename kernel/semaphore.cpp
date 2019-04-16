@@ -57,16 +57,12 @@ void Semaphore::Signal(Ints::State *state)
     bool is = cpuDisableInterrupts();
     ++Count;
     bool ok;
-    Thread *t = nullptr;
-    do
-    {
-        t = Waiters->Read(&ok);
-        if(!ok)
-        { // no waiting threads in queue
-            cpuRestoreInterrupts(is);
-            return;
-        }
-    } while(!t);
+    Thread *t = Waiters->Read(&ok);
+    if(!ok)
+    { // no waiting threads in queue
+        cpuRestoreInterrupts(is);
+        return;
+    }
 
     if(state) t->QuickResume(state);
     else t->Resume(false);

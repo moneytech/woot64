@@ -67,7 +67,7 @@ uint64_t cpuReadMSR(uint32_t msr);
 void cpuWriteMSR(uint32_t msr, uint64_t value);
 
 // misc
-void cpuEnterUserMode(uintptr_t stackPointer, uintptr_t instructionPointer);
+void cpuEnterUserMode(uintptr_t arg, uintptr_t stackPointer, uintptr_t instructionPointer);
 uint64_t cpuReadTSC();
 
 }
