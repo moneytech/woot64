@@ -13,6 +13,8 @@ static int64_t debugWrite(const void *buffer, int64_t n);
 static CallBackStream DebugStream(debugRead, debugWrite);
 static Mutex DebugStreamLock(true, "DebugStreamLock");
 
+static bool framebufferDisabled = false;
+
 #define USE_VGA_TEXT        0
 #define USE_SERIAL          1
 #define USE_FRAMEBUFFER     1
@@ -197,43 +199,44 @@ int64_t debugWrite(const void *buffer, int64_t n)
         vgaSetCursorPos(vgaOffs);
 #endif // USE_VGA_TEXT
 #if USE_FRAMEBUFFER
-        uint chrX = fbX * fbCharWidth;
-        uint chrY = fbY * fbCharHeight;
-        if(c == '\n')
+        if(!framebufferDisabled)
         {
-            fbX = 0;
-            ++fbY;
-        }
-        else if(c == '\t')
-            fbX = align(fbX + 1, 8);
-        else
-        {
-            fbPutChar(chrX, chrY, c, foreColor);
-            ++fbX;
-        }
-        if(fbX >= fbConsoleWidth)
-        {
-            fbX = 0;
-            ++fbY;
-        }
-        if(fbY >= fbConsoleHeight)
-        {
+            uint chrX = fbX * fbCharWidth;
+            uint chrY = fbY * fbCharHeight;
+            if(c == '\n')
+            {
+                fbX = 0;
+                ++fbY;
+            }
+            else if(c == '\t')
+                fbX = align(fbX + 1, 8);
+            else
+            {
+                fbPutChar(chrX, chrY, c, foreColor);
+                ++fbX;
+            }
+            if(fbX >= fbConsoleWidth)
+            {
+                fbX = 0;
+                ++fbY;
+            }
+            if(fbY >= fbConsoleHeight)
+            {
 #if defined(__x86_64__) || defined(__amd64__)
-            __qmemcpy(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
-                      (multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight)) / 8);
-            __lmemset(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
-                      backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
-#else
-            Memory::Move(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
-                         multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight));
-            Memory::Set32(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
+                __qmemcpy(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
+                          (multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight)) / 8);
+                __lmemset(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
                           backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
+#else
+                Memory::Move(fbPixels, fbPixels + multibootInfo->framebuffer_pitch * fbCharHeight,
+                             multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight));
+                Memory::Set32(fbPixels + multibootInfo->framebuffer_pitch * ((fbConsoleHeight - 1) * fbCharHeight),
+                              backColor, multibootInfo->framebuffer_pitch * fbCharHeight / 4);
 #endif // defined(__x86_64__) || defined(__amd64__)
-            fbX = 0;
-            --fbY;
+                fbX = 0;
+                --fbY;
+            }
         }
-
-
 #endif // USE_FRAMEBUFFER
 
         if(c == '\n')
@@ -322,4 +325,17 @@ void Debug::BufferDump(void *ptr, size_t n)
         }
         DEBUG("\n");
     }
+}
+
+void Debug::DisableFramebuffer()
+{
+    framebufferDisabled = true;
+}
+
+void Debug::EnableFramebuffer()
+{
+    fbX = 0;
+    fbY = 0;
+    fbClearScreen(backColor);
+    framebufferDisabled = false;
 }

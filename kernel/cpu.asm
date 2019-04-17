@@ -1345,6 +1345,7 @@ cpuEnterUserMode:
     push 0x0202     ; rflags
     push 0x0043     ; cs - 64 bit user code selector
     push rdx        ; rip
+    xor rbp, rbp
     iretq
 
 global cpuReadTSC

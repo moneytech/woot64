@@ -21,11 +21,11 @@ static int kbdThread(int arg)
         int res = inpGetEvent(handle, 1000, &event);
         if(res < 0)
         {
-            if(res == -EBADF)
+            /*if(res == -EBADF)
             {
                 printf("[inputhandler] Keyboard event read problem. (handle: %d)\n", handle);
                 break;
-            }
+            }*/
             continue;
         }
         //printf("key: %d %s\n", event.Key, event.Flags & INP_KBD_EVENT_FLAG_RELEASE ? "released" : "pressed");
@@ -53,11 +53,11 @@ static int mouseThread(int arg)
         int res = inpGetEvent(handle, 1000, &event);
         if(res < 0)
         {
-            if(res == -EBADF)
+            /*if(res == -EBADF)
             {
                 printf("[inputhandler] Mouse event read problem. (handle: %d)\n", handle);
                 break;
-            }
+            }*/
             continue;
         }
         //printf("mouse delta: %d %d, buttons: pressed: %d held: %d released: %d\n",
@@ -83,9 +83,9 @@ int main()
     int *threads = (int *)calloc(devCount, sizeof(int));
 
     inpDeviceListIds(devIds, devCount);
-    for(int j = 0; j < devCount; ++j)
+    for(int i = 0; i < devCount; ++i)
     {
-        int id = devIds[j];
+        int id = devIds[i];
         int devType = inpGetDeviceType(id);
         int devHandle = inpOpenDevice(id);
         if(devHandle < 0)
@@ -98,15 +98,15 @@ int main()
         default:
             inpCloseDevice(devHandle);
             printf("[inputhandler] I don't know how to handle device %d\n", id);
-            threads[j] = -1;
+            threads[i] = -1;
             break;
         case INP_DEV_TYPE_KEYBOARD:
             printf("[inputhandler] Creating handler for keyboard %d(%d)\n", id, devHandle);
-            threads[j] = threadCreate("keyboard thread", kbdThread, devHandle, NULL);
+            threads[i] = threadCreate("keyboard thread", kbdThread, devHandle, NULL);
             break;
         case INP_DEV_TYPE_MOUSE:
             printf("[inputhandler] Creating handler for mouse %d(%d)\n", id, devHandle);
-            threads[j] = threadCreate("mouse thread", mouseThread, devHandle, NULL);
+            threads[i] = threadCreate("mouse thread", mouseThread, devHandle, NULL);
             break;
         }
     }

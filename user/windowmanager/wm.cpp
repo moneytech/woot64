@@ -92,12 +92,11 @@ extern "C" int main(int argc, char *argv[])
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
 
     // create desktop window
-    Window *desktopWnd = nullptr;
+    Window *desktopWnd = new Window(0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, &bbPixMap->Format);
+    windows.Prepend(desktopWnd);
     pmPixMap_t *logo = nullptr;//pmLoadPNG("/logo.png");
-    if(logo)
+    if(logo && desktopWnd)
     {
-        desktopWnd = new Window(0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height,
-                                WM_CWF_NONE, &bbPixMap->Format);
         pmPixMap_t *pm = desktopWnd->GetPixMap();
         pmClear(pm, pmColorFromRGB(24, 64, 96));
         pmAlphaBlit(pm, logo, 0, 0,
@@ -105,7 +104,6 @@ extern "C" int main(int argc, char *argv[])
                     (bbPixMap->Contents.Height - logo->Contents.Height) / 2,
                     logo->Contents.Width, logo->Contents.Height);
         pmDelete(logo);
-        windows.Prepend(desktopWnd);
     }
 
     // create mouse cursor window
@@ -232,8 +230,18 @@ extern "C" int main(int argc, char *argv[])
     ipcSendMessage(0, MSG_RELEASE_KEYBOARD, MSG_FLAG_NONE, NULL, 0);
     ipcSendMessage(0, MSG_RELEASE_MOUSE, MSG_FLAG_NONE, NULL, 0);
 
-    pmDelete(bbPixMap);
-    pmDelete(fbPixMap);
+    if(mouseWnd)
+    {
+        windows.RemoveOne(mouseWnd);
+        delete mouseWnd;
+    }
+    if(desktopWnd)
+    {
+        windows.RemoveOne(desktopWnd);
+        delete desktopWnd;
+    }
+    if(bbPixMap) pmDelete(bbPixMap);
+    if(fbPixMap) pmDelete(fbPixMap);
 
     return 0;
 }

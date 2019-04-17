@@ -201,7 +201,6 @@ int Process::userThreadEntryPoint(void *arg)
 
     // allocate and initialize user stack
     uintptr_t *stack = (uintptr_t *)ct->AllocStack(&ct->UserStack, ct->UserStackSize);
-    *(--stack) = 0; // dummy ebp
     *(--stack) = (uintptr_t)userThreadReturn;
 
     cpuEnterUserMode(ct->UserArgument, (uintptr_t)stack, (uintptr_t)ct->UserEntryPoint);
@@ -237,7 +236,7 @@ uintptr_t Process::brk(uintptr_t brk, bool allocPages)
     brk = align(brk, PAGE_SIZE);
     uintptr_t obrk = CurrentBrk;
 
-    if(brk < MinBrk || brk > MaxBrk)// || brk <= CurrentBrk)
+    if(brk < MinBrk || brk > MaxBrk)
         return (brk = CurrentBrk);
 
     uintptr_t mappedNeeded = align(brk, PAGE_SIZE);

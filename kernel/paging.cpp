@@ -89,12 +89,17 @@ void Paging::BuildAddressSpace(AddressSpace as)
 
 AddressSpace Paging::GetCurrentAddressSpace()
 {
-    return (AddressSpace)cpuGetCR3();
+    bool ints = cpuDisableInterrupts();
+    AddressSpace res = (AddressSpace)cpuGetCR3();
+    cpuRestoreInterrupts(ints);
+    return res;
 }
 
 void Paging::FlushTLB()
 {
+    bool ints = cpuDisableInterrupts();
     cpuSetCR3(cpuGetCR3());
+    cpuRestoreInterrupts(ints);
 }
 
 void Paging::InvalidatePage(uintptr_t addr)
@@ -281,7 +286,7 @@ void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
             if(!(pml3[pml3idx] & 1))
                 continue;
 
-            uintptr_t *pml2 = (uintptr_t *)((pml3[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+            uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
             for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
             {
                 if(!(pml2[pml2idx] & 1))

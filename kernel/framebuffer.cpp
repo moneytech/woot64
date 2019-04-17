@@ -1,3 +1,4 @@
+#include <debug.hpp>
 #include <errno.h>
 #include <framebuffer.hpp>
 #include <misc.hpp>
@@ -118,12 +119,14 @@ int FrameBuffer::Open()
     Process *cp = Process::GetCurrent();
     if(Misc::TestAndSet(&owner, cp))
         return -EBUSY;
+    Debug::DisableFramebuffer();
     return ESUCCESS;
 }
 
 int FrameBuffer::Close()
 {
     Misc::Release(&owner);
+    Debug::EnableFramebuffer();
     return ESUCCESS;
 }
 

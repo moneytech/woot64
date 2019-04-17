@@ -146,7 +146,14 @@ extern isr0
     stosd           ; reserverd fields
     add rdx, ISR_STUB_SIZE
     loop .next_idt_entry
+
+; double fault handler uses IST1
+    mov rdi, KERNEL_BASE
+    add rdi, idt - KERNEL_BASE
+    mov byte [rdi + 16 * 8 + 4], 0x01
+
     lidt [idt_descr - KERNEL_BASE]
+
 
     ; jump to 64 bit entry point
     mov rbx, KERNEL_BASE
@@ -205,6 +212,13 @@ idt_descr:
     dw idt.end - idt;
     dq idt
 
+global mainTSS
+mainTSS:
+    times 0x24 db 0
+    dq doubleFaultStack.end
+    times 104 - ($ - mainTSS) db 0;
+.end:
+
 segment .bss
 global __multibootInfo
 __multibootInfo:
@@ -215,11 +229,11 @@ align PAGE_SIZE
 pdp:
     resb PAGE_SIZE
 
-global mainTSS
-mainTSS:
-    resb 0x68
-.end:
-
 idt:
     resq 256 * 2
+.end:
+
+align PAGE_SIZE
+doubleFaultStack:
+    resb PAGE_SIZE
 .end:

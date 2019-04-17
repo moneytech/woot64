@@ -32,6 +32,7 @@ INLINE_ASM_SYNTAX
 "mov rbp, rsp\n"                            // save user stack pointer
 "mov rsp, [rip + mainTSS + 4]\n"            // load kernel stack
 "and rsp, ~0xF\n"                           // align stack for SSE
+"sti\n"                                     // enable interrupts disabled by FMASK msr
 
 "push rbx\n"
 "push rdx\n"
@@ -188,9 +189,8 @@ long SysCalls::sys_write(int fd, const char *buf, size_t count)
 
 long SysCalls::sys_open(const char *filename, int flags, int mode)
 {
-    DEBUG("sys_open(\"%s\", %p)", filename, flags);
     int res = Process::GetCurrent()->Open(filename, flags);
-    DEBUG(" returned %d\n", res);
+    DEBUG("sys_open(\"%s\", %p) returned %d\n", filename, flags, res);
     return res;
 }
 
@@ -295,6 +295,7 @@ long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, 
 
 long SysCalls::sys_munmap(uintptr_t addr, size_t len)
 {
+    //DEBUG("sys_munmap(%p, %p)\n", addr, len);
     Paging::UnmapRange(PG_CURRENT_ADDR_SPC, addr, len);
     return 0;
 }
@@ -719,7 +720,7 @@ long SysCalls::sysIPCMapSharedMem(int fd, uintptr_t hint, unsigned flags)
     NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);
     if(!shm) return -EBADF;
 
-    if(!va) va = cp->SBrk(shm->GetSize(), false);
+    if(!va) va = cp->MMapSBrk(shm->GetSize(), false);
 
     int res = shm->Map(cp, va, true, flags & 1);
     if(res < 0) return res;
@@ -806,5 +807,5 @@ void SysCalls::Initialize()
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);
-    cpuWriteMSR(0xC0000084, 0);
+    cpuWriteMSR(0xC0000084, 0x00000200);
 }

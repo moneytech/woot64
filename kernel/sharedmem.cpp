@@ -88,7 +88,11 @@ SharedMem::~SharedMem()
 {
     Lock();
     size_t mapCnt = mappings.Count();
-    if(mapCnt) DEBUG("[sharedmem] WARNING: %d processes are still using this shared memory!\n", mapCnt);
+    if(mapCnt)
+    {
+        if(mapCnt == 1) DEBUG("[sharedmem] WARNING: %d process is still using %d bytes of deleted shared memory!\n", mapCnt, GetSize());
+        else if(mapCnt > 1) DEBUG("[sharedmem] WARNING: %d processes are still using %d bytes of deleted shared memory!\n", mapCnt, GetSize());
+    }
     for(Mapping map : mappings)
         Paging::UnMapPages(map.Owner->AddressSpace, map.VA, pageCount);
     for(uintptr_t pa : frames)

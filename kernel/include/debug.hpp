@@ -14,4 +14,6 @@ public:
     static int DebugRead(void *buffer, size_t count);
     static int DebugWrite(const void *buffer, size_t count);
     static void BufferDump(void *ptr, size_t n);
+    static void DisableFramebuffer();
+    static void EnableFramebuffer();
 };
