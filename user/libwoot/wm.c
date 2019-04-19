@@ -43,7 +43,7 @@ wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
         char Data[MSG_RPC_RESP_PAYLOAD_SIZE];
     } response;
     int res = rpcCall(wmServer, "wmCreateWindow", args, sizeof(args), &response, sizeof(response), DEFAULT_RPC_TIMEOUT);
-    printf("id: %d %s\n", response.id, response.shMemName);
+    //printf("id: %d %s\n", response.id, response.shMemName);
     if(res < 0 || response.id < 0) return NULL;
     wmWindow_t *wnd = (wmWindow_t *)calloc(1, sizeof(wmWindow_t));
     if(!wnd)

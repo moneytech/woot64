@@ -159,6 +159,8 @@ int main()
         threadDelete(threads[i]);
     }
 
+    printf("[inputhandler] Closing inputhandler\n");
+
     free(threads);
     free(devIds);
     return 0;

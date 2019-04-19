@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
     processWait(testProc, -1);
     processDelete(testProc);
 
-    processWait(wmProc, -1);
+    processWait(wmProc, 5000);
     processDelete(wmProc);
-    processWait(inputProc, -1);
+    processWait(inputProc, 5000);
     processDelete(inputProc);
 
     printf("[init] Exiting %s\n", argv[0]);
