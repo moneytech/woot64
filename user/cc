@@ -3,15 +3,18 @@
 COMMAND=clang
 
 ARGS="-Wno-unused-command-line-argument \
--ggdb -nostdinc -nostdlib \
+-fno-stack-protector \
+-ffreestanding -ggdb -nostdinc -nostdlib \
 -Wl,-z,max-page-size=4096 \
 -I$TOP_DIR/user/libsyscalls \
 -I$TOP_DIR/user/libc/include \
 -I$TOP_DIR/user/libz/include \
+-I$TOP_DIR/user/libpng/include \
 -I$TOP_DIR/user/libwoot \
 -L$TOP_DIR/user/libsyscalls \
 -L$TOP_DIR/user/libc/lib \
 -L$TOP_DIR/user/libz/lib \
+-L$TOP_DIR/user/libpng/lib \
 -L$TOP_DIR/user/libwoot"
 
 $COMMAND $ARGS "$@"

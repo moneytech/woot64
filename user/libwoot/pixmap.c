@@ -1,5 +1,5 @@
 #include <errno.h>
-//#include <png.h>
+#include <png.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -459,7 +459,7 @@ pmPixMap_t *pmSubPixMap(pmPixMap_t *src, int x, int y, int w, int h)
     return pm;
 }
 
-/*pmPixMap_t *pmLoadPNG(const char *filename)
+pmPixMap_t *pmLoadPNG(const char *filename)
 {
     FILE *f = fopen(filename, "rb");
     if(!f) return NULL;
@@ -542,7 +542,7 @@ pmPixMap_t *pmSubPixMap(pmPixMap_t *src, int x, int y, int w, int h)
     free(row_pointers);
 
     return pm;
-}*/
+}
 
 pmPixMap_t *pmLoadCUR(const char *filename, unsigned idx, int *hotX, int *hotY)
 {

@@ -19,7 +19,7 @@ CC = $(TOP_DIR)/user/cc
 
 CFLAGS += -fPIC -Wno-undefined-internal
 LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
-LIBS = -lc -lsyscalls
+LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,--end-group
 
 export TOP_DIR
 

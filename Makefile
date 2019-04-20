@@ -19,7 +19,7 @@ export CC CXX ASM LD AR TOP_DIR
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
 
-install: $(IMGFILE)
+install: $(IMGFILE) root/logo.png
 	mkdir -p ./root
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
 	$(MAKE) try-mount
@@ -31,6 +31,9 @@ $(IMGFILE): hdd-empty-ext2.img.gz
 	$(MAKE) try-mount
 	grub-install --boot-directory=$(MOUNTPOINT)/boot $(LOOP_DEVICE)
 	$(MAKE) try-umount
+
+root/logo.png: logo.png
+	cp $? $@
 
 try-mount:
 	sudo losetup -P $(LOOP_DEVICE) hdd.img

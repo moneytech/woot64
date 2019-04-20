@@ -1,5 +1,5 @@
 #include <errno.h>
-//#include <png.h>
+#include <png.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -94,7 +94,7 @@ extern "C" int main(int argc, char *argv[])
     // create desktop window
     Window *desktopWnd = new Window(0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, &bbPixMap->Format);
     windows.Prepend(desktopWnd);
-    pmPixMap_t *logo = nullptr;//pmLoadPNG("/logo.png");
+    pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
     {
         pmPixMap_t *pm = desktopWnd->GetPixMap();

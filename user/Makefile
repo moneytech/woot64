@@ -2,6 +2,7 @@ SUBDIRS = \
 	libsyscalls \
 	libc \
 	libz \
+	libpng \
 	libwoot \
 	init \
 	inputhandler \
