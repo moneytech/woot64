@@ -5,6 +5,7 @@ OBJS = cxx.o window.o wm.o
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 CUR_FILE = $(WOOT_TOP_DIR)/root/normal.cur
+DEFAULT_TTF_FILE = $(WOOT_TOP_DIR)/root/default.ttf
 
 CC = $(WOOT_TOP_DIR)/user/cc
 CXX = $(WOOT_TOP_DIR)/user/cxx
@@ -26,7 +27,7 @@ $(OUTFILE_STATIC): $(OBJS)
 $(OUTFILE): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
-install: $(BIN_DIR)/$(OUTFILE) $(BIN_DIR)/$(OUTFILE_STATIC) $(CUR_FILE)
+install: $(BIN_DIR)/$(OUTFILE) $(BIN_DIR)/$(OUTFILE_STATIC) $(CUR_FILE) $(DEFAULT_TTF_FILE)
 
 $(BIN_DIR)/$(OUTFILE): $(OUTFILE)
 	mkdir -p $(BIN_DIR)
@@ -37,6 +38,9 @@ $(BIN_DIR)/$(OUTFILE_STATIC): $(OUTFILE_STATIC)
 	cp $(OUTFILE_STATIC) $(BIN_DIR)/$(OUTFILE_STATIC)
 
 $(CUR_FILE): normal.cur
+	cp $? $@
+
+$(DEFAULT_TTF_FILE): default.ttf
 	cp $? $@
 
 clean:

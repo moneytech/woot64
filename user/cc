@@ -3,6 +3,8 @@
 COMMAND=clang
 
 ARGS="-Wno-unused-command-line-argument \
+-Wno-bitwise-op-parentheses \
+-Wno-shift-op-parentheses \
 -fno-stack-protector \
 -ffreestanding -ggdb -nostdinc -nostdlib \
 -Wl,-z,max-page-size=4096 \
@@ -10,7 +12,7 @@ ARGS="-Wno-unused-command-line-argument \
 -I$WOOT_TOP_DIR/user/libc/include \
 -I$WOOT_TOP_DIR/user/libz/include \
 -I$WOOT_TOP_DIR/user/libpng/include \
--I$WOOT_TOP_DIR/user/libfreetype/include \
+-I$WOOT_TOP_DIR/user/libfreetype/include/freetype2 \
 -I$WOOT_TOP_DIR/user/libwoot \
 -L$WOOT_TOP_DIR/user/libsyscalls \
 -L$WOOT_TOP_DIR/user/libc/lib \

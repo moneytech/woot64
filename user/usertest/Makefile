@@ -10,7 +10,7 @@ LIBS = \
 	$(WOOT_TOP_DIR)/user/libc/lib/Scrt1.o \
 	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
 	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
-	-Wl,--start-group,-lc,-lwoot,-lsyscalls,-lz,--end-group
+	-Wl,--start-group,-lc,-lwoot,-lsyscalls,-lz,-lpng16,-lfreetype,--end-group
 
 export WOOT_TOP_DIR
 

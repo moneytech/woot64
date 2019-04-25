@@ -1,6 +1,7 @@
 SHARED_LIB = libwoot.so
 STATIC_LIB = libwoot.a
 OBJS = \
+	font.o \
 	input.o \
 	ipc.o \
 	misc.o \
@@ -19,7 +20,7 @@ CC = $(WOOT_TOP_DIR)/user/cc
 
 CFLAGS += -fPIC -Wno-undefined-internal
 LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
-LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,--end-group
+LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,-lfreetype,--end-group
 
 export WOOT_TOP_DIR
 

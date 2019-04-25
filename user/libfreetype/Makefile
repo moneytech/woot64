@@ -37,11 +37,15 @@ build/config.status:
 	--prefix="$(WOOT_TOP_DIR)/user/libfreetype" \
 	--host=x86_64-linux
 
-install: $(LIB_DIR)/$(SHARED_LIB)
+install: $(LIB_DIR)/$(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB).6
 
 $(LIB_DIR)/$(SHARED_LIB): lib/$(SHARED_LIB)
 	mkdir -p $(LIB_DIR)
 	cp lib/$(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB)
+
+$(LIB_DIR)/$(SHARED_LIB).6: lib/$(SHARED_LIB).6
+	mkdir -p $(LIB_DIR)
+	cp lib/$(SHARED_LIB).6 $(LIB_DIR)/$(SHARED_LIB).6
 
 distclean:
 	-rm -rf build bin lib share include

@@ -1,4 +1,6 @@
+font.c
 wm.c
+woot/font.h
 woot/wm.h
 ipc.c
 misc.c

@@ -1,3 +1,4 @@
 ../libsyscalls
+../libfreetype/include/freetype2
 woot
 .

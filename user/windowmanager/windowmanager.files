@@ -1,3 +1,5 @@
+default.ttf
+normal.cur
 vector.hpp
 wm.cpp
 window.cpp
