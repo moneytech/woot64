@@ -173,6 +173,7 @@ int Process::processEntryPoint(const char *cmdline)
     uintptr_t stackPointer = ct->AllocStack(&ct->UserStack, ct->UserStackSize);
     const char *envVars[] =
     {
+        "LC_ALL=C",
         "PATH=WOOT_OS~/bin:WOOT_OS~/system",
         "LD_LIBRARY_PATH=WOOT_OS~/lib",
         "TEST=value"

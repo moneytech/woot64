@@ -17,6 +17,7 @@
 #define SYS_exit                60
 #define SYS_arch_prctl          158
 #define SYS_set_tid_address     218
+#define SYS_clock_get_time      228
 #define SYS_exit_group          231
 
 #define SYS_FB_GET_COUNT        0x300
@@ -142,6 +143,7 @@ long sys_getpid();
 long sys_exit(long error_code);
 int sys_arch_prctl(int code, uintptr_t addr);
 int sys_set_tid_address(int *tidptr);
+long sys_clock_get_time(int clock, void *ts);
 long sys_exit_group(long error_code);
 
 long sysFBGetCount();

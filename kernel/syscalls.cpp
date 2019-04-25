@@ -82,11 +82,7 @@ struct iovec
     size_t iov_len;     /* Number of bytes to transfer */
 };
 
-struct timespec
-{
-    time_t tv_sec;
-    long tv_nsec;
-};
+#define CLOCK_REALTIME           0
 
 #ifdef __i386__
 typedef unsigned long long dev_t;
@@ -399,6 +395,16 @@ long SysCalls::sys_set_tid_address(int *tidptr)
     Thread *ct = Thread::GetCurrent();
     ct->tidPtr = tidptr;
     return ct->Id;
+}
+
+long SysCalls::sys_clock_get_time(int clock, struct timespec *t)
+{
+    if(clock != CLOCK_REALTIME)
+        return -ENOSYS;
+    if(!t) return -EINVAL;
+    t->tv_sec = Time::GetTime();
+    t->tv_nsec = 0;
+    return ESUCCESS;
 }
 
 long SysCalls::sys_exit_group(intn retVal)
@@ -759,6 +765,7 @@ void SysCalls::Initialize()
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;
+    Handlers[SYS_clock_get_time] = (SysCallHandler)sys_clock_get_time;
     Handlers[SYS_exit_group] = (SysCallHandler)sys_exit_group;
 
     Handlers[SYS_FB_GET_COUNT] = (SysCallHandler)sysFBGetCount;

@@ -80,6 +80,11 @@ int sys_set_tid_address(int *tidptr)
     return __syscall1(SYS_set_tid_address, (long)tidptr);
 }
 
+long sys_clock_get_time(int clock, void *ts)
+{
+    return __syscall2(SYS_clock_get_time, clock, (long)ts);
+}
+
 long sys_exit_group(long error_code)
 {
     return __syscall1(SYS_exit_group, error_code);

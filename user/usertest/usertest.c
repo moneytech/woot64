@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <syscalls/syscalls.h>
+#include <time.h>
 #include <unistd.h>
 #include <woot/font.h>
 #include <woot/input.h>
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
         wmDeleteWindow(window);
         return -errno;
     }
-    fntSetPointSize(fnt, 24, 96);
+    fntSetPointSize(fnt, 14, 96);
 
     ipcMessage_t msg;
     for(int i = 0;; ++i)
@@ -60,8 +61,9 @@ int main(int argc, char *argv[])
         }
         if(quit) break;
 
-        char buf[16];
-        sprintf(buf, "Font test %d", i);
+        char buf[64];
+        time_t ct = time(NULL);
+        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
 
         int strW = fntMeasureString(fnt, buf);
 
