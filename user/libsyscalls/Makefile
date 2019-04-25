@@ -2,15 +2,15 @@ SHARED_LIB = libsyscalls.so
 STATIC_LIB = libsyscalls.a
 OBJS = syscalls.o
 
-TOP_DIR ?= $(shell realpath ../..)
-LIB_DIR ?= $(TOP_DIR)/root/lib
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 
 CFLAGS += -fPIC
 LDFLAGS = -shared
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: $(STATIC_LIB) $(SHARED_LIB)
 

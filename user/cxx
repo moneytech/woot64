@@ -8,15 +8,17 @@ ARGS="-Wno-unused-command-line-argument \
 -fno-stack-protector \
 -ffreestanding -ggdb -nostdinc -nostdinc++ -nostdlib -fno-exceptions -fno-rtti \
 -Wl,-z,max-page-size=4096 \
--I$TOP_DIR/user/libsyscalls \
--I$TOP_DIR/user/libc/include \
--I$TOP_DIR/user/libz/include \
--I$TOP_DIR/user/libpng/include \
--I$TOP_DIR/user/libwoot \
--L$TOP_DIR/user/libsyscalls \
--L$TOP_DIR/user/libc/lib \
--L$TOP_DIR/user/libz/lib \
--L$TOP_DIR/user/libpng/lib \
--L$TOP_DIR/user/libwoot"
+-I$WOOT_TOP_DIR/user/libsyscalls \
+-I$WOOT_TOP_DIR/user/libc/include \
+-I$WOOT_TOP_DIR/user/libz/include \
+-I$WOOT_TOP_DIR/user/libpng/include \
+-I$WOOT_TOP_DIR/user/libfreetype/include \
+-I$WOOT_TOP_DIR/user/libwoot \
+-L$WOOT_TOP_DIR/user/libsyscalls \
+-L$WOOT_TOP_DIR/user/libc/lib \
+-L$WOOT_TOP_DIR/user/libz/lib \
+-L$WOOT_TOP_DIR/user/libpng/lib \
+-L$WOOT_TOP_DIR/user/libfreetype/lib \
+-L$WOOT_TOP_DIR/user/libwoot"
 
 $COMMAND $ARGS "$@"

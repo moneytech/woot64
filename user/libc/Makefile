@@ -1,5 +1,5 @@
-TOP_DIR ?= $(shell realpath ../..)
-LIB_DIR ?= $(TOP_DIR)/root/lib
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 CC = clang
 
 SHARED_LIB = libc.so
@@ -7,7 +7,7 @@ STATIC_LIB = libc.a
 SHARED_LIB_PATH = lib/$(SHARED_LIB)
 STATIC_LIB_PATH = lib/$(STATIC_LIB)
 
-export TOP_DIR CC
+export WOOT_TOP_DIR CC
 
 all: $(SHARED_LIB_PATH) $(STATIC_LIB_PATH)
 
@@ -22,7 +22,7 @@ build/config.mak:
 	cd build && \
 	CFLAGS='-D__WOOT__ -nostdinc -fno-omit-frame-pointer -O0 -ggdb' \
 	LDFLAGS="-Wl,-z,max-page-size=4096" \
-	../musl-1.1.21/configure --prefix=$(TOP_DIR)/user/libc --host=x86_64-linux-gnu
+	../musl-1.1.21/configure --prefix=$(WOOT_TOP_DIR)/user/libc --host=x86_64-linux-gnu
 
 
 reconfigure:

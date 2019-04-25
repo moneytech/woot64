@@ -2,17 +2,17 @@ OUTFILE = usertest
 OUTFILE_STATIC = $(OUTFILE)_static
 OBJS = usertest.o
 
-TOP_DIR ?= $(shell realpath ../..)
-BIN_DIR ?= $(TOP_DIR)/root/bin
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 LIBS = \
-	$(TOP_DIR)/user/libc/lib/Scrt1.o \
-	$(TOP_DIR)/user/libc/lib/crti.o \
-	$(TOP_DIR)/user/libc/lib/crtn.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/Scrt1.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
 	-Wl,--start-group,-lc,-lwoot,-lsyscalls,-lz,--end-group
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: $(OUTFILE) $(OUTFILE_STATIC)
 

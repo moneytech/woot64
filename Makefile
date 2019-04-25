@@ -12,9 +12,9 @@ ASM = yasm
 LD = ld
 AR = ar
 
-TOP_DIR = $(shell realpath .)
+WOOT_TOP_DIR = $(shell realpath .)
 
-export CC CXX ASM LD AR TOP_DIR
+export CC CXX ASM LD AR WOOT_TOP_DIR
 
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done

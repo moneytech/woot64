@@ -575,7 +575,7 @@ pmPixMap_t *pmLoadCUR(const char *filename, unsigned idx, int *hotX, int *hotY)
     int w = ide.Width ? ide.Width : 256;
     int h = ide.Height ? ide.Height : 256;
     if(ide.PaletteColors != 0)
-    {   // palettized immages not supported
+    {   // palettized images not supported
         fclose(f);
         return NULL;
     }

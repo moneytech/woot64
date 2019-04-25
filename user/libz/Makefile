@@ -1,17 +1,17 @@
 SHARED_LIB = libz.so
 STATIC_LIB = libz.a
 
-TOP_DIR ?= $(shell realpath ../..)
-LIB_DIR ?= $(TOP_DIR)/root/lib
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 
 export CC CFLAGS LDFLAGS
 
 CFLAGS += -fPIC -Wno-undefined-internal -lc
 LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: configure lib/$(SHARED_LIB) lib/$(STATIC_LIB)
 
@@ -30,8 +30,8 @@ build/configure.log:
 	cd build && \
 	rm -rf ./* && \
 	SONAME=libz.so \
-	LDSHAREDLIBC="-nostdlib -Wl,-L$(TOP_DIR)/user/lib -lc -lgcc" \
-	../zlib-1.2.11/configure --prefix="$(TOP_DIR)/user/libz"
+	LDSHAREDLIBC="-nostdlib -Wl,-L$(WOOT_TOP_DIR)/user/lib -lc -lgcc" \
+	../zlib-1.2.11/configure --prefix="$(WOOT_TOP_DIR)/user/libz"
 
 install: $(LIB_DIR)/$(SHARED_LIB)
 

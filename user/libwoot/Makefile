@@ -12,16 +12,16 @@ OBJS = \
 	video.o \
 	wm.o
 
-TOP_DIR ?= $(shell realpath ../..)
-LIB_DIR ?= $(TOP_DIR)/root/lib
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 
 CFLAGS += -fPIC -Wno-undefined-internal
 LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
 LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,--end-group
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: $(STATIC_LIB) $(SHARED_LIB)
 

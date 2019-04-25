@@ -1,17 +1,17 @@
 SHARED_LIB = libpng16.so
 STATIC_LIB = libpng16.a
 
-TOP_DIR ?= $(shell realpath ../..)
-LIB_DIR ?= $(TOP_DIR)/root/lib
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 
 export CC CFLAGS LDFLAGS
 
 CFLAGS += -fPIC -Wl,-soname=$(SHARED_LIB)
 LDFLAGS = -Wl,-soname=$(SHARED_LIB)
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: configure lib/$(SHARED_LIB) lib/$(STATIC_LIB)
 
@@ -31,7 +31,7 @@ build/config.status:
 	rm -rf ./* && \
 	LIBS="-lc" \
 	SONAME=$(SHARED_LIB) \
-	../libpng-1.6.36/configure --prefix="$(TOP_DIR)/user/libpng" \
+	../libpng-1.6.36/configure --prefix="$(WOOT_TOP_DIR)/user/libpng" \
 	--host=x86_64-linux-gnu
 
 install: $(LIB_DIR)/$(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB).16

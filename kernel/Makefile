@@ -57,7 +57,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	volume.o \
 	volumetype.o 
 
-TOP_DIR ?= $(shell realpath ..)
+WOOT_TOP_DIR ?= $(shell realpath ..)
 CC ?= clang
 CXX ?= clang++
 ASM ?= yasm
@@ -75,7 +75,7 @@ COMPILE_FLAGS = \
 	-Ulinux \
 	-D__WOOT__ \
 	-ggdb \
-	-I$(TOP_DIR)/kernel/include \
+	-I$(WOOT_TOP_DIR)/kernel/include \
 	-fno-pic \
 	-Wno-undefined-internal
 		
@@ -92,19 +92,19 @@ all: $(OUTFILE)
 $(OUTFILE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(OUTFILE)
 
-$(TOP_DIR)/root/boot/grub/grub.cfg: boot/grub/grub.cfg
-	mkdir -p $(TOP_DIR)/root/boot/grub
+$(WOOT_TOP_DIR)/root/boot/grub/grub.cfg: boot/grub/grub.cfg
+	mkdir -p $(WOOT_TOP_DIR)/root/boot/grub
 	cp $< $@
 
-$(TOP_DIR)/root/system/$(OUTFILE): $(OUTFILE)
-	mkdir -p $(TOP_DIR)/root/system
-	cp $(OUTFILE) $(TOP_DIR)/root/system/$(OUTFILE)
+$(WOOT_TOP_DIR)/root/system/$(OUTFILE): $(OUTFILE)
+	mkdir -p $(WOOT_TOP_DIR)/root/system
+	cp $(OUTFILE) $(WOOT_TOP_DIR)/root/system/$(OUTFILE)
 
-$(TOP_DIR)/root/system/modulelist: modulelist
-	mkdir -p $(TOP_DIR)/root/system
+$(WOOT_TOP_DIR)/root/system/modulelist: modulelist
+	mkdir -p $(WOOT_TOP_DIR)/root/system
 	cp $< $@
 
-install: $(TOP_DIR)/root/boot/grub/grub.cfg $(TOP_DIR)/root/system/$(OUTFILE) $(TOP_DIR)/root/system/modulelist
+install: $(WOOT_TOP_DIR)/root/boot/grub/grub.cfg $(WOOT_TOP_DIR)/root/system/$(OUTFILE) $(WOOT_TOP_DIR)/root/system/modulelist
 	for dir in $(MODULES); do $(MAKE) -C $$dir install; done
 
 clean:

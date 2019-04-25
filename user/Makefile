@@ -3,6 +3,7 @@ SUBDIRS = \
 	libc \
 	libz \
 	libpng \
+	libfreetype \
 	libwoot \
 	init \
 	inputhandler \

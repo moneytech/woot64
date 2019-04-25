@@ -2,17 +2,17 @@ OUTFILE = init
 OUTFILE_STATIC = init_static
 OBJS = init.o
 
-TOP_DIR ?= $(shell realpath ../..)
-BIN_DIR ?= $(TOP_DIR)/root/bin
+WOOT_TOP_DIR ?= $(shell realpath ../..)
+BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 
-CC = $(TOP_DIR)/user/cc
+CC = $(WOOT_TOP_DIR)/user/cc
 LIBS = \
-	$(TOP_DIR)/user/libc/lib/crt1.o \
-	$(TOP_DIR)/user/libc/lib/crti.o \
-	$(TOP_DIR)/user/libc/lib/crtn.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/crt1.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
 	-Wl,--start-group,-lc,-lwoot,-lsyscalls,--end-group
 
-export TOP_DIR
+export WOOT_TOP_DIR
 
 all: $(OUTFILE) $(OUTFILE_STATIC)
 
