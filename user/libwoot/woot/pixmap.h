@@ -104,6 +104,7 @@ void pmLine(pmPixMap_t *pixMap, int x1, int y1, int x2, int y2, pmColor_t c);
 void pmRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
 void pmRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c);
 void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
+void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken);
 void pmClear(pmPixMap_t *pixMap, pmColor_t color);
 void pmBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);

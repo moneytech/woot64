@@ -1,6 +1,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <woot/font.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
@@ -9,6 +11,8 @@
 #define DEFAULT_RPC_TIMEOUT 1000
 
 static char wmServer[64] = { 0 };
+static pmColor_t colors[WM_COLOR_ID_COUNT];
+static fntFont_t *fonts[WM_FONT_ID_COUNT];
 
 struct wmWindow
 {
@@ -17,16 +21,46 @@ struct wmWindow
     pmPixMap_t *pixMap;
 };
 
+struct wmSetWindowPosArgs
+{
+    int windowId;
+    int x, y;
+};
+
+struct wmSetWindowTitleArgs
+{
+    int windowId;
+    const char title[0];
+};
+
 int wmInitialize()
 {
     int res = rpcFindServer("windowmanager", wmServer, sizeof(wmServer), DEFAULT_RPC_TIMEOUT);
     if(res < 0) return res;
+    memset(colors, 0, sizeof(colors));
+    colors[WM_COLOR_BACKGROUND] = pmColorGray;
+    memset(fonts, 0, sizeof(fonts));
+    fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
     return 0;
 }
 
 const char *wmGetServer()
 {
     return wmServer[0] ? wmServer : NULL;
+}
+
+pmColor_t wmGetColor(int colorId)
+{
+    if(colorId < 0 || colorId >= WM_COLOR_ID_COUNT)
+        return pmColorBlack;
+    return colors[colorId];
+}
+
+fntFont_t *wmGetFont(int fontId)
+{
+    if(fontId < 0 || fontId >= WM_FONT_ID_COUNT)
+        return NULL;
+    return fonts[fontId];
 }
 
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
@@ -102,4 +136,30 @@ pmPixMap_t *wmGetPixMap(wmWindow_t *window)
 void wmRedrawWindow(wmWindow_t *window)
 {
     rpcCall(wmServer, "wmRedrawWindow", &window->id, sizeof(int), NULL, 0, DEFAULT_RPC_TIMEOUT);
+}
+
+void wmSetWindowPos(wmWindow_t *window, int x, int y)
+{
+    struct wmSetWindowPosArgs args = { window->id, x, y };
+    rpcCall(wmServer, "wmSetWindowPos", &args, sizeof(args), NULL, 0, DEFAULT_RPC_TIMEOUT);
+}
+
+void wmSetWindowTitle(wmWindow_t *window, const char *title)
+{
+    union
+    {
+        char rpcArgs[MSG_RPC_RESP_PAYLOAD_SIZE];
+        struct wmSetWindowTitleArgs args;
+    } a;
+    int titleLen = strlen(title);
+    a.args.windowId = window->id;
+    memcpy((void *)a.args.title, title, titleLen + 1);
+    rpcCall(wmServer, "wmSetWindowTitle", &a.args, sizeof(a.args) + titleLen + 1, NULL, 0, DEFAULT_RPC_TIMEOUT);
+}
+
+int wmCleanup()
+{
+    if(fonts[WM_FONT_DEFAULT]) fntDelete(fonts[WM_FONT_DEFAULT]);
+    memset(fonts, 0, sizeof(fonts));
+    return 0;
 }

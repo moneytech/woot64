@@ -9,7 +9,9 @@ STATIC_LIB_PATH = lib/$(STATIC_LIB)
 
 export WOOT_TOP_DIR CC
 
-all: $(SHARED_LIB_PATH) $(STATIC_LIB_PATH)
+all: $(SHARED_LIB_PATH)
+
+static: $(STATIC_LIB_PATH)
 
 $(SHARED_LIB_PATH) $(STATIC_LIB_PATH): build/config.mak
 	$(MAKE) -C build

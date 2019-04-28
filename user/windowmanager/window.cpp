@@ -3,18 +3,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <woot/pixmap.h>
+#include <woot/font.h>
 #include <woot/ipc.h>
+#include <woot/pixmap.h>
+#include <woot/rectangle.h>
+#include <woot/wm.h>
 
 #include "window.hpp"
 
 #define align(val, alignment) ((alignment) * (((val) + ((alignment) - 1)) / (alignment)))
 
 int Window::ids = 0;
+int Window::TitleBarHeight = 24;
+fntFont_t *Window::TitleFont = nullptr;
 
 Window::Window(int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format) :
     id(++ids), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
-    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr)
+    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr)
 {
     size_t pgSize = getpagesize();
     char nameBuf[64];
@@ -52,7 +57,13 @@ rcRectangle_t Window::GetRect() const
 
 rcRectangle_t Window::GetDecoratedRect() const
 {
-    return rect;
+    rcRectangle_t r = rect;
+    if(flags & WM_CWF_TITLEBAR)
+    {
+        r.Y -= TitleBarHeight;
+        r.Height += TitleBarHeight;
+    }
+    return r;
 }
 
 pmPixMap_t *Window::GetPixMap() const
@@ -67,8 +78,63 @@ unsigned Window::GetFlags() const
 
 void Window::SetPosition(int x, int y)
 {
-    rect.X = x;
-    rect.Y = y;
+    rcRectangle_t drc = GetDecoratedRect();
+    int dx = drc.X - rect.X;
+    int dy = drc.Y - rect.Y;
+    rect.X = x - dx;
+    rect.Y = y - dy;
+}
+
+void Window::SetTitle(const char *title)
+{
+    if(!title) return;
+    if(this->title) free(this->title);
+    this->title = strdup(title);
+}
+
+const char *Window::GetTitle() const
+{
+    return (const char *)title;
+}
+
+void Window::UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect)
+{
+    rcRectangle_t rc = GetRect();
+    rcRectangle_t drc = GetDecoratedRect();
+    rcRectangle_t is = rcIntersectP(dstDirtyRect, &drc);
+    if(rcIsEmptyP(&is))
+        return;
+
+    if(flags & WM_CWF_TITLEBAR)
+    {
+        rcRectangle_t titleBar = { rc.X, rc.Y - TitleBarHeight, rc.Width, TitleBarHeight };
+        is = rcIntersectP(dstDirtyRect, &titleBar);
+        if(!rcIsEmptyP(&is))
+        {
+            pmFillRectangle(dst, is.X, is.Y, is.Width, is.Height, pmColorBlue);
+            if(title && TitleFont)
+            {
+                int titleHeight = fntGetPixelHeight(TitleFont);
+                int titleWidth = fntMeasureString(TitleFont, title);
+                int cx = (titleBar.Width - titleWidth) / 2;
+                int cy = (titleBar.Height - titleHeight) / 2;
+                fntDrawString(TitleFont, dst, titleBar.X + cx, titleBar.Y + cy, title, pmColorWhite);
+            }
+            pmRectangleRect(dst, &titleBar, pmColorWhite);
+        }
+    }
+
+    is = rcIntersectP(dstDirtyRect, &rc);
+    if(rcIsEmptyP(&is))
+        return;
+    pmPixMap_t *pm = GetPixMap();
+    int sx = is.X - rc.X;
+    int sy = is.Y - rc.Y;
+
+    if(flags & WM_CWF_USEALPHA)
+        pmAlphaBlit(dst, pm, sx, sy, is.X, is.Y, is.Width, is.Height);
+    else pmBlit(dst, pm, sx, sy, is.X, is.Y, is.Width, is.Height);
+    //else pmRectangle(dst, is.X, is.Y, is.Width, is.Height, pmColorMagenta);
 }
 
 Window::~Window()
@@ -77,4 +143,5 @@ Window::~Window()
     if(pixMap) pmDelete(pixMap);
     if(pixels) ipcUnMapSharedMem(pixelsShMem, pixels);
     if(pixelsShMem) ipcCloseSharedMem(pixelsShMem);
+    if(title) free(title);
 }

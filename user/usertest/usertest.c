@@ -30,6 +30,7 @@ int main(int argc, char *argv[])
 
     wmWindow_t *window = wmCreateWindow(100, 200, 300, 200, WM_CWF_DEFAULT);
     if(!window) return -errno;
+    wmSetWindowTitle(window, "Test window");
 
     pmPixMap_t *pm = wmGetPixMap(window);
     if(!pm)
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
     }
     fntSetPointSize(fnt, 14, 96);
 
+    srand(time(NULL));
     ipcMessage_t msg;
     for(int i = 0;; ++i)
     {
@@ -60,6 +62,9 @@ int main(int argc, char *argv[])
             }
         }
         if(quit) break;
+
+        if((i % 10) == 9)
+            wmSetWindowPos(window, rand() % 500, rand() % 500);
 
         char buf[64];
         time_t ct = time(NULL);

@@ -1,5 +1,6 @@
 default.ttf
 normal.cur
+title.ttf
 vector.hpp
 wm.cpp
 window.cpp

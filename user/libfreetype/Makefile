@@ -13,7 +13,9 @@ LDFLAGS =
 
 export WOOT_TOP_DIR
 
-all: configure lib/$(SHARED_LIB) lib/$(STATIC_LIB)
+all: configure lib/$(SHARED_LIB)
+
+static: lib/$(STATIC_LIB)
 
 lib/$(SHARED_LIB) lib/$(STATIC_LIB):
 	$(MAKE) -C build

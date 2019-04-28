@@ -12,8 +12,21 @@
 
 static const char *libDir = "WOOT_OS~/lib";
 
+static char *dupBase(const char *name)
+{
+    char *basename = nullptr;
+    int sepLen = String::Length(PATH_SEPARATORS);
+    for(int i = 0; i < sepLen; ++i)
+    {
+        basename = String::Find(name, PATH_SEPARATORS[i], true);
+        if(basename) break;
+    }
+    if(!basename) return String::Duplicate(name);
+    return String::Duplicate(basename + 1);
+}
+
 ELF::ELF(const char *name, Elf_Ehdr *ehdr, uint8_t *phdrData, uint8_t *shdrData, bool user) :
-    Name(String::Duplicate(name)), ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), user(user),
+    Name(dupBase(name)), ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), user(user),
     EntryPoint((int (*)())ehdr->e_entry)
 {
 }
@@ -270,13 +283,12 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                     if(dyn->d_tag != DT_NEEDED)
                         continue;
                     char *soname = _strtab + dyn->d_un.d_val;
-                    StringBuilder sb(MAX_PATH_LENGTH);
-                    sb.WriteFmt("%s/%s", libDir, soname);
-                    soname = sb.String();
                     if(proc->GetELF(soname))
                         continue;
                     //DEBUG("[elf] loading DT_NEEDED %s for %s\n", soname, elf->Name);
-                    ELF *soELF = Load(soname, user, false, applyRelocs);
+                    StringBuilder sb(MAX_PATH_LENGTH);
+                    sb.WriteFmt("%s/%s", libDir, soname);
+                    ELF *soELF = Load(sb.String(), user, false, applyRelocs);
                 }
             }
         }

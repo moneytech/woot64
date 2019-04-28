@@ -813,6 +813,17 @@ void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c
         pmHLine(pixMap, x, Y, x2, c);
 }
 
+void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken)
+{
+    pmColor_t tl = sunken ? pmColorDarkGray : pmColorWhite;
+    pmColor_t br = sunken ? pmColorWhite : pmColorDarkGray;
+
+    pmHLine(pixMap, x, y + h - 1, x + w - 1, br);
+    pmVLine(pixMap, x + w - 1, y, y + h - 1, br);
+    pmHLine(pixMap, x, y, x + w - 1, tl);
+    pmVLine(pixMap, x, y, y + h - 1, tl);
+}
+
 void pmClear(pmPixMap_t *pixMap, pmColor_t color)
 {
     pmFillRectangle(pixMap, 0, 0, pixMap->Contents.Width, pixMap->Contents.Height, color);

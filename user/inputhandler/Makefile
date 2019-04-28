@@ -16,7 +16,7 @@ LIBS = \
 
 export WOOT_TOP_DIR
 
-all: $(OUTFILE) $(OUTFILE_STATIC)
+all: $(OUTFILE)
 
 static: $(OUTFILE_STATIC)
 
@@ -26,7 +26,9 @@ $(OUTFILE_STATIC): $(OBJS)
 $(OUTFILE): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
-install: $(BIN_DIR)/$(OUTFILE) $(BIN_DIR)/$(OUTFILE_STATIC) $(CUR_FILE)
+install: $(BIN_DIR)/$(OUTFILE) $(CUR_FILE)
+
+install-static: $(BIN_DIR)/$(OUTFILE_STATIC) $(CUR_FILE)
 
 $(BIN_DIR)/$(OUTFILE): $(OUTFILE)
 	mkdir -p $(BIN_DIR)
@@ -42,4 +44,4 @@ $(CUR_FILE): normal.cur
 clean:
 	rm -f $(OBJS) $(OUTFILE_STATIC) $(OUTFILE)
 
-.PHONY: clean install static
+.PHONY: clean install static install-static

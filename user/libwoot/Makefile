@@ -10,6 +10,7 @@ OBJS = \
 	rectangle.o \
 	rpc.o \
 	thread.o \
+	ui.o \
 	video.o \
 	wm.o
 
@@ -24,7 +25,9 @@ LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,-lfreetype,--end-group
 
 export WOOT_TOP_DIR
 
-all: $(STATIC_LIB) $(SHARED_LIB)
+all: $(SHARED_LIB)
+
+static: $(STATIC_LIB)
 
 $(STATIC_LIB): $(OBJS)
 	$(AR) rc $@ $(OBJS)

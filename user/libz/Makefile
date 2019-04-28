@@ -13,7 +13,9 @@ LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
 
 export WOOT_TOP_DIR
 
-all: configure lib/$(SHARED_LIB) lib/$(STATIC_LIB)
+all: configure lib/$(SHARED_LIB)
+
+static: lib/$(STATIC_LIB)
 
 lib/$(SHARED_LIB) lib/$(STATIC_LIB):
 	$(MAKE) -C build
@@ -46,5 +48,5 @@ clean:
 	-rm -rf lib share include
 	$(MAKE) -C build clean
 
-.PHONY: clean install reconfigure distclean
+.PHONY: clean install reconfigure distclean static
 

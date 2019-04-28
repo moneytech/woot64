@@ -23,18 +23,70 @@ extern "C" {
 #define WM_CWF_DEFAULT          (WM_CWF_APPWINDOW | WM_CWF_BORDER | WM_CWF_TITLEBAR | WM_CWF_CLOSEBUTTON | WM_CWF_MINIMIZEBUTTON | WM_CWF_MAXIMIZEBUTTON | WM_CWF_SHOWICON)
 
 // window messages
-#define WM_QUIT 1
+#define WM_QUIT             1
 
+// color ids
+#define WM_COLOR_BACKGROUND 0
+#define WM_COLOR_ID_COUNT   1
+
+// font ids
+#define WM_FONT_DEFAULT     0
+#define WM_FONT_ID_COUNT    1
+
+// event types
+#define WM_EVT_INVALID      0
+#define WM_EVT_OTHER        1
+#define WM_EVT_KEYBOARD     2
+#define WM_EVT_MOUSE        3
+
+// keyboard event definitions
+#define WM_EVT_KB_RELEASED  1
+
+// mouse event definitions
+#define WM_EVT_MOUSE_AXES   5
+
+typedef struct fntFont fntFont_t;
+typedef union pmColor pmColor_t;
 typedef struct pmPixMap pmPixMap_t;
 typedef struct pmPixelFormat pmPixelFormat_t;
 typedef struct wmWindow wmWindow_t;
 
+typedef struct wmEvent
+{
+    int Type;
+    union
+    {
+        struct
+        {
+            int Data[15];
+        } Other;
+        struct
+        {
+            int Key;
+            int Flags;
+        } Keyboard;
+        struct
+        {
+            int Coords[WM_EVT_MOUSE_AXES];
+            int Delta[WM_EVT_MOUSE_AXES];
+            int ButtonsPressed;
+            int ButtonsReleased;
+            int ButtonsHeld;
+        } Mouse;
+    };
+} wmEvent_t;
+
 int wmInitialize();
+int wmCleanup();
 const char *wmGetServer();
+pmColor_t wmGetColor(int colorId);
+fntFont_t *wmGetFont(int fontId);
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);
 int wmDeleteWindow(wmWindow_t *window);
 pmPixMap_t *wmGetPixMap(wmWindow_t *window);
 void wmRedrawWindow(wmWindow_t *window);
+void wmSetWindowPos(wmWindow_t *window, int x, int y);
+void wmSetWindowTitle(wmWindow_t *window, const char *title);
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,8 @@ extern "C" {
 #include <sys/types.h>
 #include <woot/ipc.h>
 
-#define MSG_RPC_RESP_PAYLOAD_SIZE (MSG_PAYLOAD_SIZE - sizeof(int))
+#define MSG_RPC_PAYLOAD_SIZE        (MSG_PAYLOAD_SIZE)
+#define MSG_RPC_RESP_PAYLOAD_SIZE   (MSG_PAYLOAD_SIZE - sizeof(int))
 
 typedef struct ipcRPCResponse
 {
