@@ -17,8 +17,13 @@ struct uiControl
     pmPixMap_t *Content;
     void *Context;
     char *Text;
+    fntFont_t *Font;
     pmColor_t TextColor;
     pmColor_t BackColor;
+    pmColor_t BorderColor;
+    int TextHAlign;
+    int TextVAlign;
+    int BorderStyle;
 
     uiEventHandler OnCreate;
     uiEventHandler OnDelete;
@@ -43,14 +48,11 @@ struct uiControl
 struct uiLabel
 {
     uiControl_t Control;
-    fntFont_t *Font;
-    int CenterHorizontal;
 };
 
 struct uiButton
 {
     uiControl_t Control;
-    fntFont_t *Font;
 };
 
 struct uiLineEdit
@@ -71,6 +73,66 @@ struct uiSlider
 static int mapValue(int imin, int imax, int omin, int omax, int val)
 {
     return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
+}
+
+static void calculateTextPosition(uiControl_t *control, rcRectangle_t *rect, int textW, int textH, int *x, int *y)
+{
+    int borderWidth = 0;
+    int borderHeight = 0;
+    switch(control->BorderStyle)
+    {
+    case UI_BORDER_NONE:
+        borderWidth = borderHeight = 0;
+        break;
+    case UI_BORDER_SIMPLE:
+    case UI_BORDER_RAISED:
+    case UI_BORDER_SUNKEN:
+        borderWidth = borderHeight = 1;
+        break;
+    }
+    *x = borderWidth;
+    switch(control->TextHAlign)
+    {
+    case UI_HALIGN_LEFT:
+        *x = borderWidth;
+        break;
+    case UI_HALIGN_CENTER:
+        *x = (rect->Width - textW) / 2;
+        break;
+    case UI_HALIGN_RIGHT:
+        *x = rect->Width - textW - borderWidth;
+        break;
+    }
+    *y = borderHeight;
+    switch(control->TextVAlign)
+    {
+    case UI_VALIGN_TOP:
+        *y = borderHeight;
+        break;
+    case UI_VALIGN_MIDDLE:
+        *y = (rect->Height - textH) / 2;
+        break;
+    case UI_VALIGN_BOTTOM:
+        *y = rect->Height - textH - borderHeight;
+        break;
+    }
+}
+
+static void drawDefaultBorder(uiControl_t *control)
+{
+    rcRectangle_t rect = pmGetRectangle(control->Content);
+    switch(control->BorderStyle)
+    {
+    case UI_BORDER_SIMPLE:
+        pmRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BorderColor);
+        break;
+    case UI_BORDER_RAISED:
+        pmDrawFrame(control->Content, 0, 0, rect.Width, rect.Height, 0);
+        break;
+    case UI_BORDER_SUNKEN:
+        pmDrawFrame(control->Content, 0, 0, rect.Width, rect.Height, 1);
+        break;
+    }
 }
 
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -94,8 +156,13 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
         return NULL;
     }
     control->Text = strdup(text ? text : "");
-    control->TextColor = pmColorBlack;
+    control->Font = wmGetFont(WM_FONT_DEFAULT);
+    control->TextColor = wmGetColor(WM_COLOR_TEXT);
     control->BackColor = wmGetColor(WM_COLOR_BACKGROUND);
+    control->BorderColor = pmColorGetLuma(control->BackColor) > 128 ? pmColorBlack : pmColorWhite;
+    control->TextHAlign = UI_HALIGN_CENTER;
+    control->TextVAlign = UI_VALIGN_MIDDLE;
+    control->BorderStyle = UI_BORDER_NONE;
     control->OnCreate = onCreate;
     if(control->OnCreate)
         control->OnCreate(control);
@@ -134,7 +201,8 @@ void uiControlRedraw(uiControl_t *control)
     if(control->BackColor.A != 0)
     {
         rcRectangle_t rect = pmGetRectangle(control->Content);
-        pmFillRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
+        if(control->BackColor.A == 255) pmFillRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
+        else pmAlphaRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
     }
     if(control->OnPaint)
         control->OnPaint(control);
@@ -252,39 +320,22 @@ void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler)
 
 static void labelPaint(struct uiControl *sender)
 {
-    struct uiLabel *label = (struct uiLabel *)sender;
-    rcRectangle_t rect = pmGetRectangle(label->Control.Content);
-    float height = fntGetPixelHeight(label->Font);
-    pmFillRectangle(sender->Content, 0, 0, rect.Width, rect.Height, sender->BackColor);
-    if(label->CenterHorizontal)
-    {
-        float width = fntMeasureString(label->Font, label->Control.Text);
-        fntDrawString(label->Font, label->Control.Content, (rect.Width - width) / 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
-    }
-    else fntDrawString(label->Font, label->Control.Content, 2, (rect.Height - height) / 2, label->Control.Text, label->Control.TextColor);
-    pmInvalidateRect(label->Control.Content, rect);
+    rcRectangle_t rect = pmGetRectangle(sender->Content);
+    int width = fntMeasureString(sender->Font, sender->Text);
+    int height = fntGetPixelHeight(sender->Font);
+    int x = 0, y = 0;
+    calculateTextPosition(sender, &rect, width, height, &x, &y);
+    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultBorder(sender);
+    pmInvalidateRect(sender->Content, rect);
 }
 
-uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate)
+uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiLabel_t *control = (uiLabel_t *)uiControlCreate(parent, sizeof(uiLabel_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
-    control->Font = font ? font : wmGetFont(WM_FONT_DEFAULT);
-    if(!control->Font)
-    {
-        uiLabelDelete(control);
-        return NULL;
-    }
     control->Control.OnPaint = labelPaint;
     return control;
-}
-
-void uiLabelSetHorizontalCentering(uiLabel_t *control, int value)
-{
-    if(!control) return;
-    control->CenterHorizontal = value;
-    if(control->Control.OnPaint)
-        control->Control.OnPaint(&control->Control);
 }
 
 void uiLabelDelete(uiLabel_t *control)
@@ -294,25 +345,21 @@ void uiLabelDelete(uiLabel_t *control)
 
 static void buttonPaint(uiControl_t *sender)
 {
-    uiButton_t *button = (uiButton_t *)sender;
-    rcRectangle_t rect = pmGetRectangle(button->Control.Content);
-    float width = fntMeasureString(button->Font, button->Control.Text);
-    float height = fntGetPixelHeight(button->Font);
-    fntDrawString(button->Font, button->Control.Content, (rect.Width - width) / 2, (rect.Height - height) / 2, button->Control.Text, button->Control.TextColor);
-    pmDrawFrame(button->Control.Content, 0, 0, rect.Width, rect.Height, 0);
-    pmInvalidateRect(button->Control.Content, rect);
+    rcRectangle_t rect = pmGetRectangle(sender->Content);
+    int width = fntMeasureString(sender->Font, sender->Text);
+    int height = fntGetPixelHeight(sender->Font);
+    int x = 0, y = 0;
+    calculateTextPosition(sender, &rect, width, height, &x, &y);
+    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultBorder(sender);
+    pmInvalidateRect(sender->Content, rect);
 }
 
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate)
+uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiButton_t *control = (uiButton_t *)uiControlCreate(parent, sizeof(uiButton_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
-    control->Font = font ? font : wmGetFont(WM_FONT_DEFAULT);
-    if(!control->Font)
-    {
-        uiButtonDelete(control);
-        return NULL;
-    }
+    control->Control.BorderStyle = UI_BORDER_RAISED;
     control->Control.OnPaint = buttonPaint;
     return control;
 }
@@ -324,27 +371,23 @@ void uiButtonDelete(uiButton_t *control)
 
 static void lineEditPaint(uiControl_t *sender)
 {
-    uiLineEdit_t *edit = (uiLineEdit_t *)sender;
-    rcRectangle_t rect = pmGetRectangle(edit->Control.Content);
-    pmFillRectangle(edit->Control.Content, 0, 0, rect.Width, rect.Height, edit->Control.BackColor);
-    float height = fntGetPixelHeight(edit->Font);
-    fntDrawString(edit->Font, edit->Control.Content, 2, (rect.Height - height) / 2, edit->Control.Text, edit->Control.TextColor);
-    pmDrawFrame(edit->Control.Content, 0, 0, rect.Width, rect.Height, 1);
-    pmDrawFrame(edit->Control.Content, 1, 1, rect.Width - 2, rect.Height - 2, 1);
-    pmInvalidateRect(edit->Control.Content, rect);
+    rcRectangle_t rect = pmGetRectangle(sender->Content);
+    int width = fntMeasureString(sender->Font, sender->Text);
+    int height = fntGetPixelHeight(sender->Font);
+    int x = 0, y = 0;
+    calculateTextPosition(sender, &rect, width, height, &x, &y);
+    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultBorder(sender);
+    pmInvalidateRect(sender->Content, rect);
 }
 
-uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate)
+uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiLineEdit_t *control = (uiLineEdit_t *)uiControlCreate(parent, sizeof(uiLineEdit_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
-    control->Font = font ? font : wmGetFont(WM_FONT_DEFAULT);
-    if(!control->Font)
-    {
-        uiLineEditDelete(control);
-        return NULL;
-    }
+    control->Control.TextHAlign = UI_HALIGN_LEFT;
     control->Control.BackColor = pmColorWhite;
+    control->Control.BorderStyle = UI_BORDER_SUNKEN;
     control->Control.OnPaint = lineEditPaint;
     return control;
 }

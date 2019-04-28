@@ -8,6 +8,22 @@
 extern "C" {
 #endif // __cplusplus
 
+// horizontal element alignment
+#define UI_HALIGN_LEFT      0
+#define UI_HALIGN_CENTER    1
+#define UI_HALIGN_RIGHT     2
+
+// vertical element alignment
+#define UI_VALIGN_TOP       0
+#define UI_VALIGN_MIDDLE    1
+#define UI_VALIGN_BOTTOM    2
+
+// border styles
+#define UI_BORDER_NONE      0
+#define UI_BORDER_SIMPLE    1
+#define UI_BORDER_RAISED    2
+#define UI_BORDER_SUNKEN    3
+
 typedef struct wmEvent wmEvent_t;
 
 typedef struct uiControl uiControl_t;
@@ -35,14 +51,13 @@ void uiControlSetOnMousePress(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler);
 
-uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate);
-void uiLabelSetHorizontalCentering(uiLabel_t *control, int value);
+uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiLabelDelete(uiLabel_t *control);
 
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate);
+uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiButtonDelete(uiButton_t *control);
 
-uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, fntFont_t *font, uiEventHandler onCreate);
+uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiLineEditDelete(uiLineEdit_t *control);
 
 uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val);

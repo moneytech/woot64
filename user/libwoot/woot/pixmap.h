@@ -67,6 +67,7 @@ unsigned pmFormatPixelsToBytes(pmPixelFormat_t format, unsigned pixels);
 unsigned pmFormatPixelsToBytesP(pmPixelFormat_t *format, unsigned pixels);
 pmPixelFormat_t pmFormatFromModeInfo(vidModeInfo_t *modeInfo);
 
+unsigned char pmColorGetLuma(pmColor_t color);
 pmColor_t pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b);
 pmColor_t pmColorFromARGB(unsigned char a, unsigned char r, unsigned char g, unsigned char b);
 unsigned pmColorToValue(pmPixelFormat_t *format, pmColor_t color);
@@ -104,6 +105,7 @@ void pmLine(pmPixMap_t *pixMap, int x1, int y1, int x2, int y2, pmColor_t c);
 void pmRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
 void pmRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c);
 void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
+void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
 void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken);
 void pmClear(pmPixMap_t *pixMap, pmColor_t color);
 void pmBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);

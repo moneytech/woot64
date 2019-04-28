@@ -12,6 +12,7 @@
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
 #include <woot/thread.h>
+#include <woot/ui.h>
 #include <woot/video.h>
 #include <woot/wm.h>
 
@@ -47,6 +48,16 @@ int main(int argc, char *argv[])
     }
     fntSetPointSize(fnt, 14, 96);
 
+    uiControl_t *rootControl = wmGetRootControl(window);
+    //uiControlSetBackColor(rootControl, pmColorTransparent);
+    uiLabel_t *lbl = uiLabelCreate(rootControl, 0, 0, pm->Contents.Width, 24, "Date and time", NULL);
+    uiButton_t *btn = uiButtonCreate(rootControl, (pm->Contents.Width - 80) / 2, 30, 80, 30, "Meheha", NULL);
+    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 70, 120, 30, "Trolololo", NULL);
+
+    pmColor_t shadeColor = pmColorFromARGB(128, 0, 0, 0);
+    uiControlSetTextColor((uiControl_t *)lbl, pmColorWhite);
+    uiControlSetBackColor((uiControl_t *)lbl, shadeColor);
+
     srand(time(NULL));
     ipcMessage_t msg;
     for(int i = 0;; ++i)
@@ -69,17 +80,22 @@ int main(int argc, char *argv[])
         char buf[64];
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
+        uiControlSetText((uiControl_t *)lbl, buf);
 
-        int strW = fntMeasureString(fnt, buf);
+        //int strW = fntMeasureString(fnt, buf);
 
         pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
         pmClear(pm, color);
-        fntDrawString(fnt, pm, (pm->Contents.Width - strW) / 2, 0, buf, pmColorWhite);
+        //fntDrawString(fnt, pm, (pm->Contents.Width - strW) / 2, 0, buf, pmColorWhite);
         pmRectangleRect(pm, &pm->Contents, pmColorWhite);
         pmLine(pm, 0, 0, pm->Contents.Width - 1, pm->Contents.Height - 1, pmColorWhite);
         pmLine(pm, 0, pm->Contents.Height - 1, pm->Contents.Width - 1, 0, pmColorWhite);
+        uiControlRedraw((uiControl_t *)lbl);
+        uiControlRedraw((uiControl_t *)btn);
+        uiControlRedraw((uiControl_t *)edit);
+        //uiControlRedraw(rootControl);
         wmRedrawWindow(window);
-        threadSleep(THREAD_SELF, 250);
+        threadSleep(THREAD_SELF, 500);
     }
 
     printf("[usertest] Closing usertest\n");

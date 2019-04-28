@@ -27,7 +27,8 @@ extern "C" {
 
 // color ids
 #define WM_COLOR_BACKGROUND 0
-#define WM_COLOR_ID_COUNT   1
+#define WM_COLOR_TEXT       1
+#define WM_COLOR_ID_COUNT   2
 
 // font ids
 #define WM_FONT_DEFAULT     0
@@ -45,10 +46,14 @@ extern "C" {
 // mouse event definitions
 #define WM_EVT_MOUSE_AXES   5
 
+// default dpi setting
+#define WM_DEFAULT_DPI      96
+
 typedef struct fntFont fntFont_t;
 typedef union pmColor pmColor_t;
 typedef struct pmPixMap pmPixMap_t;
 typedef struct pmPixelFormat pmPixelFormat_t;
+typedef struct uiControl uiControl_t;
 typedef struct wmWindow wmWindow_t;
 
 typedef struct wmEvent
@@ -87,6 +92,7 @@ pmPixMap_t *wmGetPixMap(wmWindow_t *window);
 void wmRedrawWindow(wmWindow_t *window);
 void wmSetWindowPos(wmWindow_t *window, int x, int y);
 void wmSetWindowTitle(wmWindow_t *window, const char *title);
+uiControl_t *wmGetRootControl(wmWindow_t *window);
 
 #ifdef __cplusplus
 }

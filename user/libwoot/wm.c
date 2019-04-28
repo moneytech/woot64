@@ -6,6 +6,7 @@
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
+#include <woot/ui.h>
 #include <woot/wm.h>
 
 #define DEFAULT_RPC_TIMEOUT 1000
@@ -19,6 +20,7 @@ struct wmWindow
     int id;
     int shMemHandle;
     pmPixMap_t *pixMap;
+    uiControl_t *rootControl;
 };
 
 struct wmSetWindowPosArgs
@@ -39,8 +41,17 @@ int wmInitialize()
     if(res < 0) return res;
     memset(colors, 0, sizeof(colors));
     colors[WM_COLOR_BACKGROUND] = pmColorGray;
+    colors[WM_COLOR_TEXT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
     fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
+    if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 12, WM_DEFAULT_DPI);
+    return 0;
+}
+
+int wmCleanup()
+{
+    if(fonts[WM_FONT_DEFAULT]) fntDelete(fonts[WM_FONT_DEFAULT]);
+    memset(fonts, 0, sizeof(fonts));
     return 0;
 }
 
@@ -108,6 +119,15 @@ wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
         free(wnd);
         return NULL;
     }
+    wnd->rootControl = uiControlCreate(NULL, 0, wnd->pixMap, 0, 0, w, h, NULL, NULL);
+    if(!wnd->rootControl)
+    {
+        pmDelete(wnd->pixMap);
+        ipcUnMapSharedMem(wnd->shMemHandle, pixels);
+        ipcCloseSharedMem(wnd->shMemHandle);
+        free(wnd);
+        return NULL;
+    }
     return wnd;
 }
 
@@ -117,6 +137,8 @@ int wmDeleteWindow(wmWindow_t *window)
     int response = -ENOSYS;
     int res = rpcCall(wmServer, "wmDeleteWindow", &window->id, sizeof(int), &response, sizeof(response), DEFAULT_RPC_TIMEOUT);
     if(res < 0) return res;
+    if(window->rootControl)
+        uiControlDelete(window->rootControl);
     if(window->pixMap)
     {
         void *pixels = window->pixMap->Pixels;
@@ -157,9 +179,12 @@ void wmSetWindowTitle(wmWindow_t *window, const char *title)
     rpcCall(wmServer, "wmSetWindowTitle", &a.args, sizeof(a.args) + titleLen + 1, NULL, 0, DEFAULT_RPC_TIMEOUT);
 }
 
-int wmCleanup()
+uiControl_t *wmGetRootControl(wmWindow_t *window)
 {
-    if(fonts[WM_FONT_DEFAULT]) fntDelete(fonts[WM_FONT_DEFAULT]);
-    memset(fonts, 0, sizeof(fonts));
-    return 0;
+    if(!window)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+    return window->rootControl;
 }

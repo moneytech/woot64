@@ -226,6 +226,11 @@ pmPixelFormat_t pmFormatFromModeInfo(vidModeInfo_t *modeInfo)
     return pf;
 }
 
+unsigned char pmColorGetLuma(pmColor_t color)
+{
+    return ((unsigned)color.R + (unsigned)color.R + (unsigned)color.G + (unsigned)color.G + (unsigned)color.G + (unsigned)color.B) / 6;
+}
+
 pmColor_t pmColorFromRGB(unsigned char r, unsigned char g, unsigned char b)
 {
     pmColor_t color;
@@ -811,6 +816,32 @@ void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c
 
     for(int Y = y; Y < y2; ++Y)
         pmHLine(pixMap, x, Y, x2, c);
+}
+
+void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c)
+{
+    if(c.A == 0) return;
+    else if(c.A == 255)
+    {
+        pmFillRectangle(pixMap, x, y, w, h, c);
+        return;
+    }
+
+    if(w <= 0 || h <= 0)
+        return;
+
+    int x2 = x + w - 1;
+    int y2 = y + h;
+
+    if(x2 < 0 || x >= pixMap->Contents.Width || y2 < 0 || y >= pixMap->Contents.Height)
+        return;
+
+    // slow but works
+    for(int Y = y; Y < y2; ++Y)
+    {
+        for(int X = x; X < x2; ++X)
+            pmSetPixel(pixMap, X, Y, pmBlendPixel(pmGetPixel(pixMap, X, Y), c));
+    }
 }
 
 void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken)
