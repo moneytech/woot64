@@ -24,6 +24,17 @@ extern "C" {
 #define UI_BORDER_RAISED    2
 #define UI_BORDER_SUNKEN    3
 
+// control visibility
+#define UI_HIDDEN           0
+#define UI_VISIBLE          1
+
+// icon position
+#define UI_ICON_BEHIND      0
+#define UI_ICON_OVER        1
+#define UI_ICON_BELOW       2
+#define UI_ICON_LEFT        3
+#define UI_ICON_RIGHT       4
+
 typedef struct wmEvent wmEvent_t;
 
 typedef struct uiControl uiControl_t;
@@ -41,11 +52,20 @@ void uiControlRedraw(uiControl_t *control);
 pmPixMap_t *uiControlGetPixMap(uiControl_t *control);
 void *uiControlGetContext(uiControl_t *control);
 void uiControlSetContext(uiControl_t *control, void *context);
+void uiControlSetVisibility(uiControl_t *control, int visibility);
 char *uiControlGetText(uiControl_t *control);
 void uiControlSetText(uiControl_t *control, const char *text);
+void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon);
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t event);
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color);
 void uiControlSetBackColor(uiControl_t *control, pmColor_t color);
+void uiControlSetBorderColor(uiControl_t *control, pmColor_t color);
+void uiControlSetTextHAlign(uiControl_t *control, int align);
+void uiControlSetTextVAlign(uiControl_t *control, int align);
+void uiControlSetBorderStyle(uiControl_t *control, int style);
+void uiControlSetMarginSize(uiControl_t *control, int size);
+void uiControlSetIconPosition(uiControl_t *control, int position);
+void uiControlSetTextIconSeparation(uiControl_t *control, int separation);
 void uiControlSetOnPaint(uiControl_t *control, uiEventHandler handler);
 void uiControlSetOnMousePress(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(uiControl_t *control, uiWMEventHandler handler);

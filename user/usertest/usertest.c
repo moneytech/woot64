@@ -48,15 +48,26 @@ int main(int argc, char *argv[])
     }
     fntSetPointSize(fnt, 14, 96);
 
+    pmPixMap_t *fileIcon = pmLoadPNG("/file.png");
+    pmPixMap_t *clockIcon = pmLoadPNG("/clock_small.png");
+
     uiControl_t *rootControl = wmGetRootControl(window);
     //uiControlSetBackColor(rootControl, pmColorTransparent);
+    //uiControlSetBackColor(rootControl, pmColorRed);
     uiLabel_t *lbl = uiLabelCreate(rootControl, 0, 0, pm->Contents.Width, 24, "Date and time", NULL);
-    uiButton_t *btn = uiButtonCreate(rootControl, (pm->Contents.Width - 80) / 2, 30, 80, 30, "Meheha", NULL);
-    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 70, 120, 30, "Trolololo", NULL);
+    uiButton_t *btn = uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Meheha", NULL);
+    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
 
     pmColor_t shadeColor = pmColorFromARGB(128, 0, 0, 0);
     uiControlSetTextColor((uiControl_t *)lbl, pmColorWhite);
     uiControlSetBackColor((uiControl_t *)lbl, shadeColor);
+    uiControlSetTextIconSeparation((uiControl_t *)lbl, 4);
+    uiControlSetIconPosition((uiControl_t *)lbl, UI_ICON_LEFT);
+    uiControlSetIcon((uiControl_t *)lbl, clockIcon);
+
+    uiControlSetIcon((uiControl_t *)btn, fileIcon);
+    uiControlSetIconPosition((uiControl_t *)btn, UI_ICON_OVER);
+    uiControlSetTextIconSeparation((uiControl_t *)btn, 2);
 
     srand(time(NULL));
     ipcMessage_t msg;

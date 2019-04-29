@@ -44,7 +44,7 @@ int wmInitialize()
     colors[WM_COLOR_TEXT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
     fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
-    if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 12, WM_DEFAULT_DPI);
+    if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 11, WM_DEFAULT_DPI);
     return 0;
 }
 

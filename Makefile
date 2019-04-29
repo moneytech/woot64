@@ -19,7 +19,7 @@ export CC CXX ASM LD AR WOOT_TOP_DIR
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
 
-install: $(IMGFILE) root/logo.png
+install: $(IMGFILE) root/logo.png root/file.png root/clock_small.png
 	mkdir -p ./root
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
 	$(MAKE) try-mount
@@ -33,6 +33,12 @@ $(IMGFILE): hdd-empty-ext2.img.gz
 	$(MAKE) try-umount
 
 root/logo.png: logo.png
+	cp $? $@
+
+root/file.png: file.png
+	cp $? $@
+
+root/clock_small.png: clock_small.png
 	cp $? $@
 
 try-mount:

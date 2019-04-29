@@ -7,6 +7,9 @@
 #include <woot/ui.h>
 #include <woot/wm.h>
 
+#undef max
+#define max(x, y) ((x) > (y) ? (x) : (y))
+
 struct uiControl
 {
     uiControl_t *Next;
@@ -16,7 +19,9 @@ struct uiControl
     int X, Y;
     pmPixMap_t *Content;
     void *Context;
+    int Visibility;
     char *Text;
+    pmPixMap_t *Icon;
     fntFont_t *Font;
     pmColor_t TextColor;
     pmColor_t BackColor;
@@ -24,6 +29,9 @@ struct uiControl
     int TextHAlign;
     int TextVAlign;
     int BorderStyle;
+    int MarginSize;
+    int IconPosition;
+    int TextIconSeparation;
 
     uiEventHandler OnCreate;
     uiEventHandler OnDelete;
@@ -75,45 +83,155 @@ static int mapValue(int imin, int imax, int omin, int omax, int val)
     return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
 }
 
-static void calculateTextPosition(uiControl_t *control, rcRectangle_t *rect, int textW, int textH, int *x, int *y)
+// calculate face (text and icon) size
+static void calculateFaceSize(uiControl_t *control, int *w, int *h)
 {
-    int borderWidth = 0;
-    int borderHeight = 0;
+    // initialize return values
+    if(w) *w = 0;
+    if(h) *h = 0;
+
+    if(!control->Icon)
+    {   // no icon
+        if(!control->Font || !control->Text || !control->Text[0])
+            return; // no icon nor text
+        if(w) *w = fntMeasureString(control->Font, control->Text);
+        if(h) *h = fntGetPixelHeight(control->Font);
+        return;
+    }
+
+    if(!control->Font || !control->Text || !control->Text[0])
+    {   // no text/icon only
+        if(w) *w = control->Icon->Contents.Width;
+        if(h) *h = control->Icon->Contents.Height;
+        return;
+    }
+
+    // we have both icon and text
+    int textWidth = fntMeasureString(control->Font, control->Text);
+    int textHeight = fntGetPixelHeight(control->Font);
+    int iconWidth = control->Icon->Contents.Width;
+    int iconHeight = control->Icon->Contents.Height;
+
+    int width = 0;
+    int height = 0;
+
+    switch(control->IconPosition)
+    {
+    default:
+    case UI_ICON_BEHIND:
+        width = max(textWidth, iconWidth);
+        height = max(textHeight, iconHeight);
+        break;
+    case UI_ICON_OVER:
+    case UI_ICON_BELOW:
+        width = max(textWidth, iconWidth);
+        height = control->TextIconSeparation + textHeight + iconHeight;
+        break;
+    case UI_ICON_LEFT:
+    case UI_ICON_RIGHT:
+        width = control->TextIconSeparation + textWidth + iconWidth;
+        height = max(textHeight, iconHeight);
+        break;
+    }
+
+    if(w) *w = width;
+    if(h) *h = height;
+}
+
+// calculate where to draw controls face
+static void calculateFaceRect(uiControl_t *control, rcRectangle_t *rect, rcRectangle_t *faceRect)
+{
+    if(!faceRect)
+        return;
+
+    calculateFaceSize(control, &faceRect->Width, &faceRect->Height);
+
+    int borderSize = 0;
     switch(control->BorderStyle)
     {
     case UI_BORDER_NONE:
-        borderWidth = borderHeight = 0;
+        borderSize = 0;
         break;
     case UI_BORDER_SIMPLE:
     case UI_BORDER_RAISED:
     case UI_BORDER_SUNKEN:
-        borderWidth = borderHeight = 1;
+        borderSize = 1;
         break;
     }
-    *x = borderWidth;
+    borderSize += control->MarginSize;
+    faceRect->X = borderSize;
     switch(control->TextHAlign)
     {
     case UI_HALIGN_LEFT:
-        *x = borderWidth;
+        faceRect->X = borderSize;
         break;
     case UI_HALIGN_CENTER:
-        *x = (rect->Width - textW) / 2;
+        faceRect->X = (rect->Width - faceRect->Width) / 2;
         break;
     case UI_HALIGN_RIGHT:
-        *x = rect->Width - textW - borderWidth;
+        faceRect->X = rect->Width - faceRect->Width - borderSize;
         break;
     }
-    *y = borderHeight;
+    faceRect->Y = borderSize;
     switch(control->TextVAlign)
     {
     case UI_VALIGN_TOP:
-        *y = borderHeight;
+        faceRect->Y = borderSize;
         break;
     case UI_VALIGN_MIDDLE:
-        *y = (rect->Height - textH) / 2;
+        faceRect->Y = (rect->Height - faceRect->Height) / 2;
         break;
     case UI_VALIGN_BOTTOM:
-        *y = rect->Height - textH - borderHeight;
+        faceRect->Y = rect->Height - faceRect->Height - borderSize;
+        break;
+    }
+}
+
+static void drawDefaultFace(uiControl_t *control)
+{
+    rcRectangle_t rect = pmGetRectangle(control->Content);
+    rcRectangle_t faceRect;
+    calculateFaceRect(control, &rect, &faceRect);
+    if(!control->Icon)
+    {   // text only
+        fntDrawString(control->Font, control->Content, faceRect.X, faceRect.Y, control->Text, control->TextColor);
+        return;
+    }
+
+    if(!control->Font || !control->Text || !control->Text[0])
+    {   // icon only
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X, faceRect.Y, -1, -1);
+        return;
+    }
+
+    // text with icon
+    //pmRectangleRect(control->Content, &faceRect, pmColorYellow);
+    int cx = faceRect.X + faceRect.Width / 2;
+    int cy = faceRect.Y + faceRect.Height / 2;
+    int textWidth = fntMeasureString(control->Font, control->Text);
+    int textHeight = fntGetPixelHeight(control->Font);
+    switch(control->IconPosition)
+    {
+    default:
+    case UI_ICON_BEHIND:
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->Content, cx - textWidth / 2, cy - textHeight / 2, control->Text, control->TextColor);
+        break;
+    case UI_ICON_OVER:
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y, -1, -1);
+        fntDrawString(control->Font, control->Content, cx - textWidth / 2, faceRect.Y + faceRect.Height - textHeight, control->Text, control->TextColor);
+        break;
+    case UI_ICON_BELOW:
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y + faceRect.Height - control->Icon->Contents.Height, -1, -1);
+        fntDrawString(control->Font, control->Content, cx - textWidth / 2, faceRect.Y, control->Text, control->TextColor);
+        break;
+    case UI_ICON_LEFT:
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->Content, faceRect.X + faceRect.Width - textWidth, cy - textHeight / 2, control->Text, control->TextColor);
+        break;
+    case UI_ICON_RIGHT:
+        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X + faceRect.Width - control->Icon->Contents.Width, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->Content, faceRect.X, cy - textHeight / 2, control->Text, control->TextColor);
         break;
     }
 }
@@ -155,14 +273,18 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
         uiControlDelete(control);
         return NULL;
     }
+    control->Visibility = parent ? parent->Visibility : UI_VISIBLE;
     control->Text = strdup(text ? text : "");
-    control->Font = wmGetFont(WM_FONT_DEFAULT);
-    control->TextColor = wmGetColor(WM_COLOR_TEXT);
-    control->BackColor = wmGetColor(WM_COLOR_BACKGROUND);
-    control->BorderColor = pmColorGetLuma(control->BackColor) > 128 ? pmColorBlack : pmColorWhite;
+    control->Icon = NULL;
+    control->Font = parent ? parent->Font : wmGetFont(WM_FONT_DEFAULT);
+    control->TextColor = parent ? parent->TextColor : wmGetColor(WM_COLOR_TEXT);
+    control->BackColor = parent ? parent->BackColor : wmGetColor(WM_COLOR_BACKGROUND);
+    control->BorderColor = parent ? parent->BorderColor : (pmColorGetLuma(control->BackColor) > 128 ? pmColorBlack : pmColorWhite);
     control->TextHAlign = UI_HALIGN_CENTER;
     control->TextVAlign = UI_VALIGN_MIDDLE;
     control->BorderStyle = UI_BORDER_NONE;
+    control->MarginSize = 4;
+    control->IconPosition = UI_ICON_OVER;
     control->OnCreate = onCreate;
     if(control->OnCreate)
         control->OnCreate(control);
@@ -198,6 +320,8 @@ void uiControlDelete(uiControl_t *control)
 
 void uiControlRedraw(uiControl_t *control)
 {
+    if(control->Visibility == UI_HIDDEN)
+        return;
     if(control->BackColor.A != 0)
     {
         rcRectangle_t rect = pmGetRectangle(control->Content);
@@ -228,6 +352,12 @@ void uiControlSetContext(uiControl_t *control, void *context)
     control->Context = context;
 }
 
+void uiControlSetVisibility(uiControl_t *control, int visibility)
+{
+    if(!control) return;
+    control->Visibility = visibility;
+}
+
 char *uiControlGetText(uiControl_t *control)
 {
     if(!control) return NULL;
@@ -238,7 +368,13 @@ void uiControlSetText(uiControl_t *control, const char *text)
 {
     if(!control) return;
     if(control->Text) free(control->Text);
-    control->Text = strdup(text);
+    control->Text = text ? strdup(text) : text;
+}
+
+void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
+{
+    if(!control) return;
+    control->Icon = icon;
 }
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t event)
@@ -294,6 +430,48 @@ void uiControlSetBackColor(uiControl_t *control, pmColor_t color)
     control->BackColor = color;
 }
 
+void uiControlSetBorderColor(uiControl_t *control, pmColor_t color)
+{
+    if(!control) return;
+    control->BorderColor = color;
+}
+
+void uiControlSetTextHAlign(uiControl_t *control, int align)
+{
+    if(!control) return;
+    control->TextHAlign = align;
+}
+
+void uiControlSetTextVAlign(uiControl_t *control, int align)
+{
+    if(!control) return;
+    control->TextVAlign = align;
+}
+
+void uiControlSetBorderStyle(uiControl_t *control, int style)
+{
+    if(!control) return;
+    control->BorderStyle = style;
+}
+
+void uiControlSetMarginSize(uiControl_t *control, int size)
+{
+    if(!control) return;
+    control->MarginSize = size;
+}
+
+void uiControlSetIconPosition(uiControl_t *control, int position)
+{
+    if(!control) return;
+    control->IconPosition = position;
+}
+
+void uiControlSetTextIconSeparation(uiControl_t *control, int separation)
+{
+    if(!control) return;
+    control->TextIconSeparation = separation;
+}
+
 void uiControlSetOnPaint(uiControl_t *control, uiEventHandler handler)
 {
     if(!control) return;
@@ -320,14 +498,9 @@ void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler)
 
 static void labelPaint(struct uiControl *sender)
 {
-    rcRectangle_t rect = pmGetRectangle(sender->Content);
-    int width = fntMeasureString(sender->Font, sender->Text);
-    int height = fntGetPixelHeight(sender->Font);
-    int x = 0, y = 0;
-    calculateTextPosition(sender, &rect, width, height, &x, &y);
-    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultFace(sender);
     drawDefaultBorder(sender);
-    pmInvalidateRect(sender->Content, rect);
+    pmInvalidateWhole(sender->Content);
 }
 
 uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -345,14 +518,9 @@ void uiLabelDelete(uiLabel_t *control)
 
 static void buttonPaint(uiControl_t *sender)
 {
-    rcRectangle_t rect = pmGetRectangle(sender->Content);
-    int width = fntMeasureString(sender->Font, sender->Text);
-    int height = fntGetPixelHeight(sender->Font);
-    int x = 0, y = 0;
-    calculateTextPosition(sender, &rect, width, height, &x, &y);
-    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultFace(sender);
     drawDefaultBorder(sender);
-    pmInvalidateRect(sender->Content, rect);
+    pmInvalidateWhole(sender->Content);
 }
 
 uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -371,14 +539,9 @@ void uiButtonDelete(uiButton_t *control)
 
 static void lineEditPaint(uiControl_t *sender)
 {
-    rcRectangle_t rect = pmGetRectangle(sender->Content);
-    int width = fntMeasureString(sender->Font, sender->Text);
-    int height = fntGetPixelHeight(sender->Font);
-    int x = 0, y = 0;
-    calculateTextPosition(sender, &rect, width, height, &x, &y);
-    fntDrawString(sender->Font, sender->Content, x, y, sender->Text, sender->TextColor);
+    drawDefaultFace(sender);
     drawDefaultBorder(sender);
-    pmInvalidateRect(sender->Content, rect);
+    pmInvalidateWhole(sender->Content);
 }
 
 uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
