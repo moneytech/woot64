@@ -56,7 +56,7 @@ void uiControlSetVisibility(uiControl_t *control, int visibility);
 char *uiControlGetText(uiControl_t *control);
 void uiControlSetText(uiControl_t *control, const char *text);
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon);
-int uiControlProcessEvent(uiControl_t *control, wmEvent_t event);
+int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event);
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color);
 void uiControlSetBackColor(uiControl_t *control, pmColor_t color);
 void uiControlSetBorderColor(uiControl_t *control, pmColor_t color);

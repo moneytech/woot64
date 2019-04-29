@@ -17,8 +17,8 @@ int Window::ids = 0;
 int Window::TitleBarHeight = 24;
 fntFont_t *Window::TitleFont = nullptr;
 
-Window::Window(int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format) :
-    id(++ids), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
+Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format) :
+    id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
     pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr)
 {
     size_t pgSize = getpagesize();
@@ -38,6 +38,11 @@ Window::Window(int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelForm
 int Window::GetID() const
 {
     return id;
+}
+
+int Window::GetOwner() const
+{
+    return owner;
 }
 
 pmPixelFormat_t Window::GetPixelFormat() const
@@ -120,7 +125,8 @@ void Window::UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect)
                 int cy = (titleBar.Height - titleHeight) / 2;
                 fntDrawString(TitleFont, dst, titleBar.X + cx, titleBar.Y + cy, title, pmColorWhite);
             }
-            pmRectangleRect(dst, &titleBar, pmColorWhite);
+            pmDrawFrameRect(dst, &titleBar, 0);
+            //pmRectangleRect(dst, &titleBar, pmColorWhite);
         }
     }
 

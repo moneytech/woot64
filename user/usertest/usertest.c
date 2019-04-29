@@ -16,6 +16,18 @@
 #include <woot/video.h>
 #include <woot/wm.h>
 
+pmPixMap_t *pm = NULL;
+wmWindow_t *window = NULL;
+
+void btnClick(uiControl_t *sender, wmEvent_t *event)
+{
+    uiControl_t *rootControl = wmGetRootControl(window);
+    pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
+    uiControlSetBackColor(rootControl, color);
+    uiControlRedraw(rootControl);
+    wmRedrawWindow(window);
+}
+
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
@@ -29,11 +41,11 @@ int main(int argc, char *argv[])
     }
     else printf("[usertest] Window manager server: '%s'\n", wmServer);
 
-    wmWindow_t *window = wmCreateWindow(100, 200, 300, 200, WM_CWF_DEFAULT);
+    window = wmCreateWindow(100, 200, 300, 200, WM_CWF_DEFAULT);
     if(!window) return -errno;
     wmSetWindowTitle(window, "Test window");
 
-    pmPixMap_t *pm = wmGetPixMap(window);
+    pm = wmGetPixMap(window);
     if(!pm)
     {
         wmDeleteWindow(window);
@@ -54,33 +66,49 @@ int main(int argc, char *argv[])
     uiControl_t *rootControl = wmGetRootControl(window);
     //uiControlSetBackColor(rootControl, pmColorTransparent);
     //uiControlSetBackColor(rootControl, pmColorRed);
-    uiLabel_t *lbl = uiLabelCreate(rootControl, 0, 0, pm->Contents.Width, 24, "Date and time", NULL);
-    uiButton_t *btn = uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Meheha", NULL);
-    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
+    uiControl_t *lbl = (uiControl_t *)uiLabelCreate(rootControl, 20, 1, pm->Contents.Width - 41, 24, "Date and time", NULL);
+    uiControl_t *btn = (uiControl_t *)uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Do something", NULL);
+    uiControl_t *edit = (uiControl_t *)uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
+
+    uiControlSetBorderColor(rootControl, pmColorWhite);
+    uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
 
     pmColor_t shadeColor = pmColorFromARGB(128, 0, 0, 0);
-    uiControlSetTextColor((uiControl_t *)lbl, pmColorWhite);
-    uiControlSetBackColor((uiControl_t *)lbl, shadeColor);
-    uiControlSetTextIconSeparation((uiControl_t *)lbl, 4);
-    uiControlSetIconPosition((uiControl_t *)lbl, UI_ICON_LEFT);
-    uiControlSetIcon((uiControl_t *)lbl, clockIcon);
+    uiControlSetTextColor(lbl, pmColorWhite);
+    uiControlSetBackColor(lbl, shadeColor);
+    uiControlSetTextIconSeparation(lbl, 4);
+    uiControlSetIconPosition(lbl, UI_ICON_LEFT);
+    uiControlSetIcon(lbl, clockIcon);
 
-    uiControlSetIcon((uiControl_t *)btn, fileIcon);
-    uiControlSetIconPosition((uiControl_t *)btn, UI_ICON_OVER);
-    uiControlSetTextIconSeparation((uiControl_t *)btn, 2);
+    uiControlSetIcon(btn, fileIcon);
+    uiControlSetIconPosition(btn, UI_ICON_OVER);
+    uiControlSetTextIconSeparation(btn, 2);
+    uiControlSetOnMousePress(btn, btnClick);
+
+    uiControlRedraw(rootControl);
+    wmRedrawWindow(window);
 
     srand(time(NULL));
     ipcMessage_t msg;
     for(int i = 0;; ++i)
     {
         int quit = 0;
-        while(ipcGetMessage(&msg, 0) >= 0)
+
+        int msgTimeout = 500;
+        while(ipcGetMessage(&msg, msgTimeout) >= 0)
         {
+            msgTimeout = 100;
             ipcProcessMessage(&msg);
             if(msg.Number == MSG_QUIT)
             {
                 quit = 1;
                 break;
+            }
+            else if(msg.Number == MSG_WM_EVENT)
+            {
+                wmEvent_t *event = (wmEvent_t *)msg.Data;
+                if(event->WindowId == wmGetWindowId(window))
+                    wmProcessEvent(window, event);
             }
         }
         if(quit) break;
@@ -92,21 +120,8 @@ int main(int argc, char *argv[])
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
         uiControlSetText((uiControl_t *)lbl, buf);
-
-        //int strW = fntMeasureString(fnt, buf);
-
-        pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
-        pmClear(pm, color);
-        //fntDrawString(fnt, pm, (pm->Contents.Width - strW) / 2, 0, buf, pmColorWhite);
-        pmRectangleRect(pm, &pm->Contents, pmColorWhite);
-        pmLine(pm, 0, 0, pm->Contents.Width - 1, pm->Contents.Height - 1, pmColorWhite);
-        pmLine(pm, 0, pm->Contents.Height - 1, pm->Contents.Width - 1, 0, pmColorWhite);
-        uiControlRedraw((uiControl_t *)lbl);
-        uiControlRedraw((uiControl_t *)btn);
-        uiControlRedraw((uiControl_t *)edit);
-        //uiControlRedraw(rootControl);
+        uiControlRedraw(rootControl);
         wmRedrawWindow(window);
-        threadSleep(THREAD_SELF, 500);
     }
 
     printf("[usertest] Closing usertest\n");

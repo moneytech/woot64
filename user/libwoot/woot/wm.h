@@ -23,7 +23,6 @@ extern "C" {
 #define WM_CWF_DEFAULT          (WM_CWF_APPWINDOW | WM_CWF_BORDER | WM_CWF_TITLEBAR | WM_CWF_CLOSEBUTTON | WM_CWF_MINIMIZEBUTTON | WM_CWF_MAXIMIZEBUTTON | WM_CWF_SHOWICON)
 
 // window messages
-#define WM_QUIT             1
 
 // color ids
 #define WM_COLOR_BACKGROUND 0
@@ -37,8 +36,9 @@ extern "C" {
 // event types
 #define WM_EVT_INVALID      0
 #define WM_EVT_OTHER        1
-#define WM_EVT_KEYBOARD     2
-#define WM_EVT_MOUSE        3
+#define WM_EVT_CLOSE        2
+#define WM_EVT_KEYBOARD     3
+#define WM_EVT_MOUSE        4
 
 // keyboard event definitions
 #define WM_EVT_KB_RELEASED  1
@@ -59,11 +59,12 @@ typedef struct wmWindow wmWindow_t;
 typedef struct wmEvent
 {
     int Type;
+    int WindowId;
     union
     {
         struct
         {
-            int Data[15];
+            int Data[14];
         } Other;
         struct
         {
@@ -88,11 +89,13 @@ pmColor_t wmGetColor(int colorId);
 fntFont_t *wmGetFont(int fontId);
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);
 int wmDeleteWindow(wmWindow_t *window);
+int wmGetWindowId(wmWindow_t *window);
 pmPixMap_t *wmGetPixMap(wmWindow_t *window);
 void wmRedrawWindow(wmWindow_t *window);
 void wmSetWindowPos(wmWindow_t *window, int x, int y);
 void wmSetWindowTitle(wmWindow_t *window, const char *title);
 uiControl_t *wmGetRootControl(wmWindow_t *window);
+int wmProcessEvent(wmWindow_t *window, wmEvent_t *event);
 
 #ifdef __cplusplus
 }

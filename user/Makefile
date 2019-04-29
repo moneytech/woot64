@@ -5,6 +5,7 @@ SUBDIRS = \
 	libpng \
 	libfreetype \
 	libwoot \
+	filemanager \
 	init \
 	inputhandler \
 	usertest \

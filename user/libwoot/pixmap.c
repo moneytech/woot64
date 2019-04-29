@@ -855,6 +855,11 @@ void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken)
     pmVLine(pixMap, x, y, y + h - 1, tl);
 }
 
+void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken)
+{
+    return pmDrawFrame(pixMap, rect->X, rect->Y, rect->Width, rect->Height, sunken);
+}
+
 void pmClear(pmPixMap_t *pixMap, pmColor_t color)
 {
     pmFillRectangle(pixMap, 0, 0, pixMap->Contents.Width, pixMap->Contents.Height, color);

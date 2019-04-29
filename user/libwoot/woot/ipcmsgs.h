@@ -20,3 +20,6 @@
 #define MSG_RPC_RESPONSE            201
 #define MSG_RPC_FIND_SERVER         202
 #define MSG_RPC_FIND_SERVER_RESP    203
+
+// window manager messages
+#define MSG_WM_EVENT                300

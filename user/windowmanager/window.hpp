@@ -10,6 +10,7 @@ class Window
     static int ids;
 
     int id;
+    int owner;
     rcRectangle_t rect;
     unsigned flags;
     char *shMemName;
@@ -23,8 +24,9 @@ public:
 
     static Window *GetByID(int id);
 
-    Window(int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format);
+    Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format);
     int GetID() const;
+    int GetOwner() const;
     pmPixelFormat_t GetPixelFormat() const;
     const char *GetShMemName() const;
     rcRectangle_t GetRect() const;

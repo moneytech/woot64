@@ -107,6 +107,7 @@ void pmRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c);
 void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
 void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
 void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken);
+void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken);
 void pmClear(pmPixMap_t *pixMap, pmColor_t color);
 void pmBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);

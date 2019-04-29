@@ -49,8 +49,11 @@ int SharedMem::Map(Process *proc, uintptr_t va, bool user, bool write)
     if(!proc) return -EINVAL;
     if(!Lock()) return -errno;
     mappings.Append(Mapping { proc, va });
+    uintptr_t ova = va;
     for(uint i = 0; i < pageCount; ++i, va += PAGE_SIZE)
         Paging::MapPage(proc->AddressSpace, va, frames.Get(i), user, write);
+    if(mappings.Count() == 1 && proc == Process::GetCurrent() && write)
+        Memory::Zero((void *)ova, pageCount << PAGE_SHIFT);
     UnLock();
     return ESUCCESS;
 }

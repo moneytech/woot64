@@ -23,6 +23,17 @@ struct wmWindow
     uiControl_t *rootControl;
 };
 
+union wmCreateWindowResp
+{
+    struct
+    {
+        int id;
+        pmPixelFormat_t pixelFormat;
+        char shMemName[0];
+    };
+    char Data[MSG_RPC_RESP_PAYLOAD_SIZE];
+};
+
 struct wmSetWindowPosArgs
 {
     int windowId;
@@ -77,16 +88,7 @@ fntFont_t *wmGetFont(int fontId)
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
 {
     int args[5] = { x, y, w, h, flags };
-    union
-    {
-        struct
-        {
-            int id;
-            pmPixelFormat_t pixelFormat;
-            char shMemName[0];
-        };
-        char Data[MSG_RPC_RESP_PAYLOAD_SIZE];
-    } response;
+    union wmCreateWindowResp response;
     int res = rpcCall(wmServer, "wmCreateWindow", args, sizeof(args), &response, sizeof(response), DEFAULT_RPC_TIMEOUT);
     //printf("id: %d %s\n", response.id, response.shMemName);
     if(res < 0 || response.id < 0) return NULL;
@@ -150,6 +152,11 @@ int wmDeleteWindow(wmWindow_t *window)
     return response;
 }
 
+int wmGetWindowId(wmWindow_t *window)
+{
+    return window->id;
+}
+
 pmPixMap_t *wmGetPixMap(wmWindow_t *window)
 {
     return window->pixMap;
@@ -187,4 +194,13 @@ uiControl_t *wmGetRootControl(wmWindow_t *window)
         return NULL;
     }
     return window->rootControl;
+}
+
+int wmProcessEvent(wmWindow_t *window, wmEvent_t *event)
+{
+    if(window->id != event->WindowId)
+        return -EINVAL;
+    if(!window->rootControl)
+        return -EINVAL;
+    return uiControlProcessEvent(window->rootControl, event);
 }

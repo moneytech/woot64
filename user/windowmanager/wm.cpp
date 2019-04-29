@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <png.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -17,6 +18,17 @@
 
 #include "vector.hpp"
 #include "window.hpp"
+
+union wmCreateWindowResp
+{
+    struct
+    {
+        int id;
+        pmPixelFormat_t pixelFormat;
+        char shMemName[0];
+    };
+    char Data[MSG_RPC_RESP_PAYLOAD_SIZE];
+};
 
 struct wmSetWindowPosArgs
 {
@@ -47,7 +59,8 @@ extern "C" int main(int argc, char *argv[])
 
     setbuf(stdout, NULL);
 
-    printf("[windowmanager] Started window manager (pid: %d)\n", getpid());
+    int currentPId = getpid();
+    printf("[windowmanager] Started window manager (pid: %d)\n", currentPId);
 
     int display = vidOpenDisplay(vidGetDefaultDisplayId());
     if(display < 0)
@@ -116,7 +129,7 @@ extern "C" int main(int argc, char *argv[])
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
 
     // create desktop window
-    Window *desktopWnd = new Window(0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, &bbPixMap->Format);
+    Window *desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, &bbPixMap->Format);
     windows.Prepend(desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
@@ -135,7 +148,7 @@ extern "C" int main(int argc, char *argv[])
     pmPixMap_t *cursor = pmLoadCUR("/normal.cur", 0, &cursorHotX, &cursorHotY);
     if(cursor)
     {
-        mouseWnd = new Window(mouseX - cursorHotX, mouseY - cursorHotY,
+        mouseWnd = new Window(currentPId, mouseX - cursorHotX, mouseY - cursorHotY,
                               cursor->Contents.Width, cursor->Contents.Height,
                               WM_CWF_USEALPHA, &cursor->Format);
         pmBlit(mouseWnd->GetPixMap(), cursor, 0, 0, 0, 0, -1, -1);
@@ -162,6 +175,15 @@ extern "C" int main(int argc, char *argv[])
             else if(msg.Number == MSG_MOUSE_EVENT)
             {
                 inpMouseEvent_t *mouseEv = (inpMouseEvent_t *)msg.Data;
+
+                // mouse acceleration
+                float mouseSpeed = sqrt(mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1]);
+                if(mouseSpeed > 4)
+                {
+                    mouseEv->Delta[0] *= 1.5;
+                    mouseEv->Delta[1] *= 1.5;
+                }
+
                 mouseX += mouseEv->Delta[0];
                 mouseY += mouseEv->Delta[1];
 
@@ -174,6 +196,30 @@ extern "C" int main(int argc, char *argv[])
 
                 if(mouseWnd)
                     moveWindow(&dirtyRect, mouseWnd, mouseX - cursorHotX, mouseY - cursorHotY);
+
+                for(Window *wnd : windows)
+                {
+                    if(wnd == mouseWnd || wnd == desktopWnd)
+                        continue;
+
+                    rcRectangle_t rect = wnd->GetRect();
+                    if(rcContainsPointP(&rect, mouseX, mouseY))
+                    {
+                        wmEvent_t event;
+                        memset(&event, 0, sizeof(event));
+                        event.Type = WM_EVT_MOUSE;
+                        event.WindowId = wnd->GetID();
+                        event.Mouse.Coords[0] = mouseX - rect.X;
+                        event.Mouse.Coords[1] = mouseY - rect.Y;
+                        for(int i = 0; i < WM_EVT_MOUSE_AXES && i < INP_MAX_MOUSE_AXES; ++i)
+                            event.Mouse.Delta[i] = mouseEv->Delta[i];
+                        event.Mouse.ButtonsPressed = mouseEv->ButtonsPressed;
+                        event.Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
+                        event.Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
+                        ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+                        break;
+                    }
+                }
             }
             else if(msg.Number == MSG_RPC_REQUEST)
             {
@@ -187,8 +233,11 @@ extern "C" int main(int argc, char *argv[])
                     unsigned h = *(unsigned *)(args + 12);
                     unsigned flags = *(unsigned *)(args + 16);
 
+                    if(x == WM_CW_USEDEFAULT) x = (bbPixMap->Contents.Width - w) / 2;
+                    if(y == WM_CW_USEDEFAULT) y = (bbPixMap->Contents.Height - h) / 2;
+
                     //printf("[windowmanager] wmCreateWindow(%d, %d, %d, %d, %#.8x)\n", x, y, w, h, flags);
-                    Window *wnd = new Window(x, y, w, h, flags, &fbFormat);
+                    Window *wnd = new Window(msg.Source, x, y, w, h, flags, &fbFormat);
                     dirtyRect = rcAdd(dirtyRect, wnd->GetDecoratedRect());
 
                     // add new window before mouse cursor window (if possible)
@@ -203,20 +252,11 @@ extern "C" int main(int argc, char *argv[])
                     }
                     windows.InsertBefore(mouseWndIdx, wnd);
 
-                    union response_type
-                    {
-                        struct
-                        {
-                            int id;
-                            pmPixelFormat_t pixelFormat;
-                            char shMemName[0];
-                        };
-                        char Data[MSG_RPC_RESP_PAYLOAD_SIZE];
-                    } response;
+                    wmCreateWindowResp response;
 
                     response.id = wnd->GetID();
                     response.pixelFormat = wnd->GetPixelFormat();
-                    snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(response_type, shMemName), "%s", wnd->GetShMemName());
+                    snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
 
                     rpcIPCReturn(msg.Source, msg.ID, &response, sizeof(response));
                 }

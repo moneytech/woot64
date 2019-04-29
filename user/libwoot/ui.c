@@ -253,6 +253,14 @@ static void drawDefaultBorder(uiControl_t *control)
     }
 }
 
+// default OnPaint handler
+static void defaultOnPaint(uiControl_t *sender)
+{
+    drawDefaultFace(sender);
+    drawDefaultBorder(sender);
+    pmInvalidateWhole(sender->Content);
+}
+
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiControl_t *control = (uiControl_t *)calloc(1, structSize ? structSize : sizeof(uiControl_t));
@@ -286,6 +294,7 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
     control->MarginSize = 4;
     control->IconPosition = UI_ICON_OVER;
     control->OnCreate = onCreate;
+    control->OnPaint = defaultOnPaint;
     if(control->OnCreate)
         control->OnCreate(control);
     return control;
@@ -368,7 +377,7 @@ void uiControlSetText(uiControl_t *control, const char *text)
 {
     if(!control) return;
     if(control->Text) free(control->Text);
-    control->Text = text ? strdup(text) : text;
+    control->Text = text ? strdup(text) : NULL;
 }
 
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
@@ -377,42 +386,46 @@ void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
     control->Icon = icon;
 }
 
-int uiControlProcessEvent(uiControl_t *control, wmEvent_t event)
+int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
 {
     if(!control) return -EINVAL;
-    if(event.Type == WM_EVT_MOUSE)
+    if(event->Type == WM_EVT_MOUSE)
     {
         for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         {
             rcRectangle_t rect = pmGetRectangle(ctrl->Content);
-            if(rcContainsPointP(&rect, event.Mouse.Coords[0], event.Mouse.Coords[1]))
+            if(rcContainsPointP(&rect, event->Mouse.Coords[0], event->Mouse.Coords[1]))
             {
-                event.Mouse.Coords[0] -= rect.X;
-                event.Mouse.Coords[1] -= rect.Y;
+                int origX = event->Mouse.Coords[0];
+                int origY = event->Mouse.Coords[1];
+                event->Mouse.Coords[0] -= rect.X;
+                event->Mouse.Coords[1] -= rect.Y;
                 int res = uiControlProcessEvent(ctrl, event);
+                event->Mouse.Coords[0] = origX;
+                event->Mouse.Coords[1] = origY;
                 if(res) return res;
             }
         }
 
-        if((event.Mouse.Delta[0] || event.Mouse.Delta[1]))
+        if((event->Mouse.Delta[0] || event->Mouse.Delta[1]))
         {
-            if(control->PreMouseMove) control->PreMouseMove(control, &event);
-            if(control->OnMouseMove) control->OnMouseMove(control, &event);
-            if(control->PostMouseMove) control->PostMouseMove(control, &event);
+            if(control->PreMouseMove) control->PreMouseMove(control, event);
+            if(control->OnMouseMove) control->OnMouseMove(control, event);
+            if(control->PostMouseMove) control->PostMouseMove(control, event);
         }
 
-        if(event.Mouse.ButtonsPressed)
+        if(event->Mouse.ButtonsPressed)
         {
-            if(control->PreMousePress) control->PreMousePress(control, &event);
-            if(control->OnMousePress) control->OnMousePress(control, &event);
-            if(control->PostMousePress) control->PostMousePress(control, &event);
+            if(control->PreMousePress) control->PreMousePress(control, event);
+            if(control->OnMousePress) control->OnMousePress(control, event);
+            if(control->PostMousePress) control->PostMousePress(control, event);
         }
 
-        if(control->OnMouseRelease && event.Mouse.ButtonsReleased)
+        if(control->OnMouseRelease && event->Mouse.ButtonsReleased)
         {
-            if(control->PreMouseRelease) control->PreMouseRelease(control, &event);
-            if(control->OnMouseRelease) control->OnMouseRelease(control, &event);
-            if(control->PostMouseRelease) control->PostMouseRelease(control, &event);
+            if(control->PreMouseRelease) control->PreMouseRelease(control, event);
+            if(control->OnMouseRelease) control->OnMouseRelease(control, event);
+            if(control->PostMouseRelease) control->PostMouseRelease(control, event);
         }
     }
     return 0;
@@ -496,18 +509,10 @@ void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler)
     control->OnMouseMove = handler;
 }
 
-static void labelPaint(struct uiControl *sender)
-{
-    drawDefaultFace(sender);
-    drawDefaultBorder(sender);
-    pmInvalidateWhole(sender->Content);
-}
-
 uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiLabel_t *control = (uiLabel_t *)uiControlCreate(parent, sizeof(uiLabel_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
-    control->Control.OnPaint = labelPaint;
     return control;
 }
 
@@ -516,32 +521,17 @@ void uiLabelDelete(uiLabel_t *control)
     uiControlDelete((uiControl_t *)control);
 }
 
-static void buttonPaint(uiControl_t *sender)
-{
-    drawDefaultFace(sender);
-    drawDefaultBorder(sender);
-    pmInvalidateWhole(sender->Content);
-}
-
 uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiButton_t *control = (uiButton_t *)uiControlCreate(parent, sizeof(uiButton_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
     control->Control.BorderStyle = UI_BORDER_RAISED;
-    control->Control.OnPaint = buttonPaint;
     return control;
 }
 
 void uiButtonDelete(uiButton_t *control)
 {
     uiControlDelete((uiControl_t *)control);
-}
-
-static void lineEditPaint(uiControl_t *sender)
-{
-    drawDefaultFace(sender);
-    drawDefaultBorder(sender);
-    pmInvalidateWhole(sender->Content);
 }
 
 uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -551,7 +541,6 @@ uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int
     control->Control.TextHAlign = UI_HALIGN_LEFT;
     control->Control.BackColor = pmColorWhite;
     control->Control.BorderStyle = UI_BORDER_SUNKEN;
-    control->Control.OnPaint = lineEditPaint;
     return control;
 }
 
