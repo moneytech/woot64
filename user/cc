@@ -6,7 +6,7 @@ ARGS="-Wno-unused-command-line-argument \
 -Wno-bitwise-op-parentheses \
 -Wno-shift-op-parentheses \
 -fno-stack-protector \
--ffreestanding -ggdb -nostdinc -nostdlib \
+-ffreestanding -nostdinc -nostdlib \
 -Wl,-z,max-page-size=4096 \
 -I$WOOT_TOP_DIR/user/libsyscalls \
 -I$WOOT_TOP_DIR/user/libc/include \

@@ -5,6 +5,7 @@ SUBDIRS = \
 	libpng \
 	libfreetype \
 	libwoot \
+	libgmp \
 	filemanager \
 	init \
 	inputhandler \
