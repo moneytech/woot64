@@ -26,7 +26,7 @@ lib/$(SHARED_LIB) lib/$(STATIC_LIB):
 configure: build/config.status
 
 reconfigure:
-	-rm build/config.status
+	rm -rf build
 	$(MAKE) configure
 
 build/config.status:
@@ -49,7 +49,7 @@ $(LIB_DIR)/$(SHARED_VERSIONED): lib/$(SHARED_VERSIONED)
 
 distclean:
 	-rm -rf build bin lib share include
-	
+
 clean:
 	-rm -rf bin lib share include
 	$(MAKE) -C build clean
