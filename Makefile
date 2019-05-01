@@ -3,6 +3,8 @@ LOOP_DEVICE = /dev/loop7
 QEMU = /usr/bin/qemu-system-x86_64
 IMGFILE = hdd.img
 
+EXTRA_FILES = root/logo.png root/file.png root/clock_small.png
+
 SUBDIRS = kernel user
 
 # tools used
@@ -19,8 +21,9 @@ export CC CXX ASM LD AR WOOT_TOP_DIR
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
 
-install: $(IMGFILE) root/logo.png root/file.png root/clock_small.png
+install: $(IMGFILE)
 	mkdir -p ./root
+	$(MAKE) $(EXTRA_FILES)
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir install; done
 	$(MAKE) try-mount
 	-cp -r ./root/* $(MOUNTPOINT)
