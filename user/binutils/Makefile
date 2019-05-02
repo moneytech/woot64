@@ -1,24 +1,27 @@
-WOOT_ROOT_DIR ?= $(shell realpath ../..)
 SRC_DIR = binutils-2.32
+WOOT_TOP_DIR ?= $(shell realpath ../..)
 
-export WOOT_ROOT_DIR
+export WOOT_TOP_DIR
 
 all: configure
 
-build:
+cross: configure-cross
+	$(MAKE) -C build-cross all install
+
+configure-help:
 	mkdir -p build
-
-build-cross:
-	mkdir -p build-cross
-
-configure-help: build
 	cd build && ../$(SRC_DIR)/configure --help
 
 configure: build/config.status
 
 configure-cross: build-cross/config.status
 
-build-cross/config.status: build-cross
+build-cross/config.status:
+	mkdir -p build-cross
+	cd build-cross && ../$(SRC_DIR)/configure \
+	--prefix=$(WOOT_TOP_DIR)/user/cross-tools \
+	--with-sysroot=$(WOOT_TOP_DIR)/user/cross-root \
+	--target=x86_64-woot
 
 reconfigure:
 	rm -rf build
@@ -29,9 +32,13 @@ reconfigure-cross:
 	$(MAKE) configure-cross
 
 clean:
+	$(MAKE) -C build clean
+
+clean-cross:
+	$(MAKE) -C build-cross clean
 
 distclean:
 	rm -rf build build-cross
 
-.PHONY: configure-help reconfigure reconfigure-cross clean distclean
+.PHONY: configure-help reconfigure reconfigure-cross clean clean-cross distclean
 
