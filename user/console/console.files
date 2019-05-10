@@ -1,2 +1,4 @@
+font.hpp
+font.cpp
 Makefile
 console.cpp

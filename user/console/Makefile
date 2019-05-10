@@ -1,14 +1,16 @@
 OUTFILE = console
 OUTFILE_STATIC = console_static
-OBJS = console.o
+OBJS = console.o font.o
 
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 
 CC = $(WOOT_TOP_DIR)/user/cc
 CXX = $(WOOT_TOP_DIR)/user/cxx
+CFLAGS = -ggdb
+CXXFLAGS = -ggdb
 LIBS = \
-	$(WOOT_TOP_DIR)/user/libc/lib/crt1.o \
+	$(WOOT_TOP_DIR)/user/libc/lib/Scrt1.o \
 	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
 	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
 	-Wl,--start-group,-lc,-lwoot,-lsyscalls,--end-group

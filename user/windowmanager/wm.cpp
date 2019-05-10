@@ -45,7 +45,13 @@ struct wmSetWindowTitleArgs
 typedef Vector<Window *> Windows;
 static Window *getWindowById(Windows *windows, int id);
 static void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
-static void updateRect(pmPixMap_t *fb, pmPixMap_t *bb, Windows *windows, rcRectangle_t *rect);
+static void updateRect(Windows *windows, rcRectangle_t *rect);
+static int getWindowIdx(Windows *windows, Window *wnd);
+static void bringToTop(Windows *windows, Window *wnd);
+
+static Window *mouseWnd = nullptr;
+static pmPixMap_t *fbPixMap = nullptr;
+static pmPixMap_t *bbPixMap = nullptr;
 
 extern "C" int main(int argc, char *argv[])
 {
@@ -118,8 +124,8 @@ extern "C" int main(int argc, char *argv[])
 
     pmPixelFormat_t fbFormat = pmFormatFromModeInfo(&mi);
 
-    pmPixMap_t *fbPixMap = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &fbFormat, pixels, 0);
-    pmPixMap_t *bbPixMap = pmFromPixMap(fbPixMap, &fbFormat); // create back buffer
+    fbPixMap = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &fbFormat, pixels, 0);
+    bbPixMap = pmFromPixMap(fbPixMap, &fbFormat); // create back buffer
 
     int cursorHotX = 0;
     int cursorHotY = 0;
@@ -127,7 +133,9 @@ extern "C" int main(int argc, char *argv[])
     ipcSendMessage(0, MSG_ACQUIRE_KEYBOARD, MSG_FLAG_NONE, NULL, 0);
     ipcSendMessage(0, MSG_ACQUIRE_MOUSE, MSG_FLAG_NONE, NULL, 0);
 
-    Vector<Window *> windows;
+    Windows windows;
+    Window *activeWindow = nullptr;
+    Window *topWindow = nullptr;
 
     threadDaemonize();
 
@@ -150,7 +158,6 @@ extern "C" int main(int argc, char *argv[])
     }
 
     // create mouse cursor window
-    Window *mouseWnd = nullptr;
     pmPixMap_t *cursor = pmLoadCUR("/normal.cur", 0, &cursorHotX, &cursorHotY);
     if(cursor)
     {
@@ -162,7 +169,7 @@ extern "C" int main(int argc, char *argv[])
         windows.Append(mouseWnd);
     }
 
-    updateRect(fbPixMap, bbPixMap, &windows, &bbPixMap->Contents);
+    updateRect(&windows, &bbPixMap->Contents);
     for(int i = 0;; ++i)
     {
         rcRectangle_t dirtyRect = rcRectangleEmpty;
@@ -203,12 +210,34 @@ extern "C" int main(int argc, char *argv[])
                 if(mouseWnd)
                     moveWindow(&dirtyRect, mouseWnd, mouseX - cursorHotX, mouseY - cursorHotY);
 
-                for(Window *wnd : windows)
+                int wndCnt = windows.Size();
+                //for(Window *wnd : windows)
+                for(int i = wndCnt - 1; i >= 0; --i)
                 {
+                    Window *wnd = windows.Get(i);
+
                     if(wnd == mouseWnd || wnd == desktopWnd)
                         continue;
 
-                    rcRectangle_t rect = wnd->GetRect();
+                    rcRectangle_t rect = wnd->GetDecoratedRect();
+
+                    if(rcContainsPointP(&rect, mouseX, mouseY))
+                    {
+                        if(mouseEv->ButtonsPressed & 1)
+                        {
+                            if(topWindow != wnd) // bring window to the top
+                            {
+                                bringToTop(&windows, wnd);
+                                topWindow = wnd;
+                            }
+
+                            if(activeWindow != wnd)
+                                activeWindow = wnd;
+                        }
+                    }
+
+                    rect = wnd->GetRect();
+
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
                         wmEvent_t event;
@@ -310,7 +339,7 @@ extern "C" int main(int argc, char *argv[])
         } while(ipcGetMessage(&msg, 0) >= 0);
 
         if(!rcIsEmptyP(&dirtyRect))
-            updateRect(fbPixMap, bbPixMap, &windows, &dirtyRect);
+            updateRect(&windows, &dirtyRect);
     }
 
     printf("[windowmanager] Closing window manager\n");
@@ -352,9 +381,40 @@ void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y)
     *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
 }
 
-void updateRect(pmPixMap_t *fb, pmPixMap_t *bb, Windows *windows, rcRectangle_t *rect)
+void updateRect(Windows *windows, rcRectangle_t *rect)
 {
     for(Window *wnd : *windows)
-        wnd->UpdateWindowGraphics(bb, rect);
-    pmBlit(fb, bb, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
+        wnd->UpdateWindowGraphics(bbPixMap, rect);
+    pmBlit(fbPixMap, bbPixMap, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
+}
+
+int getWindowIdx(Windows *windows, Window *wnd)
+{
+    size_t wndCnt = windows->Size();
+    for(decltype(wndCnt) i = 0; i < wndCnt; ++i)
+    {
+        if(windows->Get(i) == wnd)
+            return i;
+    }
+    return -1;
+}
+
+void bringToTop(Windows *windows, Window *wnd)
+{
+    int wndIdx = getWindowIdx(windows, wnd);
+    int wndCnt = windows->Size();
+    int topWndIdx = -1;
+    for(int i = wndCnt - 1; i >= 0; --i)
+    {
+        if(windows->Get(i) == mouseWnd)
+            continue;
+        topWndIdx = i;
+        break;
+    }
+    if(wndIdx >= 0 && topWndIdx >= 0 && topWndIdx > wndIdx)
+    {
+        windows->Swap(wndIdx, topWndIdx);
+        rcRectangle_t wndRect = wnd->GetDecoratedRect();
+        updateRect(windows, &wndRect);
+    }
 }
