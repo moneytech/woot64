@@ -62,7 +62,13 @@ extern "C" int main(int argc, char *argv[])
     int currentPId = getpid();
     printf("[windowmanager] Started window manager (pid: %d)\n", currentPId);
 
-    int display = vidOpenDisplay(vidGetDefaultDisplayId());
+    int defaultDisplayId = vidGetDefaultDisplayId();
+    if(defaultDisplayId < 0)
+    {
+        printf("[windowmanager] Couldn't get default display id\n");
+        return -errno;
+    }
+    int display = vidOpenDisplay(defaultDisplayId);
     if(display < 0)
     {
         printf("[windowmanager] Couldn't open default display\n");

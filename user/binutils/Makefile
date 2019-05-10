@@ -6,7 +6,9 @@ export WOOT_TOP_DIR
 all: configure
 
 cross: configure-cross
-	$(MAKE) -C build-cross all install
+	$(MAKE) -C build-cross
+	$(MAKE) -C build-cross all
+	$(MAKE) -C build-cross install
 
 configure-help:
 	mkdir -p build

@@ -8,6 +8,7 @@ OBJS = module.o
 
 CC ?= clang
 CXX ?= clang++
+LD ?= ld
 
 COMPILE_FLAGS = \
 	-masm=intel \
@@ -33,7 +34,9 @@ LDFLAGS = \
 	--section-start .headers=0xFFFFF80010000000 \
 	-shared
 
-all: $(OBJS)
+all: $(OUTFILE)
+
+$(OUTFILE): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $(OUTFILE)
 
 clean:
