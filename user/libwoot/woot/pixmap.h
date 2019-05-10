@@ -85,6 +85,7 @@ void pmInvalidateWhole(pmPixMap_t *pixMap);
 rcRectangle_t pmGetDirtyRectangle(pmPixMap_t *pixMap);
 rcRectangle_t pmGetAndClearDirtyRectangle(pmPixMap_t *pixMap);
 void pmClearDirty(pmPixMap_t *pixMap);
+void pmClearParentDirty(pmPixMap_t *pixMap);
 pmPixMap_t *pmFromMemory(int width, int height, int pitch, pmPixelFormat_t *format, void *pixels, unsigned releasePixels);
 pmPixMap_t *pmFromPixMap(pmPixMap_t *src, pmPixelFormat_t *format);
 pmPixMap_t *pmSubPixMap(pmPixMap_t *src, int x, int y, int w, int h);

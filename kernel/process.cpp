@@ -332,6 +332,20 @@ DEntry *Process::GetCurrentDir()
     return de;
 }
 
+void Process::SetCurrentDir(DEntry *dentry)
+{
+    bool ints = cpuDisableInterrupts();
+    Process *cp = GetCurrent();
+    if(!cp)
+    {
+        cpuRestoreInterrupts(ints);
+        return;
+    }
+    cp->CurrentDirectory = dentry;
+    cpuRestoreInterrupts(ints);
+    return;
+}
+
 bool Process::Finalize(pid_t pid, int retVal)
 {
     if(!listLock.Acquire(0, false))

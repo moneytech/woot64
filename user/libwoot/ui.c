@@ -341,6 +341,8 @@ void uiControlRedraw(uiControl_t *control)
         control->OnPaint(control);
     for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         uiControlRedraw(ctrl);
+    pmPixMap_t *pm = uiControlGetPixMap(control);
+    if(pm) pmClearParentDirty(pm);
 }
 
 pmPixMap_t *uiControlGetPixMap(uiControl_t *control)

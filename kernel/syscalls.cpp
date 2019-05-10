@@ -3,6 +3,7 @@
 #include <dentry.hpp>
 #include <errno.h>
 #include <file.hpp>
+#include <filesystem.hpp>
 #include <framebuffer.hpp>
 #include <inode.hpp>
 #include <memory.hpp>
@@ -125,7 +126,7 @@ struct stat
 	mode_t st_mode;
 	uid_t st_uid;
 	gid_t st_gid;
-	unsigned int    __pad0;
+	unsigned int __pad0;
 	dev_t st_rdev;
 	off_t st_size;
 	blksize_t st_blksize;
@@ -364,6 +365,25 @@ long SysCalls::sys_getpid()
 long SysCalls::sys_exit(intn retVal)
 {
     Thread::Finalize(nullptr, retVal);
+    return ESUCCESS;
+}
+
+long SysCalls::sys_getcwd(char *buf, size_t size)
+{
+    DEntry *dentry = Process::GetCurrentDir();
+    if(!dentry) return -ENOENT;
+    dentry->GetFullPath(buf, size);
+    return (long)buf;
+}
+
+long SysCalls::sys_chdir(char *pathname)
+{
+    File *dir = File::Open(pathname, O_DIRECTORY);
+    if(!dir) return -ENOENT;
+    DEntry *dentry = Process::GetCurrentDir();
+    if(dentry) FileSystem::PutDEntry(dentry);
+    Process::SetCurrentDir(FileSystem::GetDEntry(dir->DEntry));
+    delete dir;
     return ESUCCESS;
 }
 
@@ -763,6 +783,8 @@ void SysCalls::Initialize()
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
     Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
+    Handlers[SYS_getcwd] = (SysCallHandler)sys_getcwd;
+    Handlers[SYS_chdir] = (SysCallHandler)sys_chdir;
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;
     Handlers[SYS_clock_get_time] = (SysCallHandler)sys_clock_get_time;

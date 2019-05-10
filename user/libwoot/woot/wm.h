@@ -53,6 +53,7 @@ typedef struct fntFont fntFont_t;
 typedef union pmColor pmColor_t;
 typedef struct pmPixMap pmPixMap_t;
 typedef struct pmPixelFormat pmPixelFormat_t;
+typedef struct rcRectangle rcRectangle_t;
 typedef struct uiControl uiControl_t;
 typedef struct wmWindow wmWindow_t;
 
@@ -92,6 +93,7 @@ int wmDeleteWindow(wmWindow_t *window);
 int wmGetWindowId(wmWindow_t *window);
 pmPixMap_t *wmGetPixMap(wmWindow_t *window);
 void wmRedrawWindow(wmWindow_t *window);
+void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect);
 void wmSetWindowPos(wmWindow_t *window, int x, int y);
 void wmSetWindowTitle(wmWindow_t *window, const char *title);
 uiControl_t *wmGetRootControl(wmWindow_t *window);

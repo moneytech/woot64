@@ -393,12 +393,20 @@ void pmInvalidateRectP(pmPixMap_t *pixMap, rcRectangle_t *rect)
 
 void pmInvalidateWhole(pmPixMap_t *pixMap)
 {
-    pixMap->Dirty = pixMap->Contents;
+    pmInvalidateRectP(pixMap, &pixMap->Contents);
 }
 
 rcRectangle_t pmGetDirtyRectangle(pmPixMap_t *pixMap)
 {
     if(!pixMap) return rcRectangleEmpty;
+    if(pixMap->Parent)
+    {
+        rcRectangle_t r = pmGetDirtyRectangle(pixMap->Parent);
+        r = rcIntersectP(&pixMap->Contents, &r);
+        r.X -= pixMap->Contents.X;
+        r.Y -= pixMap->Contents.Y;
+        return r;
+    }
     return pixMap->Dirty;
 }
 
@@ -412,6 +420,14 @@ rcRectangle_t pmGetAndClearDirtyRectangle(pmPixMap_t *pixMap)
 void pmClearDirty(pmPixMap_t *pixMap)
 {
     if(!pixMap) return;
+    pixMap->Dirty = rcRectangleEmpty;
+}
+
+void pmClearParentDirty(pmPixMap_t *pixMap)
+{
+    if(!pixMap) return;
+    if(pixMap->Parent)
+        pmClearParentDirty(pixMap->Parent);
     pixMap->Dirty = rcRectangleEmpty;
 }
 

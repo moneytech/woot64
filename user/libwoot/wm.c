@@ -5,6 +5,7 @@
 #include <woot/font.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
+#include <woot/rectangle.h>
 #include <woot/rpc.h>
 #include <woot/ui.h>
 #include <woot/wm.h>
@@ -44,6 +45,12 @@ struct wmSetWindowTitleArgs
 {
     int windowId;
     const char title[0];
+};
+
+struct wmRedrawRectArgs
+{
+    int windowId;
+    rcRectangle_t rect;
 };
 
 int wmInitialize()
@@ -165,6 +172,12 @@ pmPixMap_t *wmGetPixMap(wmWindow_t *window)
 void wmRedrawWindow(wmWindow_t *window)
 {
     rpcCall(wmServer, "wmRedrawWindow", &window->id, sizeof(int), NULL, 0, DEFAULT_RPC_TIMEOUT);
+}
+
+void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect)
+{
+    struct wmRedrawRectArgs args = { window->id, *rect };
+    rpcCall(wmServer, "wmRedrawRect", &args, sizeof(args), NULL, 0, DEFAULT_RPC_TIMEOUT);
 }
 
 void wmSetWindowPos(wmWindow_t *window, int x, int y)

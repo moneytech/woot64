@@ -15,6 +15,8 @@
 #define SYS_writev              20
 #define SYS_getpid              39
 #define SYS_exit                60
+#define SYS_getcwd              79
+#define SYS_chdir               80
 #define SYS_arch_prctl          158
 #define SYS_set_tid_address     218
 #define SYS_clock_get_time      228
@@ -141,6 +143,8 @@ long sys_readv(int fd, const void *vec, size_t vlen);
 long sys_writev(int fd, const void *vec, size_t vlen);
 long sys_getpid();
 long sys_exit(long error_code);
+long sys_getcwd(char *buf, size_t size);
+long sys_chdir(char *pathname);
 int sys_arch_prctl(int code, uintptr_t addr);
 int sys_set_tid_address(int *tidptr);
 long sys_clock_get_time(int clock, void *ts);

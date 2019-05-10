@@ -155,6 +155,7 @@ public:
     static Process *Create(const char *filename, Semaphore *finished, bool noAutoRelocs, int *retVal);
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
+    static void SetCurrentDir(DEntry *dentry);
     static bool Finalize(pid_t pid, int retVal);
     static void Dump();
     static int ForEach(bool (*handler)(Process *proc, void *arg), void *arg);

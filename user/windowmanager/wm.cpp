@@ -42,6 +42,12 @@ struct wmSetWindowTitleArgs
     const char title[0];
 };
 
+struct wmRedrawRectArgs
+{
+    int windowId;
+    rcRectangle_t rect;
+};
+
 typedef Vector<Window *> Windows;
 static Window *getWindowById(Windows *windows, int id);
 static void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
@@ -183,7 +189,15 @@ extern "C" int main(int argc, char *argv[])
             else if(msg.Number == MSG_KEYBOARD_EVENT)
             {
                 inpKeyboardEvent_t *kbdEv = (inpKeyboardEvent_t *)msg.Data;
-                printf("[usertest] key: %d %s\n", kbdEv->Key, kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? "released" : "pressed");
+                //printf("[usertest] key: %d %s\n", kbdEv->Key, kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? "released" : "pressed");
+                if(activeWindow)
+                {
+                    wmEvent_t event;
+                    event.Type = WM_EVT_KEYBOARD;
+                    event.Keyboard.Key = kbdEv->Key;
+                    event.Keyboard.Flags = kbdEv->Flags;
+                    ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+                }
             }
             else if(msg.Number == MSG_MOUSE_EVENT)
             {
@@ -210,9 +224,7 @@ extern "C" int main(int argc, char *argv[])
                 if(mouseWnd)
                     moveWindow(&dirtyRect, mouseWnd, mouseX - cursorHotX, mouseY - cursorHotY);
 
-                int wndCnt = windows.Size();
-                //for(Window *wnd : windows)
-                for(int i = wndCnt - 1; i >= 0; --i)
+                for(int i = windows.Size() - 1; i >= 0; --i)
                 {
                     Window *wnd = windows.Get(i);
 
@@ -301,6 +313,13 @@ extern "C" int main(int argc, char *argv[])
                     Window *wnd = getWindowById(&windows, id);
                     if(wnd)
                     {
+                        rcRectangle_t rect = wnd->GetDecoratedRect();
+                        dirtyRect = rcAddP(&dirtyRect, &rect);
+
+                        if(topWindow == wnd)
+                            topWindow = nullptr;
+                        if(activeWindow == wnd)
+                            activeWindow = nullptr;
                         windows.RemoveOne(wnd);
                         delete wnd;
                     }
@@ -312,6 +331,18 @@ extern "C" int main(int argc, char *argv[])
                     Window *wnd = getWindowById(&windows, window);
                     rcRectangle rect = wnd ? wnd->GetDecoratedRect() : rcRectangleEmpty;
                     dirtyRect = rcAddP(&dirtyRect, &rect);
+                    rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
+                }
+                else if(!strcmp(req, "wmRedrawRect"))
+                {
+                    wmRedrawRectArgs *rra = (decltype(rra))args;
+                    //printf("rra %d %d %d %d\n", rra->rect.X, rra->rect.Y, rra->rect.Width, rra->rect.Height);
+                    Window *wnd = getWindowById(&windows, rra->windowId);
+                    rcRectangle_t wndRect = wnd->GetRect();
+                    rra->rect.X += wndRect.X;
+                    rra->rect.Y += wndRect.Y;
+                    rra->rect = rcIntersectP(&wndRect, &rra->rect);
+                    dirtyRect = rcAddP(&dirtyRect, &rra->rect);
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
                 }
                 else if(!strcmp(req, "wmSetWindowPos"))

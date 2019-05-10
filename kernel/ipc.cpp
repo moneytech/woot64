@@ -26,7 +26,7 @@ int IPC::SendMessage(pid_t dst, int number, int flags, void *payload, size_t pay
     ipcMessage msg = { number, flags, ids.GetNext(), Process::GetCurrent()->Id };
     Memory::Zero(msg.Data, sizeof(msg.Data));
     if(payload) Memory::Move(msg.Data, payload, min(sizeof(msg.Data), payloadSize));
-    int res = dstProc->Messages.Write(msg, 100);
+    int res = dstProc->Messages.Write(msg, 0);
     if(res < 0) return res;
     return msg.ID;
 }
