@@ -7,6 +7,7 @@ SUBDIRS = \
 	libwoot \
 	libgmp \
 	libmpfr \
+	console \
 	filemanager \
 	init \
 	inputhandler \
