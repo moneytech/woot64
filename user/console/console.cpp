@@ -3,10 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <woot/input.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
+#include <woot/process.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
 #include <woot/wm.h>
@@ -170,6 +172,7 @@ extern "C" int main(int argc, char *argv[])
 
     ipcMessage_t msg;
     unsigned conCmdIdx;
+    bool shutdown = false;
     for(;;)
     {
         conCmdIdx = 0;
@@ -193,6 +196,7 @@ extern "C" int main(int argc, char *argv[])
         updateConsole();
 
         bool quit = false;
+        int modifiers = INP_MOD_NONE;
         for(;;)
         {
             int res = ipcGetMessage(&msg, -1);
@@ -204,29 +208,33 @@ extern "C" int main(int argc, char *argv[])
             else if(msg.Number == MSG_WM_EVENT)
             {
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
-                if(event->Type == WM_EVT_KEYBOARD && !(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+                if(event->Type == WM_EVT_KEYBOARD)
                 {
-                    int chr = inpTranslateKey(event->Keyboard.Key, INP_MOD_NONE);
-                    if(chr)
+                    inpProcessKeyboardEvent(event, &modifiers);
+                    if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
                     {
-                        if(conCmdIdx > 0 && chr == '\b')
+                        int chr = inpTranslateKey(event->Keyboard.Key, modifiers);
+                        if(chr)
                         {
-                            conCmdBuf[--conCmdIdx] = 0;
-                            putChar(chr);
-                        }
-                        else if(chr != '\b' && conCmdIdx < (conCmdBufSize - 1))
-                        {
-                            if(chr != '\n')
+                            if(conCmdIdx > 0 && chr == '\b')
                             {
-                                conCmdBuf[conCmdIdx++] = chr;
-                                conCmdBuf[conCmdIdx] = 0;
+                                conCmdBuf[--conCmdIdx] = 0;
+                                putChar(chr);
                             }
-                            putChar(chr);
+                            else if(chr != '\b' && conCmdIdx < (conCmdBufSize - 1))
+                            {
+                                if(chr != '\n')
+                                {
+                                    conCmdBuf[conCmdIdx++] = chr;
+                                    conCmdBuf[conCmdIdx] = 0;
+                                }
+                                putChar(chr);
+                            }
+                            updateConsole();
                         }
-                        updateConsole();
+                        if(chr == '\n')
+                            break;
                     }
-                    if(chr == '\n')
-                        break;
                 }
             }
         }
@@ -246,10 +254,23 @@ extern "C" int main(int argc, char *argv[])
 
         if(!strcmp(conCmdArgs[0], "quit") || !strcmp(conCmdArgs[0], "exit"))
             break;
+        else if(!strcmp(conCmdArgs[0], "shutdown"))
+        {
+            shutdown = true;
+            break;
+        }
         else if(!strcmp(conCmdArgs[0], "pwd"))
         {
             putStr(conCWD);
             putStr("\n");
+        }
+        else if(!strcmp(conCmdArgs[0], "env"))
+        {
+            for(char **env = environ; *env; ++env)
+            {
+                putStr(*env);
+                putStr("\n");
+            }
         }
         else if(!strcmp(conCmdArgs[0], "cd"))
         {
@@ -307,9 +328,22 @@ extern "C" int main(int argc, char *argv[])
         }
         else
         {
-            putStr("unknown command: '");
-            putStr(conCmdArgs[0]);
-            putStr("'\n");
+            bool noWait = conCmdBuf[0] == '&';
+            char *cmdLine = noWait ? conCmdBuf + 1 : conCmdBuf;
+            struct stat st;
+            int r = stat(conCmdArgs[0] + (noWait ? 1 : 0), &st);
+            int cmdProc = r < 0 ? r : processCreate(cmdLine);
+            if(cmdProc < 0)
+            {
+                putStr("unknown command: '");
+                putStr(conCmdArgs[0]);
+                putStr("'\n");
+            }
+            else if(!noWait)
+            {
+                processWait(cmdProc, -1);
+                processDelete(cmdProc);
+            }
         }
         updateConsole();
     }
@@ -319,6 +353,10 @@ extern "C" int main(int argc, char *argv[])
     if(conCmdBuf2) delete[] conCmdBuf2;
     if(conCmdBuf) delete[] conCmdBuf;
     if(conWindow) wmDeleteWindow(conWindow);
+
     wmCleanup();
+
+    if(shutdown) ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, nullptr, 0);
+
     return 0;
 }

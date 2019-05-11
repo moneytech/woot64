@@ -128,7 +128,11 @@ int main()
             break;
         ipcProcessMessage(&msg);
         if(msg.Number == MSG_QUIT)
+        {
+            for(int i = 0; i < devCount; ++i)
+                threadAbort(threads[i], 0);
             break;
+        }
         else if(msg.Number == MSG_ACQUIRE_KEYBOARD)
         {
             if(keyboardOwner < 0)
@@ -151,6 +155,8 @@ int main()
             mouseOwner = -1;
     }
 
+    printf("[inputhandler] Closing inputhandler\n");
+
     for(int i = 0; i < devCount; ++i)
     {
         if(threads[i] < 0)
@@ -158,8 +164,6 @@ int main()
         threadWait(threads[i], -1);
         threadDelete(threads[i]);
     }
-
-    printf("[inputhandler] Closing inputhandler\n");
 
     free(threads);
     free(devIds);

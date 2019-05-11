@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     int wmProc = processCreate("/bin/windowmanager 1024 768 32");
     processWait(wmProc, 5000); // wait for demonetization of window manager
 
-    int testProc = processCreate("/bin/usertest");
+    //int testProc = processCreate("/bin/usertest");
     //int fmProc = processCreate("/bin/filemanager");
     int conProc = processCreate("/bin/console");
     if(conProc)
@@ -25,11 +25,11 @@ int main(int argc, char *argv[])
         processWait(fmProc, -1);
         processDelete(fmProc);
     }*/
-    if(testProc)
+    /*if(testProc)
     {
         processWait(testProc, -1);
         processDelete(testProc);
-    }
+    }*/
 
     processWait(wmProc, 5000);
     processDelete(wmProc);

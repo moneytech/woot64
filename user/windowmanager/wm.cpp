@@ -180,12 +180,16 @@ extern "C" int main(int argc, char *argv[])
     {
         rcRectangle_t dirtyRect = rcRectangleEmpty;
         ipcGetMessage(&msg, -1);
-
+        bool quit = false;
         do
         {
             ipcProcessMessage(&msg);
             if(msg.Number == MSG_QUIT)
+            {
+                threadSleep(THREAD_SELF, 500);
+                quit = true;
                 break;
+            }
             else if(msg.Number == MSG_KEYBOARD_EVENT)
             {
                 inpKeyboardEvent_t *kbdEv = (inpKeyboardEvent_t *)msg.Data;
@@ -305,6 +309,9 @@ extern "C" int main(int argc, char *argv[])
                     response.pixelFormat = wnd->GetPixelFormat();
                     snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
 
+                    if(!activeWindow)
+                        activeWindow = wnd;
+
                     rpcIPCReturn(msg.Source, msg.ID, &response, sizeof(response));
                 }
                 else if(!strcmp(req, "wmDeleteWindow"))
@@ -367,7 +374,8 @@ extern "C" int main(int argc, char *argv[])
             }
             else if(msg.Number == MSG_RPC_FIND_SERVER && !strcmp("windowmanager", (const char *)msg.Data))
                 rpcIPCFindServerRespond(msg.Source, msg.ID);
-        } while(ipcGetMessage(&msg, 0) >= 0);
+        } while(!quit && ipcGetMessage(&msg, 0) >= 0);
+        if(quit) break;
 
         if(!rcIsEmptyP(&dirtyRect))
             updateRect(&windows, &dirtyRect);

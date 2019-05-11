@@ -81,6 +81,8 @@ typedef struct inpControllerEvent
 #define INP_MOD_NUM     (1 << 9)
 #define INP_MOD_SCROLL  (1 << 10)
 
+typedef struct wmEvent wmEvent_t;
+
 int inpGetDeviceCount();
 int inpDeviceListIds(int *buf, size_t bufSize);
 int inpGetDeviceType(int id);
@@ -88,6 +90,7 @@ int inpGetDeviceName(int id, char *buf, size_t bufSize);
 int inpOpenDevice(int id);
 int inpCloseDevice(int fd);
 int inpGetEvent(int fd, int timeout, void *buf);
+int inpProcessKeyboardEvent(wmEvent_t *event, int *modifiers);
 int inpTranslateKey(int vKey, int modifiers);
 
 #ifdef __cplusplus
