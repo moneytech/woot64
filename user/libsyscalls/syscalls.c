@@ -70,6 +70,11 @@ long sys_exit(long error_code)
     return __syscall1(SYS_exit, error_code);
 }
 
+long sys_getdents(int fd, void *de, size_t count)
+{
+    return __syscall3(SYS_getdents, fd, (long)de, count);
+}
+
 long sys_getcwd(char *buf, size_t size)
 {
     return __syscall2(SYS_getcwd, (long)buf, size);
@@ -83,6 +88,11 @@ long sys_chdir(char *pathname)
 int sys_arch_prctl(int code, uintptr_t addr)
 {
     return __syscall2(SYS_arch_prctl, code, addr);
+}
+
+long sys_getdents64(int fd, void *de, size_t count)
+{
+    return __syscall3(SYS_getdents64, fd, (long)de, count);
 }
 
 int sys_set_tid_address(int *tidptr)

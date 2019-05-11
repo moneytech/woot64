@@ -1,3 +1,4 @@
+#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -285,6 +286,23 @@ extern "C" int main(int argc, char *argv[])
                     if(lastChr != '\n')
                         putStr("\n");
                 }
+            }
+        }
+        else if(!strcmp(conCmdArgs[0], "ls") || !strcmp(conCmdArgs[0], "dir"))
+        {
+            char *dirName = conCmdArgs[1] ? conCmdArgs[1] : conCWD;
+            DIR *dir = opendir(dirName);
+            if(!dir) putStr("couldn't open directory\n");
+            else
+            {
+                struct dirent *de = nullptr;
+                while((de = readdir(dir)))
+                {
+                    char line[64];
+                    snprintf(line, sizeof(line), "%s\n", de->d_name);
+                    putStr(line);
+                }
+                closedir(dir);
             }
         }
         else

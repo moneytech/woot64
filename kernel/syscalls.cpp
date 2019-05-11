@@ -1,6 +1,7 @@
 #include <cpu.hpp>
 #include <debug.hpp>
 #include <dentry.hpp>
+#include <directoryentry.hpp>
 #include <errno.h>
 #include <file.hpp>
 #include <filesystem.hpp>
@@ -157,6 +158,16 @@ typedef struct vidModeInfo
 #define INP_MAX_TABLET_COORDS       7
 #define INP_MAX_TABLET_AXES         6
 #define INP_MAX_CONTROLLER_COORDS   13
+
+// USER_MATCH: libc/musl-1.1.21/include/dirent.h
+struct dirent
+{
+    ino_t d_ino;
+    off_t d_off;
+    unsigned short d_reclen;
+    unsigned char d_type;
+    char d_name[0];
+};
 
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
@@ -368,6 +379,11 @@ long SysCalls::sys_exit(intn retVal)
     return ESUCCESS;
 }
 
+long SysCalls::sys_getdents(int fd, dirent *de, size_t count)
+{
+    return sys_getdents64(fd, de, count);
+}
+
 long SysCalls::sys_getcwd(char *buf, size_t size)
 {
     DEntry *dentry = Process::GetCurrentDir();
@@ -408,6 +424,33 @@ long SysCalls::sys_arch_prctl(int code, uintptr_t addr)
     }
     DEBUG("[syscalls] sys_arch_prctl: unknown code %p\n", code);
     return -ENOSYS;
+}
+
+long SysCalls::sys_getdents64(int fd, struct dirent *de, size_t count)
+{
+    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
+    if(!f) return -EBADF;
+    if(!S_ISDIR(f->Mode))
+        return -ENOTDIR;
+    DirectoryEntry *d = f->ReadDir();
+    if(!d)
+    {
+        delete d;
+        return 0;
+    }
+    size_t nameLen = String::Length(d->Name);
+    size_t recLen = sizeof(dirent) + nameLen + 1;
+    if(count < recLen)
+    {
+        delete d;
+        return -EINVAL; // buffer too small
+    }
+    de->d_ino = d->INode;
+    de->d_off = f->Position;
+    de->d_reclen = recLen;
+    String::Copy(de->d_name, d->Name, nameLen + 1);
+    delete d;
+    return recLen;
 }
 
 long SysCalls::sys_set_tid_address(int *tidptr)
@@ -783,9 +826,11 @@ void SysCalls::Initialize()
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
     Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
+    Handlers[SYS_getdents] = (SysCallHandler)sys_getdents;
     Handlers[SYS_getcwd] = (SysCallHandler)sys_getcwd;
     Handlers[SYS_chdir] = (SysCallHandler)sys_chdir;
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
+    Handlers[SYS_getdents64] = (SysCallHandler)sys_getdents64;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;
     Handlers[SYS_clock_get_time] = (SysCallHandler)sys_clock_get_time;
     Handlers[SYS_exit_group] = (SysCallHandler)sys_exit_group;
