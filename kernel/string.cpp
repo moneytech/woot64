@@ -20,6 +20,11 @@ size_t String::Length(const wchar_t *str)
     return s - str;
 }
 
+size_t String::Size(const char *str)
+{
+    return Length(str) + 1;
+}
+
 int String::Compare(const char *s1, const char *s2)
 {
     for(;;)

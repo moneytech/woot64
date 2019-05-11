@@ -171,6 +171,13 @@ struct dirent
 
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
+// check if buffer is completely contained in userspace
+#define BUFFER_CHECK(buf, size) \
+{ \
+    if((uintptr_t)buf < USER_BASE && (uintptr_t)buf >= USER_END) return -EFAULT; \
+    if((size + (uintptr_t)buf) >= USER_END) return -EFAULT; \
+}
+
 long SysCalls::InvalidHandler()
 {
     // not sure if this is stable
@@ -181,6 +188,7 @@ long SysCalls::InvalidHandler()
 
 long SysCalls::sys_read(int fd, char *buf, size_t count)
 {
+    BUFFER_CHECK(buf, count);
     if(fd < 3) return Debug::DebugRead(buf, count); // temporary hack
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
     if(!f) return -EBADF;
@@ -189,6 +197,7 @@ long SysCalls::sys_read(int fd, char *buf, size_t count)
 
 long SysCalls::sys_write(int fd, const char *buf, size_t count)
 {
+    BUFFER_CHECK(buf, count);
     if(fd < 3) return Debug::DebugWrite(buf, count); // temporary hack
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
     if(!f) return -EBADF;
@@ -197,6 +206,7 @@ long SysCalls::sys_write(int fd, const char *buf, size_t count)
 
 long SysCalls::sys_open(const char *filename, int flags, int mode)
 {
+    BUFFER_CHECK(filename, String::Size(filename));
     int res = Process::GetCurrent()->Open(filename, flags);
     DEBUG("sys_open(\"%s\", %p) returned %d\n", filename, flags, res);
     return res;
@@ -209,6 +219,9 @@ long SysCalls::sys_close(int fd)
 
 long SysCalls::sys_stat(const char *filename, stat *statbuf)
 {
+    BUFFER_CHECK(filename, String::Size(filename));
+    BUFFER_CHECK(statbuf, sizeof(stat));
+
     Memory::Zero(statbuf, sizeof(struct stat));
     File *f = File::Open(filename, 0);
     if(!f) return -EBADF;
@@ -230,6 +243,8 @@ long SysCalls::sys_stat(const char *filename, stat *statbuf)
 
 long SysCalls::sys_fstat(int fd, stat *statbuf)
 {
+    BUFFER_CHECK(statbuf, sizeof(stat));
+
     Memory::Zero(statbuf, sizeof(struct stat));
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
     if(!f) return -EBADF;
@@ -258,6 +273,8 @@ long SysCalls::sys_lseek(int fd, off_t offset, unsigned int origin)
 long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, int fd, off_t off)
 {
     //DEBUG("sys_mmap(%p, %p, %p, %p, %d, %p)\n", addr, len, prot, flags, fd, off);
+
+    BUFFER_CHECK(addr, len);
 
     len = align(len, PAGE_SIZE);
     uintptr_t pgoffset = off << PAGE_SHIFT;
@@ -316,12 +333,16 @@ long SysCalls::sys_brk(uintptr_t brk)
 
 long SysCalls::sys_readv(int fd, const iovec *vec, size_t vlen)
 {
+    BUFFER_CHECK(vec, sizeof(iovec) * vlen);
+
     if(vlen < 0) return -EINVAL;
     long res = 0;
     if(fd < 3)
     {   // temporary hack
         for(int i = 0; i < vlen; ++i)
         {
+            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+
             long r = Debug::DebugRead(vec[i].iov_base, vec[i].iov_len);
             if(r < 0) return r;
             res += r;
@@ -333,6 +354,8 @@ long SysCalls::sys_readv(int fd, const iovec *vec, size_t vlen)
         if(!f) return -EBADF;
         for(int i = 0; i < vlen; ++i)
         {
+            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+
             long r = f->Read(vec[i].iov_base, vec[i].iov_len);
             if(r < 0) return r;
             res += r;
@@ -343,12 +366,16 @@ long SysCalls::sys_readv(int fd, const iovec *vec, size_t vlen)
 
 long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
 {
+    BUFFER_CHECK(vec, sizeof(iovec) * vlen);
+
     if(vlen < 0) return -EINVAL;
     long res = 0;
     if(fd < 3)
     {   // temporary hack
         for(int i = 0; i < vlen; ++i)
         {
+            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+
             long r = Debug::DebugWrite(vec[i].iov_base, vec[i].iov_len);
             if(r < 0) return r;
             res += r;
@@ -360,6 +387,8 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
         if(!f) return -EBADF;
         for(int i = 0; i < vlen; ++i)
         {
+            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+
             long r = f->Write(vec[i].iov_base, vec[i].iov_len);
             if(r < 0) return r;
             res += r;
@@ -386,6 +415,7 @@ long SysCalls::sys_getdents(int fd, dirent *de, size_t count)
 
 long SysCalls::sys_getcwd(char *buf, size_t size)
 {
+    BUFFER_CHECK(buf, size);
     DEntry *dentry = Process::GetCurrentDir();
     if(!dentry) return -ENOENT;
     dentry->GetFullPath(buf, size);
@@ -394,6 +424,7 @@ long SysCalls::sys_getcwd(char *buf, size_t size)
 
 long SysCalls::sys_chdir(char *pathname)
 {
+    BUFFER_CHECK(pathname, String::Size(pathname));
     File *dir = File::Open(pathname, O_DIRECTORY);
     if(!dir) return -ENOENT;
     DEntry *dentry = Process::GetCurrentDir();
@@ -428,6 +459,8 @@ long SysCalls::sys_arch_prctl(int code, uintptr_t addr)
 
 long SysCalls::sys_getdents64(int fd, struct dirent *de, size_t count)
 {
+    BUFFER_CHECK(de, count);
+
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
     if(!f) return -EBADF;
     if(!S_ISDIR(f->Mode))
@@ -455,6 +488,8 @@ long SysCalls::sys_getdents64(int fd, struct dirent *de, size_t count)
 
 long SysCalls::sys_set_tid_address(int *tidptr)
 {
+    BUFFER_CHECK(tidptr, sizeof(*tidptr));
+
     Thread *ct = Thread::GetCurrent();
     ct->tidPtr = tidptr;
     return ct->Id;
@@ -462,6 +497,7 @@ long SysCalls::sys_set_tid_address(int *tidptr)
 
 long SysCalls::sys_clock_get_time(int clock, struct timespec *t)
 {
+    BUFFER_CHECK(t, sizeof(*t));
     if(clock != CLOCK_REALTIME)
         return -ENOSYS;
     if(!t) return -EINVAL;
@@ -488,11 +524,13 @@ long SysCalls::sysFBGetDefault()
 
 long SysCalls::sysFBListIds(int *buf, size_t bufSize)
 {
+    BUFFER_CHECK(buf, bufSize);
     return FrameBuffer::ListIds(buf, bufSize);
 }
 
 long SysCalls::sysFBGetName(int id, char *buf, size_t bufSize)
 {
+    BUFFER_CHECK(buf, bufSize);
     FrameBuffer *fb = FrameBuffer::GetById(id);
     if(!fb) return -ENODEV;
     const char *fbName = fb->GetName();
@@ -528,6 +566,7 @@ long SysCalls::sysFBGetModeCount(int fd)
 
 long SysCalls::sysFBGetModeInfo(int fd, int mode, struct vidModeInfo *modeInfo)
 {
+    BUFFER_CHECK(modeInfo, sizeof(*modeInfo));
     if(!modeInfo) return -EINVAL;
 
     FrameBuffer *fb = (FrameBuffer *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::FrameBuffer);
@@ -608,6 +647,7 @@ long SysCalls::sysInDevGetCount()
 
 long SysCalls::sysInDevListIds(int *buf, size_t bufSize)
 {
+    BUFFER_CHECK(buf, bufSize);
     return InputDevice::ListIds(buf, bufSize);
 }
 
@@ -619,6 +659,7 @@ long SysCalls::sysInDevGetType(int id)
 
 long SysCalls::sysInDevGetName(int id, char *buf, size_t bufSize)
 {
+    BUFFER_CHECK(buf, bufSize);
     InputDevice *dev = InputDevice::GetById(id);
     if(!dev) return -ENODEV;
     const char *devName = dev->GetName();
@@ -647,6 +688,7 @@ long SysCalls::sysInDevClose(int fd)
 
 long SysCalls::sysInDevGetEvent(int fd, int timeout, struct inpEvent *event)
 {
+    BUFFER_CHECK(event, PAGE_SIZE);
     if(!event) return -EINVAL;
     InputDevice *dev = (InputDevice *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::InputDevice);
     if(!dev) return -EBADF;
@@ -658,6 +700,9 @@ long SysCalls::sysInDevGetEvent(int fd, int timeout, struct inpEvent *event)
 
 long SysCalls::sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
 {
+    BUFFER_CHECK(name, String::Size(name));
+    BUFFER_CHECK(entry, PAGE_SIZE);
+    BUFFER_CHECK(retVal, sizeof(*retVal));
     return Process::GetCurrent()->NewThread(name, entry, arg, retVal);
 }
 
@@ -714,6 +759,7 @@ long SysCalls::sysThreadGetId(int fd)
 
 long SysCalls::sysProcessCreate(const char *cmdline)
 {
+    BUFFER_CHECK(cmdline, String::Size(cmdline));
     return Process::GetCurrent()->NewProcess(cmdline);
 }
 
@@ -734,16 +780,19 @@ long SysCalls::sysProcessAbort(int fd, int result)
 
 long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
 {
+    BUFFER_CHECK(payload, payloadSize);
     return IPC::SendMessage(dst, num, flags, payload, payloadSize);
 }
 
 long SysCalls::sysIPCGetMessage(void *msg, int timeout)
 {
+    BUFFER_CHECK(msg, sizeof(ipcMessage));
     return IPC::GetMessage((ipcMessage *)msg, timeout);
 }
 
 long SysCalls::sysIPCCreateSharedMem(const char *name, unsigned size)
 {
+    BUFFER_CHECK(name, String::Size(name));
     if(!size) return -EINVAL;
     NamedSharedMem *shm = new NamedSharedMem(name, align(size, PAGE_SIZE), false);
     return Process::GetCurrent()->CreateNamedObjectHandle(shm);
@@ -751,6 +800,7 @@ long SysCalls::sysIPCCreateSharedMem(const char *name, unsigned size)
 
 long SysCalls::sysIPCOpenSharedMem(const char *name)
 {
+    BUFFER_CHECK(name, String::Size(name));
     NamedObject *no = NamedObject::Get(name);
     if(!no) return -ENOENT;
     NamedSharedMem *shm = dynamic_cast<NamedSharedMem *>(no);

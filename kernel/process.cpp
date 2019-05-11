@@ -409,7 +409,7 @@ int Process::ForEach(bool (*handler)(Process *proc, void *arg), void *arg)
 
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :
     lock(true, "processLock"),
-    UserStackPtr(USER_END),
+    UserStackPtr(USER_END - PAGE_SIZE),
     Handles(8, 8, MAX_HANDLES),
     Id(id.GetNext()),
     Messages(64),

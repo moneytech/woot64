@@ -7,6 +7,7 @@ class String
 public:
     static size_t Length(const char *str);
     static size_t Length(const wchar_t *str);
+    static size_t Size(const char *str);
     static int Compare(const char *s1, const char *s2);
     static int Compare(const char *s1, const char *s2, size_t n);
     static char *Duplicate(const char *s);
