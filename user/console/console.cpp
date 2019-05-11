@@ -141,7 +141,7 @@ extern "C" int main(int argc, char *argv[])
     setbuf(stdout, NULL);
     wmInitialize();
 
-    conWindow = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 500, 400, WM_CWF_DEFAULT);
+    conWindow = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 600, 400, WM_CWF_DEFAULT);
     if(!conWindow)
     {
         fprintf(stderr, "[console] Couldn't create main window\n");

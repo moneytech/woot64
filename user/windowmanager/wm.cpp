@@ -235,10 +235,12 @@ extern "C" int main(int argc, char *argv[])
                     if(wnd == mouseWnd || wnd == desktopWnd)
                         continue;
 
-                    rcRectangle_t rect = wnd->GetDecoratedRect();
+                    bool doBreak = false;
 
+                    rcRectangle_t rect = wnd->GetDecoratedRect();
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
+                        doBreak = true;
                         if(mouseEv->ButtonsPressed & 1)
                         {
                             if(topWindow != wnd) // bring window to the top
@@ -253,9 +255,9 @@ extern "C" int main(int argc, char *argv[])
                     }
 
                     rect = wnd->GetRect();
-
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
+                        doBreak = true;
                         wmEvent_t event;
                         memset(&event, 0, sizeof(event));
                         event.Type = WM_EVT_MOUSE;
@@ -268,8 +270,10 @@ extern "C" int main(int argc, char *argv[])
                         event.Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
                         event.Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
                         ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
-                        break;
                     }
+
+                    if(doBreak)
+                        break;
                 }
             }
             else if(msg.Number == MSG_RPC_REQUEST)
