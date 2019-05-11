@@ -113,9 +113,6 @@ int main(int argc, char *argv[])
         }
         if(quit) break;
 
-        if((i % 10) == 9)
-            wmSetWindowPos(window, rand() % 500, rand() % 500);
-
         char buf[64];
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));

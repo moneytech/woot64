@@ -142,6 +142,9 @@ extern "C" int main(int argc, char *argv[])
     Windows windows;
     Window *activeWindow = nullptr;
     Window *topWindow = nullptr;
+    Window *dragWindow = nullptr;
+    int dragDeltaX = 0;
+    int dragDeltaY = 0;
 
     threadDaemonize();
 
@@ -235,6 +238,9 @@ extern "C" int main(int argc, char *argv[])
                     if(wnd == mouseWnd || wnd == desktopWnd)
                         continue;
 
+                    if(mouseEv->ButtonsReleased & 1)
+                        dragWindow = nullptr;
+
                     bool doBreak = false;
 
                     rcRectangle_t rect = wnd->GetDecoratedRect();
@@ -249,10 +255,24 @@ extern "C" int main(int argc, char *argv[])
                                 topWindow = wnd;
                             }
 
-                            if(activeWindow != wnd)
-                                activeWindow = wnd;
+                            activeWindow = wnd;
                         }
                     }
+
+                    rcRectangle_t decoRect = rect;
+                    rect = wnd->GetDragRect();
+                    if(rcContainsPointP(&rect, mouseX, mouseY))
+                    {
+                        if(mouseEv->ButtonsPressed & 1)
+                        {
+                            dragWindow = wnd;
+                            dragDeltaX = mouseX - decoRect.X;
+                            dragDeltaY = mouseY - decoRect.Y;
+                        }
+                    }
+
+                    if(dragWindow && (mouseEv->Delta[0] || mouseEv->Delta[1]))
+                        moveWindow(&dirtyRect, dragWindow, mouseX - dragDeltaX, mouseY - dragDeltaY);
 
                     rect = wnd->GetRect();
                     if(rcContainsPointP(&rect, mouseX, mouseY))
@@ -331,6 +351,8 @@ extern "C" int main(int argc, char *argv[])
                             topWindow = nullptr;
                         if(activeWindow == wnd)
                             activeWindow = nullptr;
+                        if(dragWindow == wnd)
+                            dragWindow = nullptr;
                         windows.RemoveOne(wnd);
                         delete wnd;
                     }

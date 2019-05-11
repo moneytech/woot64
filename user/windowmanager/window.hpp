@@ -31,6 +31,7 @@ public:
     const char *GetShMemName() const;
     rcRectangle_t GetRect() const;
     rcRectangle_t GetDecoratedRect() const;
+    rcRectangle_t GetDragRect() const;
     pmPixMap_t *GetPixMap() const;
     unsigned GetFlags() const;
     void SetPosition(int x, int y);

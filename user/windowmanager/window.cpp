@@ -71,6 +71,16 @@ rcRectangle_t Window::GetDecoratedRect() const
     return r;
 }
 
+rcRectangle_t Window::GetDragRect() const
+{
+    if(!(flags & WM_CWF_TITLEBAR))
+        return rcRectangleEmpty;
+    rcRectangle_t r = rect;
+    r.Height = TitleBarHeight;
+    r.Y -= r.Height;
+    return r;
+}
+
 pmPixMap_t *Window::GetPixMap() const
 {
     return pixMap;
