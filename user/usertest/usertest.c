@@ -109,6 +109,17 @@ int main(int argc, char *argv[])
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
                 if(event->WindowId == wmGetWindowId(window))
                     wmProcessEvent(window, event);
+                if(event->Type == WM_EVT_KEYBOARD)
+                {
+                    if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+                    {
+                        if(event->Keyboard.Key == VK_ESCAPE)
+                        {
+                            quit = 1;
+                            break;
+                        }
+                    }
+                }
             }
         }
         if(quit) break;

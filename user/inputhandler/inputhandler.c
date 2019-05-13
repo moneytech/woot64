@@ -32,12 +32,6 @@ static int kbdThread(int arg)
 
         if(keyboardOwner >= 0)
             ipcSendMessage(keyboardOwner, MSG_KEYBOARD_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
-
-        if(event.Key == 27 && event.Flags & INP_KBD_EVENT_FLAG_RELEASE)
-        {
-            ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, NULL, 0);
-            done = 1;
-        }
     }
     inpCloseDevice(handle);
     return 0;

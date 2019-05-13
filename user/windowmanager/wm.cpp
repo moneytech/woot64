@@ -54,6 +54,7 @@ static void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
 static void updateRect(Windows *windows, rcRectangle_t *rect);
 static int getWindowIdx(Windows *windows, Window *wnd);
 static void bringToTop(Windows *windows, Window *wnd);
+static Window *findTopWindow(Windows *windows);
 
 static Window *mouseWnd = nullptr;
 static pmPixMap_t *fbPixMap = nullptr;
@@ -333,8 +334,8 @@ extern "C" int main(int argc, char *argv[])
                     response.pixelFormat = wnd->GetPixelFormat();
                     snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
 
-                    if(!activeWindow)
-                        activeWindow = wnd;
+                    topWindow = wnd;
+                    activeWindow = wnd;
 
                     rpcIPCReturn(msg.Source, msg.ID, &response, sizeof(response));
                 }
@@ -346,14 +347,11 @@ extern "C" int main(int argc, char *argv[])
                     {
                         rcRectangle_t rect = wnd->GetDecoratedRect();
                         dirtyRect = rcAddP(&dirtyRect, &rect);
-
-                        if(topWindow == wnd)
-                            topWindow = nullptr;
-                        if(activeWindow == wnd)
-                            activeWindow = nullptr;
+                        windows.RemoveOne(wnd);
                         if(dragWindow == wnd)
                             dragWindow = nullptr;
-                        windows.RemoveOne(wnd);
+                        topWindow = findTopWindow(&windows);
+                        activeWindow = topWindow;
                         delete wnd;
                     }
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
@@ -482,4 +480,18 @@ void bringToTop(Windows *windows, Window *wnd)
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         updateRect(windows, &wndRect);
     }
+}
+
+static Window *findTopWindow(Windows *windows)
+{
+    Window *prevWnd = nullptr;
+    int wndCnt = windows->Size();
+    for(int i = 0; i < wndCnt; ++i)
+    {
+        Window *wnd = windows->Get(i);
+        if(wnd == mouseWnd)
+            break;
+        prevWnd = wnd;
+    }
+    return prevWnd;
 }
