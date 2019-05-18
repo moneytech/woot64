@@ -10,49 +10,6 @@
 #undef max
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
-struct uiControl
-{
-    uiControl_t *Next;
-    uiControl_t *Parent;
-    uiControl_t *Children;
-
-    int X, Y;
-    pmPixMap_t *Content;
-    void *Context;
-    int Visibility;
-    char *Text;
-    pmPixMap_t *Icon;
-    fntFont_t *Font;
-    pmColor_t TextColor;
-    pmColor_t BackColor;
-    pmColor_t BorderColor;
-    int TextHAlign;
-    int TextVAlign;
-    int BorderStyle;
-    int MarginSize;
-    int IconPosition;
-    int TextIconSeparation;
-
-    uiEventHandler OnCreate;
-    uiEventHandler OnDelete;
-    uiEventHandler OnPaint;
-
-    uiWMEventHandler OnKeyPress;
-    uiWMEventHandler OnKeyRelease;
-
-    uiWMEventHandler PreMouseMove;
-    uiWMEventHandler OnMouseMove;
-    uiWMEventHandler PostMouseMove;
-
-    uiWMEventHandler PreMousePress;
-    uiWMEventHandler OnMousePress;
-    uiWMEventHandler PostMousePress;
-
-    uiWMEventHandler PreMouseRelease;
-    uiWMEventHandler OnMouseRelease;
-    uiWMEventHandler PostMouseRelease;
-};
-
 struct uiLabel
 {
     uiControl_t Control;
@@ -67,15 +24,6 @@ struct uiLineEdit
 {
     uiControl_t Control;
     fntFont_t *Font;
-};
-
-struct uiSlider
-{
-    uiControl_t Control;
-    int Horizontal;
-    int MinValue;
-    int MaxValue;
-    int Value;
 };
 
 static int mapValue(int imin, int imax, int omin, int omax, int val)
@@ -189,18 +137,18 @@ static void calculateFaceRect(uiControl_t *control, rcRectangle_t *rect, rcRecta
 
 static void drawDefaultFace(uiControl_t *control)
 {
-    rcRectangle_t rect = pmGetRectangle(control->Content);
+    rcRectangle_t rect = pmGetRectangle(control->PixMap);
     rcRectangle_t faceRect;
     calculateFaceRect(control, &rect, &faceRect);
     if(!control->Icon)
     {   // text only
-        fntDrawString(control->Font, control->Content, faceRect.X, faceRect.Y, control->Text, control->TextColor);
+        fntDrawString(control->Font, control->PixMap, faceRect.X, faceRect.Y, control->Text, control->TextColor);
         return;
     }
 
     if(!control->Font || !control->Text || !control->Text[0])
     {   // icon only
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X, faceRect.Y, -1, -1);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X, faceRect.Y, -1, -1);
         return;
     }
 
@@ -214,41 +162,41 @@ static void drawDefaultFace(uiControl_t *control)
     {
     default:
     case UI_ICON_BEHIND:
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, cy - control->Icon->Contents.Height / 2, -1, -1);
-        fntDrawString(control->Font, control->Content, cx - textWidth / 2, cy - textHeight / 2, control->Text, control->TextColor);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, cy - textHeight / 2, control->Text, control->TextColor);
         break;
     case UI_ICON_OVER:
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y, -1, -1);
-        fntDrawString(control->Font, control->Content, cx - textWidth / 2, faceRect.Y + faceRect.Height - textHeight, control->Text, control->TextColor);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y, -1, -1);
+        fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, faceRect.Y + faceRect.Height - textHeight, control->Text, control->TextColor);
         break;
     case UI_ICON_BELOW:
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y + faceRect.Height - control->Icon->Contents.Height, -1, -1);
-        fntDrawString(control->Font, control->Content, cx - textWidth / 2, faceRect.Y, control->Text, control->TextColor);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y + faceRect.Height - control->Icon->Contents.Height, -1, -1);
+        fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, faceRect.Y, control->Text, control->TextColor);
         break;
     case UI_ICON_LEFT:
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X, cy - control->Icon->Contents.Height / 2, -1, -1);
-        fntDrawString(control->Font, control->Content, faceRect.X + faceRect.Width - textWidth, cy - textHeight / 2, control->Text, control->TextColor);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->PixMap, faceRect.X + faceRect.Width - textWidth, cy - textHeight / 2, control->Text, control->TextColor);
         break;
     case UI_ICON_RIGHT:
-        pmAlphaBlit(control->Content, control->Icon, 0, 0, faceRect.X + faceRect.Width - control->Icon->Contents.Width, cy - control->Icon->Contents.Height / 2, -1, -1);
-        fntDrawString(control->Font, control->Content, faceRect.X, cy - textHeight / 2, control->Text, control->TextColor);
+        pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X + faceRect.Width - control->Icon->Contents.Width, cy - control->Icon->Contents.Height / 2, -1, -1);
+        fntDrawString(control->Font, control->PixMap, faceRect.X, cy - textHeight / 2, control->Text, control->TextColor);
         break;
     }
 }
 
 static void drawDefaultBorder(uiControl_t *control)
 {
-    rcRectangle_t rect = pmGetRectangle(control->Content);
+    rcRectangle_t rect = pmGetRectangle(control->PixMap);
     switch(control->BorderStyle)
     {
     case UI_BORDER_SIMPLE:
-        pmRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BorderColor);
+        pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;
     case UI_BORDER_RAISED:
-        pmDrawFrame(control->Content, 0, 0, rect.Width, rect.Height, 0);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0);
         break;
     case UI_BORDER_SUNKEN:
-        pmDrawFrame(control->Content, 0, 0, rect.Width, rect.Height, 1);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1);
         break;
     }
 }
@@ -258,7 +206,7 @@ static void defaultOnPaint(uiControl_t *sender)
 {
     drawDefaultFace(sender);
     drawDefaultBorder(sender);
-    pmInvalidateWhole(sender->Content);
+    //pmInvalidateWhole(sender->PixMap);
 }
 
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -273,10 +221,11 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
         if(!ctrl) control->Parent->Children = control;
         else ctrl->Next = control;
     }
+    control->Window = parent ? parent->Window : NULL;
     control->X = x;
     control->Y = y;
-    control->Content = pmSubPixMap(parent ? parent->Content : parentPixMap, x, y, width, height);
-    if(!control->Content)
+    control->PixMap = pmSubPixMap(parent ? parent->PixMap : parentPixMap, x, y, width, height);
+    if(!control->PixMap)
     {
         uiControlDelete(control);
         return NULL;
@@ -321,8 +270,8 @@ void uiControlDelete(uiControl_t *control)
             }
         }
     }
-    if(control->Content)
-        pmDelete(control->Content);
+    if(control->PixMap)
+        pmDelete(control->PixMap);
     if(control->Text)
         free(control->Text);
 }
@@ -333,22 +282,36 @@ void uiControlRedraw(uiControl_t *control)
         return;
     if(control->BackColor.A != 0)
     {
-        rcRectangle_t rect = pmGetRectangle(control->Content);
-        if(control->BackColor.A == 255) pmFillRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
-        else pmAlphaRectangle(control->Content, 0, 0, rect.Width, rect.Height, control->BackColor);
+        rcRectangle_t rect = pmGetRectangle(control->PixMap);
+        if(control->BackColor.A == 255) pmFillRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
+        else pmAlphaRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
     }
     if(control->OnPaint)
         control->OnPaint(control);
     for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         uiControlRedraw(ctrl);
     pmPixMap_t *pm = uiControlGetPixMap(control);
-    if(pm) pmClearParentDirty(pm);
+    if(pm) pmInvalidateWhole(pm);
+    if(!control->Parent && control->Window)
+        wmUpdateWindow(control->Window);
+}
+
+void uiControlSetWindow(uiControl_t *control, wmWindow_t *window)
+{
+    if(!control) return;
+    control->Window = window;
+}
+
+wmWindow_t *uiControlGetWindow(uiControl_t *control)
+{
+    if(!control) return NULL;
+    return control->Window;
 }
 
 pmPixMap_t *uiControlGetPixMap(uiControl_t *control)
 {
     if(!control) return NULL;
-    return control->Content;
+    return control->PixMap;
 }
 
 void *uiControlGetContext(uiControl_t *control)
@@ -395,7 +358,7 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
     {
         for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         {
-            rcRectangle_t rect = pmGetRectangle(ctrl->Content);
+            rcRectangle_t rect = pmGetRectangle(ctrl->PixMap);
             if(rcContainsPointP(&rect, event->Mouse.Coords[0], event->Mouse.Coords[1]))
             {
                 int origX = event->Mouse.Coords[0];
@@ -423,7 +386,7 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
             if(control->PostMousePress) control->PostMousePress(control, event);
         }
 
-        if(control->OnMouseRelease && event->Mouse.ButtonsReleased)
+        if(event->Mouse.ButtonsReleased)
         {
             if(control->PreMouseRelease) control->PreMouseRelease(control, event);
             if(control->OnMouseRelease) control->OnMouseRelease(control, event);
@@ -547,99 +510,6 @@ uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int
 }
 
 void uiLineEditDelete(uiLineEdit_t *control)
-{
-    uiControlDelete((uiControl_t *)control);
-}
-
-static void sliderPaint(uiControl_t *control)
-{
-    if(!control) return;
-    uiSlider_t *slider = (uiSlider_t *)control;
-    rcRectangle_t rect = pmGetRectangle(slider->Control.Content);
-    if(slider->Horizontal)
-    {
-        int cy = rect.Height / 2;
-        pmDrawFrame(slider->Control.Content, 4, cy - 1, rect.Width - 8, 2, 1);
-        int x = mapValue(slider->MinValue, slider->MaxValue, 4, rect.Width - 4, slider->Value);
-        pmFillRectangle(slider->Control.Content, x - 2, 5, 4, rect.Height - 10, pmColorGray);
-        pmDrawFrame(slider->Control.Content, x - 3, 4, 6, rect.Height - 8, 0);
-    }
-    else
-    {
-        int cx = rect.Width / 2;
-        pmDrawFrame(slider->Control.Content, cx - 1, 4, 2, rect.Height - 8, 1);
-        int y = mapValue(slider->MaxValue, slider->MinValue, 4, rect.Height - 4, slider->Value);
-        pmFillRectangle(slider->Control.Content, 5, y - 2, rect.Width - 10, 4, pmColorGray);
-        pmDrawFrame(slider->Control.Content, 4, y - 3, rect.Width - 8, 6, 0);
-    }
-    pmInvalidateRect(slider->Control.Content, rect);
-}
-
-uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val)
-{
-    struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL, NULL);
-    if(!control) return NULL;
-    control->Horizontal = horizontal;
-    if(maxVal < minVal)
-    {
-        int t = minVal;
-        minVal = maxVal;
-        maxVal = t;
-    }
-    control->MinValue = minVal;
-    control->MaxValue = maxVal;
-    if(val < minVal) val = minVal;
-    else if(val > maxVal) val = maxVal;
-    control->Value = val;
-    control->Control.OnPaint = sliderPaint;
-    return control;
-}
-
-void uiSliderSetValue(uiSlider_t *control, int value)
-{
-    if(!control) return;
-    if(value < control->MinValue) value = control->MinValue;
-    else if(value > control->MaxValue) value = control->MaxValue;
-    control->Value = value;
-    if(control->Control.OnPaint)
-        control->Control.OnPaint(&control->Control);
-}
-
-int uiSliderGetValue(uiSlider_t *control)
-{
-    if(!control) return 0;
-    return control->Value;
-}
-
-void uiSliderSetMinValue(uiSlider_t *control, int value)
-{
-    if(!control) return;
-    control->MinValue = value;
-    if(value > control->MaxValue) control->MaxValue = value;
-    uiSliderSetValue(control, control->Value);
-}
-
-int uiSliderGetMinValue(uiSlider_t *control)
-{
-    if(!control) return 0;
-    return control->MinValue;
-}
-
-void uiSliderSetMaxValue(uiSlider_t *control, int value)
-{
-    if(!control) return;
-    control->MaxValue = value;
-    if(value < control->MinValue) control->MinValue = value;
-    uiSliderSetValue(control, control->Value);
-}
-
-int uiSliderGetMaxValue(uiSlider_t *control)
-{
-    if(!control) return 0;
-    return control->MaxValue;
-}
-
-void uiSliderDelete(uiSlider_t *control)
 {
     uiControlDelete((uiControl_t *)control);
 }

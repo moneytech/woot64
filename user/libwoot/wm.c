@@ -137,6 +137,7 @@ wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
         free(wnd);
         return NULL;
     }
+    uiControlSetWindow(wnd->rootControl, wnd);
     return wnd;
 }
 
@@ -172,6 +173,15 @@ pmPixMap_t *wmGetPixMap(wmWindow_t *window)
 void wmRedrawWindow(wmWindow_t *window)
 {
     rpcCall(wmServer, "wmRedrawWindow", &window->id, sizeof(int), NULL, 0, DEFAULT_RPC_TIMEOUT);
+}
+
+void wmUpdateWindow(wmWindow_t *window)
+{
+    if(!window) return;
+    rcRectangle_t rect = pmGetAndClearDirtyRectangle(window->pixMap);
+    if(rcIsEmptyP(&rect))
+        return;
+    wmRedrawRect(window, &rect);
 }
 
 void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect)

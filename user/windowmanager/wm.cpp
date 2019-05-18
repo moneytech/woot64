@@ -449,6 +449,7 @@ void updateRect(Windows *windows, rcRectangle_t *rect)
     for(Window *wnd : *windows)
         wnd->UpdateWindowGraphics(bbPixMap, rect);
     pmBlit(fbPixMap, bbPixMap, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
+    //pmRectangleRect(fbPixMap, rect, pmColorFromRGB(rand(), rand(), rand()));
 }
 
 int getWindowIdx(Windows *windows, Window *wnd)

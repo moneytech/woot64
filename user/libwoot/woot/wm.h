@@ -93,6 +93,7 @@ int wmDeleteWindow(wmWindow_t *window);
 int wmGetWindowId(wmWindow_t *window);
 pmPixMap_t *wmGetPixMap(wmWindow_t *window);
 void wmRedrawWindow(wmWindow_t *window);
+void wmUpdateWindow(wmWindow_t *window);
 void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect);
 void wmSetWindowPos(wmWindow_t *window, int x, int y);
 void wmSetWindowTitle(wmWindow_t *window, const char *title);

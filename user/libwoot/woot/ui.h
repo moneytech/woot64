@@ -36,19 +36,67 @@ extern "C" {
 #define UI_ICON_RIGHT       4
 
 typedef struct wmEvent wmEvent_t;
+typedef struct wmWindow wmWindow_t;
 
 typedef struct uiControl uiControl_t;
+
+typedef void (*uiEventHandler)(uiControl_t *sender);
+typedef void (*uiWMEventHandler)(uiControl_t *sender, wmEvent_t *event);
+
+struct uiControl
+{
+    uiControl_t *Next;
+    uiControl_t *Parent;
+    uiControl_t *Children;
+    wmWindow_t *Window;
+
+    int X, Y;
+    pmPixMap_t *PixMap;
+    void *Context;
+    int Visibility;
+    char *Text;
+    pmPixMap_t *Icon;
+    fntFont_t *Font;
+    pmColor_t TextColor;
+    pmColor_t BackColor;
+    pmColor_t BorderColor;
+    int TextHAlign;
+    int TextVAlign;
+    int BorderStyle;
+    int MarginSize;
+    int IconPosition;
+    int TextIconSeparation;
+
+    uiEventHandler OnCreate;
+    uiEventHandler OnDelete;
+    uiEventHandler OnPaint;
+
+    uiWMEventHandler OnKeyPress;
+    uiWMEventHandler OnKeyRelease;
+
+    uiWMEventHandler PreMouseMove;
+    uiWMEventHandler OnMouseMove;
+    uiWMEventHandler PostMouseMove;
+
+    uiWMEventHandler PreMousePress;
+    uiWMEventHandler OnMousePress;
+    uiWMEventHandler PostMousePress;
+
+    uiWMEventHandler PreMouseRelease;
+    uiWMEventHandler OnMouseRelease;
+    uiWMEventHandler PostMouseRelease;
+};
+
 typedef struct uiLabel uiLabel_t;
 typedef struct uiButton uiButton_t;
 typedef struct uiLineEdit uiLineEdit_t;
 typedef struct uiSlider uiSlider_t;
 
-typedef void (*uiEventHandler)(uiControl_t *sender);
-typedef void (*uiWMEventHandler)(uiControl_t *sender, wmEvent_t *event);
-
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiControlDelete(uiControl_t *control);
 void uiControlRedraw(uiControl_t *control);
+void uiControlSetWindow(uiControl_t *control, wmWindow_t *window);
+wmWindow_t *uiControlGetWindow(uiControl_t *control);
 pmPixMap_t *uiControlGetPixMap(uiControl_t *control);
 void *uiControlGetContext(uiControl_t *control);
 void uiControlSetContext(uiControl_t *control, void *context);
@@ -79,15 +127,6 @@ void uiButtonDelete(uiButton_t *control);
 
 uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiLineEditDelete(uiLineEdit_t *control);
-
-uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val);
-void uiSliderSetValue(uiSlider_t *control, int value);
-int uiSliderGetValue(uiSlider_t *control);
-void uiSliderSetMinValue(uiSlider_t *control, int value);
-int uiSliderGetMinValue(uiSlider_t *control);
-void uiSliderSetMaxValue(uiSlider_t *control, int value);
-int uiSliderGetMaxValue(uiSlider_t *control);
-void uiSliderDelete(uiSlider_t *control);
 
 #ifdef __cplusplus
 }

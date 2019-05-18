@@ -13,6 +13,7 @@
 #include <woot/pixmap.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
+#include <woot/uislider.h>
 #include <woot/video.h>
 #include <woot/wm.h>
 
@@ -26,6 +27,15 @@ void btnClick(uiControl_t *sender, wmEvent_t *event)
     uiControlSetBackColor(rootControl, color);
     uiControlRedraw(rootControl);
     wmRedrawWindow(window);
+}
+
+void sldChange(uiSlider_t *sender)
+{
+    uiLineEdit_t *edit = uiControlGetContext((uiControl_t *)sender);
+    char text[32];
+    snprintf(text, sizeof(text), "slider value: %d", uiSliderGetValue(sender));
+    uiControlSetText((uiControl_t *)edit, text);
+    uiControlRedraw((uiControl_t *)edit);
 }
 
 int main(int argc, char *argv[])
@@ -68,7 +78,9 @@ int main(int argc, char *argv[])
     //uiControlSetBackColor(rootControl, pmColorRed);
     uiControl_t *lbl = (uiControl_t *)uiLabelCreate(rootControl, 20, 1, pm->Contents.Width - 41, 24, "Date and time", NULL);
     uiControl_t *btn = (uiControl_t *)uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Do something", NULL);
-    uiControl_t *edit = (uiControl_t *)uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
+    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
+    uiSlider_t *sld = uiSliderCreate(rootControl, (pm->Contents.Width - 120) / 2, 150, 120, 30, 1, 0, 100, 25);
+    uiSlider_t *sld2 = uiSliderCreate(rootControl, 1, 40, 30, 130, 0, 0, 100, 25);
 
     uiControlSetBorderColor(rootControl, pmColorWhite);
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
@@ -85,8 +97,10 @@ int main(int argc, char *argv[])
     uiControlSetTextIconSeparation(btn, 2);
     uiControlSetOnMousePress(btn, btnClick);
 
+    uiSliderSetOnValueChange(sld, sldChange);
+    uiControlSetContext((uiControl_t *)sld, edit);
+
     uiControlRedraw(rootControl);
-    wmRedrawWindow(window);
 
     srand(time(NULL));
     ipcMessage_t msg;
@@ -129,7 +143,6 @@ int main(int argc, char *argv[])
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
         uiControlSetText((uiControl_t *)lbl, buf);
         uiControlRedraw(rootControl);
-        wmRedrawWindow(window);
     }
 
     printf("[usertest] Closing usertest\n");

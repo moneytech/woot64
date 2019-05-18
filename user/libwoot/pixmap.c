@@ -413,7 +413,7 @@ rcRectangle_t pmGetDirtyRectangle(pmPixMap_t *pixMap)
 rcRectangle_t pmGetAndClearDirtyRectangle(pmPixMap_t *pixMap)
 {
     rcRectangle_t dirty = pmGetDirtyRectangle(pixMap);
-    pmClearDirty(pixMap);
+    pmClearParentDirty(pixMap);
     return dirty;
 }
 
