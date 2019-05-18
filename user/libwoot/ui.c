@@ -276,6 +276,58 @@ void uiControlDelete(uiControl_t *control)
         free(control->Text);
 }
 
+uiControl_t *uiControlGetRoot(uiControl_t *control)
+{
+    if(!control) return NULL;
+    uiControl_t *root = control;
+    while(root->Parent)
+        root = root->Parent;
+    return root;
+}
+
+uiControl_t *uiControlFindFocus(uiControl_t *control)
+{
+    if(!control) return NULL;
+    if(control->HasFocus) return control;
+    for(uiControl_t *child = control->Children; child; child = child->Next)
+    {
+        uiControl_t *ctrl = uiControlFindFocus(child);
+        if(ctrl) return ctrl;
+    }
+    return NULL;
+}
+
+void uiControlSetFocus(uiControl_t *control)
+{
+    if(!control) return;
+    uiControl_t *root = uiControlGetRoot(control);
+    uiControl_t *curFocus = uiControlFindFocus(root ? root : control);
+    if(curFocus == control)
+        return;
+    uiControlClearFocus(root ? root : control);
+    if(control->CanHaveFocus && !control->HasFocus)
+    {
+        control->HasFocus = 1;
+        if(control->OnGotFocus)
+            control->OnGotFocus(control);
+        uiControlRedraw(control);
+    }
+}
+
+void uiControlClearFocus(uiControl_t *control)
+{
+    if(!control) return;
+    for(uiControl_t *child = control->Children; child; child = child->Next)
+        uiControlClearFocus(child);
+    if(control->HasFocus)
+    {
+        control->HasFocus = 0;
+        if(control->OnFocusLost)
+            control->OnFocusLost(control);
+        uiControlRedraw(control);
+    }
+}
+
 void uiControlRedraw(uiControl_t *control)
 {
     if(control->Visibility == UI_HIDDEN)
@@ -332,6 +384,12 @@ void uiControlSetVisibility(uiControl_t *control, int visibility)
     control->Visibility = visibility;
 }
 
+int uiControlHasFocus(uiControl_t *control)
+{
+    if(!control) return 0;
+    return control->HasFocus ? 1 : 0;
+}
+
 char *uiControlGetText(uiControl_t *control)
 {
     if(!control) return NULL;
@@ -353,6 +411,7 @@ void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
 {
+    int res = 0;
     if(!control) return -EINVAL;
     if(event->Type == WM_EVT_MOUSE)
     {
@@ -377,13 +436,18 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
             if(control->PreMouseMove) control->PreMouseMove(control, event);
             if(control->OnMouseMove) control->OnMouseMove(control, event);
             if(control->PostMouseMove) control->PostMouseMove(control, event);
+            res = 1;
         }
 
         if(event->Mouse.ButtonsPressed)
         {
+            if(event->Mouse.ButtonsPressed & 1)
+                uiControlSetFocus(control);
+
             if(control->PreMousePress) control->PreMousePress(control, event);
             if(control->OnMousePress) control->OnMousePress(control, event);
             if(control->PostMousePress) control->PostMousePress(control, event);
+            res = 1;
         }
 
         if(event->Mouse.ButtonsReleased)
@@ -391,9 +455,10 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
             if(control->PreMouseRelease) control->PreMouseRelease(control, event);
             if(control->OnMouseRelease) control->OnMouseRelease(control, event);
             if(control->PostMouseRelease) control->PostMouseRelease(control, event);
+            res = 1;
         }
     }
-    return 0;
+    return res;
 }
 
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color)
@@ -472,6 +537,18 @@ void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler)
 {
     if(!control) return;
     control->OnMouseMove = handler;
+}
+
+void uiControlSetOnGotFocus(uiControl_t *control, uiGotFocusHandler handler)
+{
+    if(!control) return;
+    control->OnGotFocus = handler;
+}
+
+void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler)
+{
+    if(!control) return;
+    control->OnFocusLost = handler;
 }
 
 uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)

@@ -65,6 +65,8 @@ static void sliderPaint(uiControl_t *control)
         pmFillRectangle(pm, 5, y - 2, rect.Width - 10, 4, pmColorGray);
         pmDrawFrame(pm, 4, y - 3, rect.Width - 8, 6, 0);
     }
+    if(control->HasFocus)
+        pmRectanglePattern(pm, 1, 1, rect.Width - 2, rect.Height - 2, 0x55555555, pmColorBlack);
     pmInvalidateWhole(pm);
 }
 
@@ -101,6 +103,7 @@ uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int hei
 {
     struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL, NULL);
     if(!control) return NULL;
+    control->Control.CanHaveFocus = 1;
     control->Horizontal = horizontal;
     if(maxVal < minVal)
     {

@@ -753,6 +753,17 @@ void pmHLine(pmPixMap_t *pixMap, int x1, int y, int x2, pmColor_t c)
     }
 }
 
+void pmHLinePattern(pmPixMap_t *pixMap, int x1, int y, int x2, unsigned pattern, pmColor_t c)
+{
+    unsigned i = ~0;
+    if(x1 > x2) swap(int, x1, x2);
+    for(int x = x1; x < x2; ++x, --i)
+    {
+        if((pattern >> (i & 31)) & 1)
+            pmSetPixel(pixMap, x, y, c);
+    }
+}
+
 void pmVLine(pmPixMap_t *pixMap, int x, int y1, int y2, pmColor_t c)
 {
     // just naive and slow implementation using SetPixel()
@@ -761,6 +772,17 @@ void pmVLine(pmPixMap_t *pixMap, int x, int y1, int y2, pmColor_t c)
         return;
     for(int Y = y1; Y <= y2; ++Y)
         pmSetPixel(pixMap, x, Y, c);
+}
+
+void pmVLinePattern(pmPixMap_t *pixMap, int x, int y1, int y2, unsigned pattern, pmColor_t c)
+{
+    unsigned i = ~0;
+    if(y1 > y2) swap(int, y1, y2);
+    for(int y = y1; y < y2; ++y, --i)
+    {
+        if((pattern >> (i & 31)) & 1)
+            pmSetPixel(pixMap, x, y, c);
+    }
 }
 
 void pmVFlip(pmPixMap_t *pixMap)
@@ -817,6 +839,22 @@ void pmRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c)
 void pmRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c)
 {
     pmRectangle(pixMap, rect->X, rect->Y, rect->Width, rect->Height, c);
+}
+
+void pmRectanglePattern(pmPixMap_t *pixMap, int x, int y, int w, int h, unsigned pattern, pmColor_t c)
+{
+    if(w <= 0 || h <= 0) return;
+    int x2 = x + w - 1;
+    int y2 = y + h - 1;
+    pmHLinePattern(pixMap, x, y, x2, pattern, c);
+    pmHLinePattern(pixMap, x, y2, x2, pattern, c);
+    pmVLinePattern(pixMap, x, y, y2, pattern, c);
+    pmVLinePattern(pixMap, x2, y, y2, pattern, c);
+}
+
+void pmRectangleRectPattern(pmPixMap_t *pixMap, rcRectangle_t *rect, unsigned pattern, pmColor_t c)
+{
+    pmRectanglePattern(pixMap, rect->X, rect->Y, rect->Width, rect->Height, pattern, c);
 }
 
 void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c)

@@ -85,9 +85,8 @@ int main(int argc, char *argv[])
     uiControlSetBorderColor(rootControl, pmColorWhite);
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
 
-    pmColor_t shadeColor = pmColorFromARGB(128, 0, 0, 0);
     uiControlSetTextColor(lbl, pmColorWhite);
-    uiControlSetBackColor(lbl, shadeColor);
+    uiControlSetBackColor(lbl, pmColorDarkGray);
     uiControlSetTextIconSeparation(lbl, 4);
     uiControlSetIconPosition(lbl, UI_ICON_LEFT);
     uiControlSetIcon(lbl, clockIcon);
@@ -142,7 +141,8 @@ int main(int argc, char *argv[])
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
         uiControlSetText((uiControl_t *)lbl, buf);
-        uiControlRedraw(rootControl);
+        uiControlRedraw(lbl);
+        wmUpdateWindow(window);
     }
 
     printf("[usertest] Closing usertest\n");

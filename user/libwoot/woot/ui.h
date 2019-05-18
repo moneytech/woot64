@@ -42,6 +42,8 @@ typedef struct uiControl uiControl_t;
 
 typedef void (*uiEventHandler)(uiControl_t *sender);
 typedef void (*uiWMEventHandler)(uiControl_t *sender, wmEvent_t *event);
+typedef void (*uiGotFocusHandler)(uiControl_t *sender);
+typedef void (*uiFocusLostHandler)(uiControl_t *sender);
 
 struct uiControl
 {
@@ -54,6 +56,8 @@ struct uiControl
     pmPixMap_t *PixMap;
     void *Context;
     int Visibility;
+    int CanHaveFocus;
+    int HasFocus;
     char *Text;
     pmPixMap_t *Icon;
     fntFont_t *Font;
@@ -85,6 +89,9 @@ struct uiControl
     uiWMEventHandler PreMouseRelease;
     uiWMEventHandler OnMouseRelease;
     uiWMEventHandler PostMouseRelease;
+
+    uiGotFocusHandler OnGotFocus;
+    uiFocusLostHandler OnFocusLost;
 };
 
 typedef struct uiLabel uiLabel_t;
@@ -94,6 +101,10 @@ typedef struct uiSlider uiSlider_t;
 
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiControlDelete(uiControl_t *control);
+uiControl_t *uiControlGetRoot(uiControl_t *control);
+uiControl_t *uiControlFindFocus(uiControl_t *control);
+void uiControlSetFocus(uiControl_t *control);
+void uiControlClearFocus(uiControl_t *control);
 void uiControlRedraw(uiControl_t *control);
 void uiControlSetWindow(uiControl_t *control, wmWindow_t *window);
 wmWindow_t *uiControlGetWindow(uiControl_t *control);
@@ -101,6 +112,7 @@ pmPixMap_t *uiControlGetPixMap(uiControl_t *control);
 void *uiControlGetContext(uiControl_t *control);
 void uiControlSetContext(uiControl_t *control, void *context);
 void uiControlSetVisibility(uiControl_t *control, int visibility);
+int uiControlHasFocus(uiControl_t *control);
 char *uiControlGetText(uiControl_t *control);
 void uiControlSetText(uiControl_t *control, const char *text);
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon);
@@ -118,6 +130,8 @@ void uiControlSetOnPaint(uiControl_t *control, uiEventHandler handler);
 void uiControlSetOnMousePress(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler);
+void uiControlSetOnGotFocus(uiControl_t *control, uiGotFocusHandler handler);
+void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler);
 
 uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiLabelDelete(uiLabel_t *control);
