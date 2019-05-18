@@ -71,6 +71,7 @@ typedef struct wmEvent
         {
             int Key;
             int Flags;
+            int Character;
         } Keyboard;
         struct
         {

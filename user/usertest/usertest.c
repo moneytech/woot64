@@ -25,7 +25,7 @@ void btnClick(uiControl_t *sender, wmEvent_t *event)
     uiControl_t *rootControl = wmGetRootControl(window);
     pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
     uiControlSetBackColor(rootControl, color);
-    uiControlRedraw(rootControl);
+    uiControlRedraw(rootControl, 1);
     wmRedrawWindow(window);
 }
 
@@ -35,7 +35,6 @@ void sldChange(uiSlider_t *sender)
     char text[32];
     snprintf(text, sizeof(text), "slider value: %d", uiSliderGetValue(sender));
     uiControlSetText((uiControl_t *)edit, text);
-    uiControlRedraw((uiControl_t *)edit);
 }
 
 int main(int argc, char *argv[])
@@ -99,7 +98,7 @@ int main(int argc, char *argv[])
     uiSliderSetOnValueChange(sld, sldChange);
     uiControlSetContext((uiControl_t *)sld, edit);
 
-    uiControlRedraw(rootControl);
+    uiControlRedraw(rootControl, 1);
 
     srand(time(NULL));
     ipcMessage_t msg;
@@ -141,8 +140,7 @@ int main(int argc, char *argv[])
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
         uiControlSetText((uiControl_t *)lbl, buf);
-        uiControlRedraw(lbl);
-        wmUpdateWindow(window);
+        uiControlRedraw(lbl, 1);
     }
 
     printf("[usertest] Closing usertest\n");

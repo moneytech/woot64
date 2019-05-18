@@ -18,7 +18,7 @@ extern "C" int main(int argc, char *argv[])
     uiControl_t *rootControl = wmGetRootControl(window);
     wmSetWindowTitle(window, "File manager");
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
-    uiControlRedraw(rootControl);
+    uiControlRedraw(rootControl, 1);
     wmRedrawWindow(window);
 
     ipcMessage_t msg;

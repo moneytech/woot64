@@ -1,6 +1,5 @@
 #include <errno.h>
 #include <woot/input.h>
-#include <woot/wm.h>
 #include <syscalls/syscalls.h>
 
 int inpGetDeviceCount()
@@ -38,70 +37,68 @@ int inpGetEvent(int fd, int timeout, void *buf)
     return sysInDevGetEvent(fd, timeout, buf);
 }
 
-int inpProcessKeyboardEvent(wmEvent_t *event, int *modifiers)
+int inpProcessKeyboardEvent(inpKeyboardEvent_t *event, int *modifiers)
 {
-    if(event->Type != WM_EVT_KEYBOARD)
-        return -EINVAL;
     if(modifiers)
     {
-        switch(event->Keyboard.Key)
+        switch(event->Key)
         {
         case VK_LSHIFT:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_LSHIFT;
             else *modifiers |= INP_MOD_LSHIFT;
             break;
         case VK_RSHIFT:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_RSHIFT;
             else *modifiers |= INP_MOD_RSHIFT;
             break;
         case VK_LCONTROL:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_LCTRL;
             else *modifiers |= INP_MOD_LCTRL;
             break;
         case VK_RCONTROL:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_RCTRL;
             else *modifiers |= INP_MOD_RCTRL;
             break;
         case VK_LMENU:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_LALT;
             else *modifiers |= INP_MOD_LALT;
             break;
         case VK_RMENU:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_RALT;
             else *modifiers |= INP_MOD_RALT;
             break;
         case VK_LWIN:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_LSUPER;
             else *modifiers |= INP_MOD_LSUPER;
             break;
         case VK_RWIN:
-            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_RSUPER;
             else *modifiers |= INP_MOD_RSUPER;
             break;
         case VK_CAPITAL:
-            if(*modifiers & INP_MOD_CAPS && event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(*modifiers & INP_MOD_CAPS && event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_CAPS;
-            else if(!(*modifiers & INP_MOD_CAPS) && !(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+            else if(!(*modifiers & INP_MOD_CAPS) && !(event->Flags & INP_KBD_EVENT_FLAG_RELEASE))
                 *modifiers |= INP_MOD_CAPS;
             break;
         case VK_NUMLOCK:
-            if(*modifiers & INP_MOD_NUM && event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(*modifiers & INP_MOD_NUM && event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_NUM;
-            else if(!(*modifiers & INP_MOD_NUM) && !(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+            else if(!(*modifiers & INP_MOD_NUM) && !(event->Flags & INP_KBD_EVENT_FLAG_RELEASE))
                 *modifiers |= INP_MOD_NUM;
             break;
         case VK_SCROLL:
-            if(*modifiers & INP_MOD_SCROLL && event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            if(*modifiers & INP_MOD_SCROLL && event->Flags & INP_KBD_EVENT_FLAG_RELEASE)
                 *modifiers &= ~INP_MOD_SCROLL;
-            else if(!(*modifiers & INP_MOD_SCROLL) && !(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+            else if(!(*modifiers & INP_MOD_SCROLL) && !(event->Flags & INP_KBD_EVENT_FLAG_RELEASE))
                 *modifiers |= INP_MOD_SCROLL;
             break;
         }

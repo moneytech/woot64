@@ -5,7 +5,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <woot/input.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
 #include <woot/process.h>
@@ -155,7 +154,7 @@ extern "C" int main(int argc, char *argv[])
     wmSetWindowTitle(conWindow, "Console");
     uiControlSetBorderStyle(rootControl, UI_BORDER_NONE);
     uiControlSetBackColor(rootControl, conBackColor);
-    uiControlRedraw(rootControl);
+    uiControlRedraw(rootControl, 1);
 
     conPixMap = uiControlGetPixMap(rootControl);
     conDirtyRect = conPixMap->Contents;
@@ -196,7 +195,6 @@ extern "C" int main(int argc, char *argv[])
         updateConsole();
 
         bool quit = false;
-        int modifiers = INP_MOD_NONE;
         for(;;)
         {
             int res = ipcGetMessage(&msg, -1);
@@ -210,28 +208,24 @@ extern "C" int main(int argc, char *argv[])
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
                 if(event->Type == WM_EVT_KEYBOARD)
                 {
-                    inpProcessKeyboardEvent(event, &modifiers);
-                    if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+                    int chr = event->Keyboard.Character;
+                    if(chr)
                     {
-                        int chr = inpTranslateKey(event->Keyboard.Key, modifiers);
-                        if(chr)
+                        if(conCmdIdx > 0 && chr == '\b')
                         {
-                            if(conCmdIdx > 0 && chr == '\b')
-                            {
-                                conCmdBuf[--conCmdIdx] = 0;
-                                putChar(chr);
-                            }
-                            else if(chr != '\b' && conCmdIdx < (conCmdBufSize - 1))
-                            {
-                                if(chr != '\n')
-                                {
-                                    conCmdBuf[conCmdIdx++] = chr;
-                                    conCmdBuf[conCmdIdx] = 0;
-                                }
-                                putChar(chr);
-                            }
-                            updateConsole();
+                            conCmdBuf[--conCmdIdx] = 0;
+                            putChar(chr);
                         }
+                        else if(chr != '\b' && conCmdIdx < (conCmdBufSize - 1))
+                        {
+                            if(chr != '\n')
+                            {
+                                conCmdBuf[conCmdIdx++] = chr;
+                                conCmdBuf[conCmdIdx] = 0;
+                            }
+                            putChar(chr);
+                        }
+                        updateConsole();
                         if(chr == '\n')
                             break;
                     }

@@ -35,7 +35,7 @@ Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, 
     shMemName = strdup(nameBuf);
 }
 
-int Window::GetID() const
+int Window::GetId() const
 {
     return id;
 }

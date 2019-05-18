@@ -25,7 +25,7 @@ public:
     static Window *GetByID(int id);
 
     Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format);
-    int GetID() const;
+    int GetId() const;
     int GetOwner() const;
     pmPixelFormat_t GetPixelFormat() const;
     const char *GetShMemName() const;

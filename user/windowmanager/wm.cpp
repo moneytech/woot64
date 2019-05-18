@@ -180,6 +180,7 @@ extern "C" int main(int argc, char *argv[])
     }
 
     updateRect(&windows, &bbPixMap->Contents);
+    int modifiers = INP_MOD_NONE;
     for(int i = 0;; ++i)
     {
         rcRectangle_t dirtyRect = rcRectangleEmpty;
@@ -197,13 +198,17 @@ extern "C" int main(int argc, char *argv[])
             else if(msg.Number == MSG_KEYBOARD_EVENT)
             {
                 inpKeyboardEvent_t *kbdEv = (inpKeyboardEvent_t *)msg.Data;
+                inpProcessKeyboardEvent(kbdEv, &modifiers);
+                int chr = kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? 0 : inpTranslateKey(kbdEv->Key, modifiers);
                 //printf("[usertest] key: %d %s\n", kbdEv->Key, kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? "released" : "pressed");
                 if(activeWindow)
                 {
                     wmEvent_t event;
                     event.Type = WM_EVT_KEYBOARD;
+                    event.WindowId = activeWindow->GetId();
                     event.Keyboard.Key = kbdEv->Key;
                     event.Keyboard.Flags = kbdEv->Flags;
+                    event.Keyboard.Character = chr;
                     ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
                 }
             }
@@ -282,7 +287,7 @@ extern "C" int main(int argc, char *argv[])
                         wmEvent_t event;
                         memset(&event, 0, sizeof(event));
                         event.Type = WM_EVT_MOUSE;
-                        event.WindowId = wnd->GetID();
+                        event.WindowId = wnd->GetId();
                         event.Mouse.Coords[0] = mouseX - rect.X;
                         event.Mouse.Coords[1] = mouseY - rect.Y;
                         for(int i = 0; i < WM_EVT_MOUSE_AXES && i < INP_MAX_MOUSE_AXES; ++i)
@@ -330,7 +335,7 @@ extern "C" int main(int argc, char *argv[])
 
                     wmCreateWindowResp response;
 
-                    response.id = wnd->GetID();
+                    response.id = wnd->GetId();
                     response.pixelFormat = wnd->GetPixelFormat();
                     snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
 
@@ -431,7 +436,7 @@ Window *getWindowById(Windows *windows, int id)
 {
     for(Window *wnd : *windows)
     {
-        if(wnd->GetID() == id)
+        if(wnd->GetId() == id)
             return wnd;
     }
     return nullptr;

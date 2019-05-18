@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <woot/uislider.h>
+#include <woot/vkeys.h>
 #include <woot/wm.h>
 
 struct uiSlider
@@ -38,8 +39,7 @@ static void sliderUpdate(uiSlider_t *slider, wmEvent_t *event)
     }
     if(slider->OnValueChange)
         slider->OnValueChange(slider);
-    uiControlRedraw((uiControl_t *)slider);
-    wmUpdateWindow(uiControlGetWindow((uiControl_t *)slider));
+    uiControlRedraw((uiControl_t *)slider, 1);
 }
 
 static void sliderPaint(uiControl_t *control)
@@ -99,6 +99,16 @@ static void sliderPostMouseRelease(uiControl_t *control, wmEvent_t *event)
     slider->dragging = 0;
 }
 
+static void sliderPreKeyPress(uiControl_t *control, wmEvent_t *event)
+{
+    if(!control || !event) return;
+    uiSlider_t *slider = (uiSlider_t *)control;
+    if(event->Keyboard.Key == VK_LEFT || event->Keyboard.Key == VK_DOWN)
+        uiSliderSetValue(slider, uiSliderGetValue(slider) - 1);
+    else if(event->Keyboard.Key == VK_UP || event->Keyboard.Key == VK_RIGHT)
+        uiSliderSetValue(slider, uiSliderGetValue(slider) + 1);
+}
+
 uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val)
 {
     struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL, NULL);
@@ -117,6 +127,7 @@ uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int hei
     else if(val > maxVal) val = maxVal;
     control->Value = val;
     control->Control.OnPaint = sliderPaint;
+    control->Control.PreKeyPress = sliderPreKeyPress;
     control->Control.PreMousePress = sliderPreMousePress;
     control->Control.PreMouseMove = sliderPreMouseMove;
     control->Control.PostMouseRelease = sliderPostMouseRelease;

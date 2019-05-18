@@ -310,7 +310,7 @@ void uiControlSetFocus(uiControl_t *control)
         control->HasFocus = 1;
         if(control->OnGotFocus)
             control->OnGotFocus(control);
-        uiControlRedraw(control);
+        uiControlRedraw(control, 1);
     }
 }
 
@@ -324,11 +324,11 @@ void uiControlClearFocus(uiControl_t *control)
         control->HasFocus = 0;
         if(control->OnFocusLost)
             control->OnFocusLost(control);
-        uiControlRedraw(control);
+        uiControlRedraw(control, 1);
     }
 }
 
-void uiControlRedraw(uiControl_t *control)
+void uiControlRedraw(uiControl_t *control, int updateWindow)
 {
     if(control->Visibility == UI_HIDDEN)
         return;
@@ -341,10 +341,10 @@ void uiControlRedraw(uiControl_t *control)
     if(control->OnPaint)
         control->OnPaint(control);
     for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
-        uiControlRedraw(ctrl);
+        uiControlRedraw(ctrl, 0);
     pmPixMap_t *pm = uiControlGetPixMap(control);
     if(pm) pmInvalidateWhole(pm);
-    if(!control->Parent && control->Window)
+    if(updateWindow && control->Window)
         wmUpdateWindow(control->Window);
 }
 
@@ -399,8 +399,12 @@ char *uiControlGetText(uiControl_t *control)
 void uiControlSetText(uiControl_t *control, const char *text)
 {
     if(!control) return;
-    if(control->Text) free(control->Text);
-    control->Text = text ? strdup(text) : NULL;
+    if(control->Text != text)
+    {
+        if(control->Text) free(control->Text);
+        control->Text = text ? strdup(text) : NULL;
+    }
+    uiControlRedraw(control, 1);
 }
 
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
@@ -411,9 +415,28 @@ void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
 {
-    int res = 0;
     if(!control) return -EINVAL;
-    if(event->Type == WM_EVT_MOUSE)
+    if(event->Type == WM_EVT_KEYBOARD)
+    {
+        uiControl_t *focus = uiControlFindFocus(control);
+        if(focus)
+        {
+            if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
+            {
+                if(focus->PreKeyRelease) focus->PreKeyRelease(focus, event);
+                if(focus->OnKeyRelease) focus->OnKeyRelease(focus, event);
+                if(focus->PostKeyRelease) focus->PostKeyRelease(focus, event);
+            }
+            else
+            {
+                if(focus->PreKeyPress) focus->PreKeyPress(focus, event);
+                if(focus->OnKeyPress) focus->OnKeyPress(focus, event);
+                if(focus->PostKeyPress) focus->PostKeyPress(focus, event);
+            }
+        }
+        return 1;
+    }
+    else if(event->Type == WM_EVT_MOUSE)
     {
         for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         {
@@ -431,6 +454,7 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
             }
         }
 
+        int res = 0;
         if((event->Mouse.Delta[0] || event->Mouse.Delta[1]))
         {
             if(control->PreMouseMove) control->PreMouseMove(control, event);
@@ -457,8 +481,9 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
             if(control->PostMouseRelease) control->PostMouseRelease(control, event);
             res = 1;
         }
+        return res;
     }
-    return res;
+    return 1;
 }
 
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color)
@@ -576,13 +601,42 @@ void uiButtonDelete(uiButton_t *control)
     uiControlDelete((uiControl_t *)control);
 }
 
+static char *stringInsert(char *str, int pos, char chr)
+{
+    size_t len = strlen(str);
+    if(pos < 0 || pos > len)
+        pos = len;
+    if(chr == '\b')
+    {
+        if(len < 1 || pos < 1)
+            return str;
+        memmove(str + pos - 1, str + pos, len - pos + 1);
+        return str;
+    }
+    str = realloc(str, len + 2);
+    memmove(str + pos + 1, str + pos, len - pos + 1);
+    str[pos] = chr;
+    return str;
+}
+
+static void lineEditPreKeyPress(uiControl_t *control, wmEvent_t *event)
+{
+    if(!control || !event) return;
+    int chr = event->Keyboard.Character;
+    if(!chr) return;
+    control->Text = stringInsert(control->Text, -1, chr);
+    uiControlRedraw(control, 1);
+}
+
 uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
 {
     uiLineEdit_t *control = (uiLineEdit_t *)uiControlCreate(parent, sizeof(uiLineEdit_t), NULL, x, y, width, height, text, onCreate);
     if(!control) return NULL;
+    control->Control.CanHaveFocus = 1;
     control->Control.TextHAlign = UI_HALIGN_LEFT;
     control->Control.BackColor = pmColorWhite;
     control->Control.BorderStyle = UI_BORDER_SUNKEN;
+    control->Control.PreKeyPress = lineEditPreKeyPress;
     return control;
 }
 
