@@ -55,6 +55,8 @@ static void putChar(int chr)
     int chrX = conX * FONT_BITS;
     int chrY = conY * FONT_SCANLINES;
 
+    putChar(chrX, chrY, ' ');
+
     if(chr == '\n')
     {
         conX = 0;
@@ -98,6 +100,10 @@ static void putChar(int chr)
         conX = 0;
         --conY;
     }
+
+    chrX = conX * FONT_BITS;
+    chrY = conY * FONT_SCANLINES;
+    putChar(chrX, chrY, '_');
 }
 
 static void putStr(const char *str)

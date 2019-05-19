@@ -482,7 +482,8 @@ void bringToTop(Windows *windows, Window *wnd)
     }
     if(wndIdx >= 0 && topWndIdx >= 0 && topWndIdx > wndIdx)
     {
-        windows->Swap(wndIdx, topWndIdx);
+        windows->RemoveAt(wndIdx);
+        windows->InsertBefore(topWndIdx, wnd);
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         updateRect(windows, &wndRect);
     }
