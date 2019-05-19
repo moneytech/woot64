@@ -44,6 +44,7 @@ typedef void (*uiEventHandler)(uiControl_t *sender);
 typedef void (*uiWMEventHandler)(uiControl_t *sender, wmEvent_t *event);
 typedef void (*uiGotFocusHandler)(uiControl_t *sender);
 typedef void (*uiFocusLostHandler)(uiControl_t *sender);
+typedef void (*uiActivateHandler)(uiControl_t *sender);
 
 struct uiControl
 {
@@ -97,12 +98,8 @@ struct uiControl
 
     uiGotFocusHandler OnGotFocus;
     uiFocusLostHandler OnFocusLost;
+    uiActivateHandler OnActivate;
 };
-
-typedef struct uiLabel uiLabel_t;
-typedef struct uiButton uiButton_t;
-typedef struct uiLineEdit uiLineEdit_t;
-typedef struct uiSlider uiSlider_t;
 
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
 void uiControlDelete(uiControl_t *control);
@@ -137,15 +134,7 @@ void uiControlSetOnMouseRelease(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnGotFocus(uiControl_t *control, uiGotFocusHandler handler);
 void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler);
-
-uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
-void uiLabelDelete(uiLabel_t *control);
-
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
-void uiButtonDelete(uiButton_t *control);
-
-uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
-void uiLineEditDelete(uiLineEdit_t *control);
+void uiControlSetOnActivate(uiControl_t *control, uiActivateHandler handler);
 
 #ifdef __cplusplus
 }

@@ -11,6 +11,9 @@ OBJS = \
 	rpc.o \
 	thread.o \
 	ui.o \
+	uibutton.o \
+	uilabel.o \
+	uilineedit.o \
 	uislider.o \
 	video.o \
 	wm.o

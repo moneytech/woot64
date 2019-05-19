@@ -10,22 +10,6 @@
 #undef max
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
-struct uiLabel
-{
-    uiControl_t Control;
-};
-
-struct uiButton
-{
-    uiControl_t Control;
-};
-
-struct uiLineEdit
-{
-    uiControl_t Control;
-    fntFont_t *Font;
-};
-
 static int mapValue(int imin, int imax, int omin, int omax, int val)
 {
     return (float)(val - imin) / (imax - imin) * (omax - omin) + omin;
@@ -153,7 +137,6 @@ static void drawDefaultFace(uiControl_t *control)
     }
 
     // text with icon
-    //pmRectangleRect(control->Content, &faceRect, pmColorYellow);
     int cx = faceRect.X + faceRect.Width / 2;
     int cy = faceRect.Y + faceRect.Height / 2;
     int textWidth = fntMeasureString(control->Font, control->Text);
@@ -182,6 +165,8 @@ static void drawDefaultFace(uiControl_t *control)
         fntDrawString(control->Font, control->PixMap, faceRect.X, cy - textHeight / 2, control->Text, control->TextColor);
         break;
     }
+    if(control->HasFocus)
+        pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, pmColorBlack);
 }
 
 static void drawDefaultBorder(uiControl_t *control)
@@ -576,71 +561,8 @@ void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler)
     control->OnFocusLost = handler;
 }
 
-uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+void uiControlSetOnActivate(uiControl_t *control, uiActivateHandler handler)
 {
-    uiLabel_t *control = (uiLabel_t *)uiControlCreate(parent, sizeof(uiLabel_t), NULL, x, y, width, height, text, onCreate);
-    if(!control) return NULL;
-    return control;
-}
-
-void uiLabelDelete(uiLabel_t *control)
-{
-    uiControlDelete((uiControl_t *)control);
-}
-
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
-{
-    uiButton_t *control = (uiButton_t *)uiControlCreate(parent, sizeof(uiButton_t), NULL, x, y, width, height, text, onCreate);
-    if(!control) return NULL;
-    control->Control.BorderStyle = UI_BORDER_RAISED;
-    return control;
-}
-
-void uiButtonDelete(uiButton_t *control)
-{
-    uiControlDelete((uiControl_t *)control);
-}
-
-static char *stringInsert(char *str, int pos, char chr)
-{
-    size_t len = strlen(str);
-    if(pos < 0 || pos > len)
-        pos = len;
-    if(chr == '\b')
-    {
-        if(len < 1 || pos < 1)
-            return str;
-        memmove(str + pos - 1, str + pos, len - pos + 1);
-        return str;
-    }
-    str = realloc(str, len + 2);
-    memmove(str + pos + 1, str + pos, len - pos + 1);
-    str[pos] = chr;
-    return str;
-}
-
-static void lineEditPreKeyPress(uiControl_t *control, wmEvent_t *event)
-{
-    if(!control || !event) return;
-    int chr = event->Keyboard.Character;
-    if(!chr) return;
-    control->Text = stringInsert(control->Text, -1, chr);
-    uiControlRedraw(control, 1);
-}
-
-uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
-{
-    uiLineEdit_t *control = (uiLineEdit_t *)uiControlCreate(parent, sizeof(uiLineEdit_t), NULL, x, y, width, height, text, onCreate);
-    if(!control) return NULL;
-    control->Control.CanHaveFocus = 1;
-    control->Control.TextHAlign = UI_HALIGN_LEFT;
-    control->Control.BackColor = pmColorWhite;
-    control->Control.BorderStyle = UI_BORDER_SUNKEN;
-    control->Control.PreKeyPress = lineEditPreKeyPress;
-    return control;
-}
-
-void uiLineEditDelete(uiLineEdit_t *control)
-{
-    uiControlDelete((uiControl_t *)control);
+    if(!control) return;
+    control->OnActivate = handler;
 }

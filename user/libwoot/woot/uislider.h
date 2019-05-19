@@ -2,6 +2,8 @@
 
 #include <woot/ui.h>
 
+typedef struct uiSlider uiSlider_t;
+
 typedef void (*uiSliderChangeValueHandler)(uiSlider_t *sender);
 
 uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val);

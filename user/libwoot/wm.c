@@ -58,7 +58,7 @@ int wmInitialize()
     int res = rpcFindServer("windowmanager", wmServer, sizeof(wmServer), DEFAULT_RPC_TIMEOUT);
     if(res < 0) return res;
     memset(colors, 0, sizeof(colors));
-    colors[WM_COLOR_BACKGROUND] = pmColorGray;
+    colors[WM_COLOR_BACKGROUND] = pmColorLightSteelBlue;
     colors[WM_COLOR_TEXT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
     fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");

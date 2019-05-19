@@ -13,6 +13,9 @@
 #include <woot/pixmap.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
+#include <woot/uibutton.h>
+#include <woot/uilabel.h>
+#include <woot/uilineedit.h>
 #include <woot/uislider.h>
 #include <woot/video.h>
 #include <woot/wm.h>
