@@ -144,7 +144,7 @@ void operator delete[](void *ptr)
 extern "C" int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
-    wmInitialize();
+    wmInitialize(WM_INITIALIZE_NONE);
 
     conWindow = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 600, 400, WM_CWF_DEFAULT);
     if(!conWindow)

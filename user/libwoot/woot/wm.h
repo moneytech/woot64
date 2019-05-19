@@ -25,9 +25,11 @@ extern "C" {
 // window messages
 
 // color ids
-#define WM_COLOR_BACKGROUND 0
-#define WM_COLOR_TEXT       1
-#define WM_COLOR_ID_COUNT   2
+#define WM_COLOR_BACKGROUND         0
+#define WM_COLOR_TEXT               1
+#define WM_COLOR_TITLE_BAR          2
+#define WM_COLOR_INACTIVE_TITLE_BAR 3
+#define WM_COLOR_ID_COUNT           4
 
 // font ids
 #define WM_FONT_DEFAULT     0
@@ -84,7 +86,10 @@ typedef struct wmEvent
     };
 } wmEvent_t;
 
-int wmInitialize();
+#define WM_INITIALIZE_NONE  0
+#define WM_INITIALIZE_WM    (1 << 0)
+
+int wmInitialize(int flags);
 int wmCleanup();
 const char *wmGetServer();
 pmColor_t wmGetColor(int colorId);

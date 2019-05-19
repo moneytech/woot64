@@ -18,6 +18,7 @@ class Window
     int pixelsShMem;
     pmPixMap_t *pixMap;
     char *title;
+    bool active;
 public:
     static int TitleBarHeight;
     static fntFont_t *TitleFont;
@@ -38,5 +39,7 @@ public:
     void SetTitle(const char *title);
     const char *GetTitle() const;
     void UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect);
+    rcRectangle_t SetActive(bool active);
+    bool GetActive() const;
     ~Window();
 };

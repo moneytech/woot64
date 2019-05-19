@@ -178,10 +178,10 @@ static void drawDefaultBorder(uiControl_t *control)
         pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;
     case UI_BORDER_RAISED:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0, control->BackColor);
         break;
     case UI_BORDER_SUNKEN:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1, control->BackColor);
         break;
     }
 }

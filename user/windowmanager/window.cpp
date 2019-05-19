@@ -19,7 +19,7 @@ fntFont_t *Window::TitleFont = nullptr;
 
 Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format) :
     id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
-    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr)
+    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr), active(true)
 {
     size_t pgSize = getpagesize();
     char nameBuf[64];
@@ -120,13 +120,15 @@ void Window::UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect)
     if(rcIsEmptyP(&is))
         return;
 
+
     if(flags & WM_CWF_TITLEBAR)
     {
         rcRectangle_t titleBar = { rc.X, rc.Y - TitleBarHeight, rc.Width, TitleBarHeight };
         is = rcIntersectP(dstDirtyRect, &titleBar);
         if(!rcIsEmptyP(&is))
         {
-            pmFillRectangle(dst, is.X, is.Y, is.Width, is.Height, pmColorBlue);
+            pmColor_t barColor = wmGetColor(active ? WM_COLOR_TITLE_BAR : WM_COLOR_INACTIVE_TITLE_BAR);
+            pmFillRectangle(dst, is.X, is.Y, is.Width, is.Height, barColor);
             if(title && TitleFont)
             {
                 int titleHeight = fntGetPixelHeight(TitleFont);
@@ -135,7 +137,7 @@ void Window::UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect)
                 int cy = (titleBar.Height - titleHeight) / 2;
                 fntDrawString(TitleFont, dst, titleBar.X + cx, titleBar.Y + cy, title, pmColorWhite);
             }
-            pmDrawFrameRect(dst, &titleBar, 0);
+            pmDrawFrameRect(dst, &titleBar, 0, barColor);
             //pmRectangleRect(dst, &titleBar, pmColorWhite);
         }
     }
@@ -151,6 +153,18 @@ void Window::UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect)
         pmAlphaBlit(dst, pm, sx, sy, is.X, is.Y, is.Width, is.Height);
     else pmBlit(dst, pm, sx, sy, is.X, is.Y, is.Width, is.Height);
     //else pmRectangle(dst, is.X, is.Y, is.Width, is.Height, pmColorMagenta);
+}
+
+rcRectangle_t Window::SetActive(bool active)
+{
+    this->active = active;
+    rcRectangle_t titleBar = { rect.X, rect.Y - TitleBarHeight, rect.Width, TitleBarHeight };
+    return titleBar;
+}
+
+bool Window::GetActive() const
+{
+    return active;
 }
 
 Window::~Window()

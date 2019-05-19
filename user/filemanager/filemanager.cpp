@@ -6,7 +6,7 @@
 
 extern "C" int main(int argc, char *argv[])
 {
-    wmInitialize();
+    wmInitialize(WM_INITIALIZE_NONE);
 
     wmWindow_t *window = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 500, 400, WM_CWF_DEFAULT);
     if(!window)

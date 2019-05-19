@@ -53,17 +53,20 @@ struct wmRedrawRectArgs
     rcRectangle_t rect;
 };
 
-int wmInitialize()
+int wmInitialize(int flags)
 {
-    int res = rpcFindServer("windowmanager", wmServer, sizeof(wmServer), DEFAULT_RPC_TIMEOUT);
+    int res = flags & WM_INITIALIZE_WM ? 0 :
+                rpcFindServer("windowmanager", wmServer, sizeof(wmServer), DEFAULT_RPC_TIMEOUT);
     if(res < 0) return res;
     memset(colors, 0, sizeof(colors));
-    colors[WM_COLOR_BACKGROUND] = pmColorLightSteelBlue;
+    colors[WM_COLOR_BACKGROUND] = pmColorSeaGreen;
     colors[WM_COLOR_TEXT] = pmColorBlack;
+    colors[WM_COLOR_TITLE_BAR] = pmColorCornflowerBlue;
+    colors[WM_COLOR_INACTIVE_TITLE_BAR] = pmColorSilver;
     memset(fonts, 0, sizeof(fonts));
     fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
     if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 11, WM_DEFAULT_DPI);
-    return 0;
+    return res;
 }
 
 int wmCleanup()

@@ -52,18 +52,18 @@ static void sliderPaint(uiControl_t *control)
     if(slider->Horizontal)
     {
         int cy = rect.Height / 2;
-        pmDrawFrame(pm, 4, cy - 1, rect.Width - 8, 2, 1);
+        pmDrawFrame(pm, 4, cy - 1, rect.Width - 8, 2, 1, control->BackColor);
         int x = mapValue(slider->MinValue, slider->MaxValue, 4, rect.Width - 4, slider->Value);
-        pmFillRectangle(pm, x - 2, 5, 4, rect.Height - 10, pmColorGray);
-        pmDrawFrame(pm, x - 3, 4, 6, rect.Height - 8, 0);
+        pmFillRectangle(pm, x - 2, 5, 4, rect.Height - 10, control->BackColor);
+        pmDrawFrame(pm, x - 3, 4, 6, rect.Height - 8, 0, control->BackColor);
     }
     else
     {
         int cx = rect.Width / 2;
-        pmDrawFrame(pm, cx - 1, 4, 2, rect.Height - 8, 1);
+        pmDrawFrame(pm, cx - 1, 4, 2, rect.Height - 8, 1, control->BackColor);
         int y = mapValue(slider->MaxValue, slider->MinValue, 4, rect.Height - 4, slider->Value);
-        pmFillRectangle(pm, 5, y - 2, rect.Width - 10, 4, pmColorGray);
-        pmDrawFrame(pm, 4, y - 3, rect.Width - 8, 6, 0);
+        pmFillRectangle(pm, 5, y - 2, rect.Width - 10, 4, control->BackColor);
+        pmDrawFrame(pm, 4, y - 3, rect.Width - 8, 6, 0, control->BackColor);
     }
     if(control->HasFocus)
         pmRectanglePattern(pm, 1, 1, rect.Width - 2, rect.Height - 2, 0x55555555, pmColorBlack);

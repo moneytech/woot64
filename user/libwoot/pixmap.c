@@ -426,6 +426,142 @@ unsigned pmIndexFromColor(pmPixMap_t *pixMap, pmColor_t color)
     return mini;
 }
 
+void pmColorRGB2HSL(pmColorHSL_t *dst, pmColor_t src)
+{
+    if(!dst) return;
+    dst->A = src.A / 255.0f;
+    float r = src.R / 255.0f;
+    float g = src.G / 255.0f;
+    float b = src.B / 255.0f;
+    //float v = max(r, g); v = max(v, b);
+    float v;
+    int maxV;
+    if(r > g)
+    {
+        v = r;
+        maxV = 0;
+    }
+    else
+    {
+        v = g;
+        maxV = 1;
+    }
+    if(b > v)
+    {
+        v = b;
+        maxV = 2;
+    }
+    //float m = min(r, g); m = min(m, b);
+    float m;
+    int minM;
+    if(r < g)
+    {
+        m = r;
+        minM = 0;
+    }
+    else
+    {
+        m = g;
+        minM = 1;
+    }
+    if(b < m)
+    {
+        m = b;
+        minM = 2;
+    }
+    dst->H = 0;
+    dst->S = 0;
+    dst->L = 0.5f * (m + v);
+    if(dst->L <= 0) return;
+    float vm = v - m;
+    dst->S = vm;
+    if(dst->S <= 0) return;
+    dst->S /= dst->L < 0.5f ? v + m : 2.0f - v - m;
+    float ivm = 1.0f / vm;
+    float R = ivm * (v - r);
+    float G = ivm * (v - g);
+    float B = ivm * (v - b);
+    switch(maxV)
+    {
+    case 0:
+        dst->H = minM == 1 ? 5.0f + B : 1.0f - G;
+        break;
+    case 1:
+        dst->H = minM == 2 ? 1.0f + R : 3.0f - B;
+        break;
+    default:
+        dst->H = minM == 0 ? 3.0f + G : 5.0f - R;
+        break;
+    }
+    dst->H *= 1.0f / 6.0f;
+}
+
+pmColor_t pmColorHSL2RGB(pmColorHSL_t *src)
+{
+    float h = src->H;
+    float s = src->S;
+    float l = src->L;
+    float a = src->A * 255.0f;
+    float r = src->L;
+    float g = src->L;
+    float b = src->L;
+
+    float v = l < 0.5f ? l * (1.0f + s) : l + s - l * s;
+    if(v > 0)
+    {
+        float m = src->L + src->L - v;
+        float sv = (v - m) / v;
+        h *= 6.0f;
+        int sextant = (int)h;
+        float fract = h - sextant;
+        float vsf = v * sv * fract;
+        float mid1 = m + vsf;
+        float mid2 = v - vsf;
+        switch(sextant)
+        {
+        case 0:
+            r = v;
+            g = mid1;
+            b = m;
+            break;
+        case 1:
+            r = mid2;
+            g = v;
+            b = m;
+            break;
+        case 2:
+            r = m;
+            g = v;
+            b = mid1;
+            break;
+        case 3:
+            r = m;
+            g = mid2;
+            b = v;
+            break;
+        case 4:
+            r = mid1;
+            g = m;
+            b = v;
+            break;
+        case 5:
+            r = v;
+            g = m;
+            b = mid2;
+            break;
+        }
+    }
+    return pmColorFromARGB(a, r * 255.0f, g * 255.0f, b * 255.0f);
+}
+
+pmColor_t pmColorBrighten(pmColor_t color, float amount)
+{
+    pmColorHSL_t hsl;
+    pmColorRGB2HSL(&hsl, color);
+    hsl.L = max(0.0f, min(1.0f, hsl.L + amount));
+    return pmColorHSL2RGB(&hsl);
+}
+
 pmColor_t *pmPaletteCreate(pmPixelFormat_t *format)
 {
     if(format->BPP > 8) return NULL;
@@ -997,6 +1133,11 @@ void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c
         pmHLine(pixMap, x, Y, x2, c);
 }
 
+void pmFillRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c)
+{
+    pmRectangle(pixMap, rect->X, rect->Y, rect->Width, rect->Height, c);
+}
+
 void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c)
 {
     if(c.A == 0) return;
@@ -1023,10 +1164,13 @@ void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t 
     }
 }
 
-void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken)
+void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken, pmColor_t color)
 {
-    pmColor_t tl = sunken ? pmColorDarkGray : pmColorWhite;
-    pmColor_t br = sunken ? pmColorWhite : pmColorDarkGray;
+    pmColor_t lighter = pmColorBrighten(color, 0.2f);
+    pmColor_t darker = pmColorBrighten(color, -0.2f);
+
+    pmColor_t tl = sunken ? darker : lighter;
+    pmColor_t br = sunken ? lighter : darker;
 
     pmHLine(pixMap, x, y + h - 1, x + w - 1, br);
     pmVLine(pixMap, x + w - 1, y, y + h - 1, br);
@@ -1034,9 +1178,9 @@ void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken)
     pmVLine(pixMap, x, y, y + h - 1, tl);
 }
 
-void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken)
+void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken, pmColor_t color)
 {
-    return pmDrawFrame(pixMap, rect->X, rect->Y, rect->Width, rect->Height, sunken);
+    return pmDrawFrame(pixMap, rect->X, rect->Y, rect->Width, rect->Height, sunken, color);
 }
 
 void pmClear(pmPixMap_t *pixMap, pmColor_t color)

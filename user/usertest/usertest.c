@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
 
-    int res = wmInitialize();
+    int res = wmInitialize(WM_INITIALIZE_NONE);
     const char *wmServer = wmGetServer();
     if(res < 0)
     {
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
 
     uiControlSetTextColor(lbl, pmColorWhite);
-    uiControlSetBackColor(lbl, pmColorDarkGray);
+    uiControlSetBackColor(lbl, pmColorBrighten(wmGetColor(WM_COLOR_BACKGROUND), -0.05f));
     uiControlSetTextIconSeparation(lbl, 4);
     uiControlSetIconPosition(lbl, UI_ICON_LEFT);
     uiControlSetIcon(lbl, clockIcon);

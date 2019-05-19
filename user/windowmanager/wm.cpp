@@ -55,10 +55,14 @@ static void updateRect(Windows *windows, rcRectangle_t *rect);
 static int getWindowIdx(Windows *windows, Window *wnd);
 static void bringToTop(Windows *windows, Window *wnd);
 static Window *findTopWindow(Windows *windows);
+static void setActiveWindow(Windows *windows, Window *window);
 
 static Window *mouseWnd = nullptr;
 static pmPixMap_t *fbPixMap = nullptr;
 static pmPixMap_t *bbPixMap = nullptr;
+static Window *activeWindow = nullptr;
+static Window *topWindow = nullptr;
+static Window *dragWindow = nullptr;
 
 extern "C" int main(int argc, char *argv[])
 {
@@ -141,13 +145,11 @@ extern "C" int main(int argc, char *argv[])
     ipcSendMessage(0, MSG_ACQUIRE_MOUSE, MSG_FLAG_NONE, NULL, 0);
 
     Windows windows;
-    Window *activeWindow = nullptr;
-    Window *topWindow = nullptr;
-    Window *dragWindow = nullptr;
     int dragDeltaX = 0;
     int dragDeltaY = 0;
 
     threadDaemonize();
+    wmInitialize(WM_INITIALIZE_WM);
 
     ipcMessage_t msg;
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
@@ -260,8 +262,7 @@ extern "C" int main(int argc, char *argv[])
                                 bringToTop(&windows, wnd);
                                 topWindow = wnd;
                             }
-
-                            activeWindow = wnd;
+                            setActiveWindow(&windows, wnd);
                         }
                     }
 
@@ -340,7 +341,7 @@ extern "C" int main(int argc, char *argv[])
                     snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
 
                     topWindow = wnd;
-                    activeWindow = wnd;
+                    setActiveWindow(&windows, wnd);
 
                     rpcIPCReturn(msg.Source, msg.ID, &response, sizeof(response));
                 }
@@ -356,7 +357,7 @@ extern "C" int main(int argc, char *argv[])
                         if(dragWindow == wnd)
                             dragWindow = nullptr;
                         topWindow = findTopWindow(&windows);
-                        activeWindow = topWindow;
+                        setActiveWindow(&windows, wnd);
                         delete wnd;
                     }
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
@@ -501,4 +502,24 @@ static Window *findTopWindow(Windows *windows)
         prevWnd = wnd;
     }
     return prevWnd;
+}
+
+static void setActiveWindow(Windows *windows, Window *window)
+{
+    if(activeWindow != window)
+    {
+        if(activeWindow)
+        {
+            rcRectangle_t rc = activeWindow->SetActive(false);
+            activeWindow->UpdateWindowGraphics(bbPixMap, &rc);
+            updateRect(windows, &rc);
+        }
+        activeWindow = window;
+        if(activeWindow)
+        {
+            rcRectangle_t rc = activeWindow->SetActive(true);
+            activeWindow->UpdateWindowGraphics(bbPixMap, &rc);
+            updateRect(windows, &rc);
+        }
+    }
 }

@@ -27,6 +27,16 @@ typedef union pmColor
     unsigned Value;
 } pmColor_t;
 
+typedef struct pmColorHSL
+{
+    float A, H, S, L;
+} pmColorHSL_t;
+
+typedef struct pmColorHSB
+{
+    float A, H, S, B;
+} pmColorHSB_t;
+
 typedef struct pmPixMap
 {
     struct pmPixMap *Parent;
@@ -198,6 +208,9 @@ pmColor_t pmColorFromARGB(unsigned char a, unsigned char r, unsigned char g, uns
 unsigned pmColorToValue(pmPixelFormat_t *format, pmColor_t color);
 pmColor_t pmColorFromValue(pmPixelFormat_t *format, unsigned value);
 pmColor_t pmColorFromIndex(pmPixMap_t *pixMap, unsigned index);
+void pmColorRGB2HSL(pmColorHSL_t *dst, pmColor_t src);
+pmColor_t pmColorHSL2RGB(pmColorHSL_t *src);
+pmColor_t pmColorBrighten(pmColor_t color, float amount);
 pmColor_t *pmPaletteCreate(pmPixelFormat_t *format);
 void pmPaletteDelete(pmColor_t *palette);
 
@@ -234,9 +247,10 @@ void pmRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c);
 void pmRectanglePattern(pmPixMap_t *pixMap, int x, int y, int w, int h, unsigned pattern, pmColor_t c);
 void pmRectangleRectPattern(pmPixMap_t *pixMap, rcRectangle_t *rect, unsigned pattern, pmColor_t c);
 void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
+void pmFillRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c);
 void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c);
-void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken);
-void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken);
+void pmDrawFrame(pmPixMap_t *pixMap, int x, int y, int w, int h, int sunken, pmColor_t color);
+void pmDrawFrameRect(pmPixMap_t *pixMap, rcRectangle_t *rect, int sunken, pmColor_t color);
 void pmClear(pmPixMap_t *pixMap, pmColor_t color);
 void pmBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);
 void pmAlphaBlit(pmPixMap_t *dst, pmPixMap_t *src, int sx, int sy, int x, int y, int w, int h);
