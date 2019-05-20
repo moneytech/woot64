@@ -14,6 +14,7 @@ OBJS = \
 	uibutton.o \
 	uilabel.o \
 	uilineedit.o \
+	uiscrollbar.o \
 	uislider.o \
 	video.o \
 	wm.o

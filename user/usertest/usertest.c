@@ -16,6 +16,7 @@
 #include <woot/uibutton.h>
 #include <woot/uilabel.h>
 #include <woot/uilineedit.h>
+#include <woot/uiscrollbar.h>
 #include <woot/uislider.h>
 #include <woot/video.h>
 #include <woot/wm.h>
@@ -81,8 +82,10 @@ int main(int argc, char *argv[])
     uiControl_t *lbl = (uiControl_t *)uiLabelCreate(rootControl, 20, 1, pm->Contents.Width - 41, 24, "Date and time", NULL);
     uiControl_t *btn = (uiControl_t *)uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Do something", NULL);
     uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
-    uiSlider_t *sld = uiSliderCreate(rootControl, (pm->Contents.Width - 120) / 2, 150, 120, 30, 1, 0, 100, 25);
-    uiSlider_t *sld2 = uiSliderCreate(rootControl, 1, 40, 30, 130, 0, 0, 100, 25);
+    uiSlider_t *sld = uiSliderCreate(rootControl, (pm->Contents.Width - 120) / 2, 150, 120, 24, 1, 0, 100, 25);
+    uiSlider_t *sld2 = uiSliderCreate(rootControl, 1, 40, 24, 130, 0, 0, 100, 25);
+    uiScrollbar_t *scroll = uiScrollbarCreate(rootControl, 283, 1, 16, 182, 0, 0, 99, 0, 5);
+    uiScrollbar_t *scroll2 = uiScrollbarCreate(rootControl, 1, 183, 283, 16, 1, 0, 99, 88, 40);
 
     uiControlSetBorderColor(rootControl, pmColorWhite);
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);

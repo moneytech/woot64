@@ -66,7 +66,7 @@ static void sliderPaint(uiControl_t *control)
         pmDrawFrame(pm, 4, y - 3, rect.Width - 8, 6, 0, control->BackColor);
     }
     if(control->HasFocus)
-        pmRectanglePattern(pm, 1, 1, rect.Width - 2, rect.Height - 2, 0x55555555, pmColorBlack);
+        pmRectanglePattern(pm, 1, 1, rect.Width - 2, rect.Height - 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
     pmInvalidateWhole(pm);
 }
 

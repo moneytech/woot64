@@ -1135,7 +1135,7 @@ void pmFillRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c
 
 void pmFillRectangleRect(pmPixMap_t *pixMap, rcRectangle_t *rect, pmColor_t c)
 {
-    pmRectangle(pixMap, rect->X, rect->Y, rect->Width, rect->Height, c);
+    pmFillRectangle(pixMap, rect->X, rect->Y, rect->Width, rect->Height, c);
 }
 
 void pmAlphaRectangle(pmPixMap_t *pixMap, int x, int y, int w, int h, pmColor_t c)

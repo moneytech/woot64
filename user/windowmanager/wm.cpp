@@ -357,7 +357,7 @@ extern "C" int main(int argc, char *argv[])
                         if(dragWindow == wnd)
                             dragWindow = nullptr;
                         topWindow = findTopWindow(&windows);
-                        setActiveWindow(&windows, wnd);
+                        setActiveWindow(&windows, topWindow);
                         delete wnd;
                     }
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);

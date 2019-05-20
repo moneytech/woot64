@@ -166,7 +166,7 @@ static void drawDefaultFace(uiControl_t *control)
         break;
     }
     if(control->HasFocus)
-        pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, pmColorBlack);
+        pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
 }
 
 static void drawDefaultBorder(uiControl_t *control)
@@ -396,6 +396,12 @@ void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
 {
     if(!control) return;
     control->Icon = icon;
+}
+
+void uiControlSetFont(uiControl_t *control, fntFont_t *font)
+{
+    if(!control) return;
+    control->Font = font;
 }
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)

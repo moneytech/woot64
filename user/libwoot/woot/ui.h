@@ -118,6 +118,7 @@ int uiControlHasFocus(uiControl_t *control);
 char *uiControlGetText(uiControl_t *control);
 void uiControlSetText(uiControl_t *control, const char *text);
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon);
+void uiControlSetFont(uiControl_t *control, fntFont_t *font);
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event);
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color);
 void uiControlSetBackColor(uiControl_t *control, pmColor_t color);

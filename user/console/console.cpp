@@ -10,6 +10,7 @@
 #include <woot/process.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
+#include <woot/vkeys.h>
 #include <woot/wm.h>
 
 #include "font.hpp"
@@ -24,6 +25,7 @@ static pmColor_t conTextColor = pmColorGray;
 static pmColor_t conBackColor = pmColorBlue;
 static char *conCmdBuf = nullptr;
 static char *conCmdBuf2 = nullptr;
+static char *conOldCmd = nullptr;
 static char **conCmdArgs = nullptr;
 static unsigned conCmdArgC = 0;
 static unsigned conCmdBufSize = 1024;
@@ -168,6 +170,7 @@ extern "C" int main(int argc, char *argv[])
     conHeight = conPixMap->Contents.Height / FONT_SCANLINES;
     conCmdBuf = new char[conCmdBufSize];
     conCmdBuf2 = new char[conCmdBufSize];
+    conOldCmd = new char[conCmdBufSize];
     int maxCmdArgC = conCmdBufSize / 2;
     conCmdArgs = new char *[maxCmdArgC];
     conCWD = new char[conCWDSize];
@@ -235,6 +238,20 @@ extern "C" int main(int argc, char *argv[])
                         if(chr == '\n')
                             break;
                     }
+
+                    if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
+                    {
+                        if(event->Keyboard.Key == VK_UP)
+                        {
+                            for(int i = 0; i < conCmdIdx; ++i)
+                                putChar('\b');
+                            memcpy(conCmdBuf, conOldCmd, conCmdBufSize);
+                            conCmdIdx = strlen(conCmdBuf);
+                            for(int i = 0; i < conCmdIdx; ++i)
+                                putChar(((unsigned)conCmdBuf[i]) & 0xFF);
+                            updateConsole();
+                        }
+                    }
                 }
             }
         }
@@ -244,6 +261,7 @@ extern "C" int main(int argc, char *argv[])
             continue;
 
         memcpy(conCmdBuf2, conCmdBuf, conCmdBufSize);
+        memcpy(conOldCmd, conCmdBuf, conCmdBufSize);
         char *savePtr = nullptr;
         for(conCmdArgC = 0; conCmdArgC < maxCmdArgC; ++conCmdArgC)
         {
@@ -350,6 +368,7 @@ extern "C" int main(int argc, char *argv[])
 
     if(conCWD) delete[] conCWD;
     if(conCmdArgs) delete[] conCmdArgs;
+    if(conOldCmd) delete[] conOldCmd;
     if(conCmdBuf2) delete[] conCmdBuf2;
     if(conCmdBuf) delete[] conCmdBuf;
     if(conWindow) wmDeleteWindow(conWindow);

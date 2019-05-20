@@ -63,9 +63,12 @@ int wmInitialize(int flags)
     colors[WM_COLOR_TEXT] = pmColorBlack;
     colors[WM_COLOR_TITLE_BAR] = pmColorCornflowerBlue;
     colors[WM_COLOR_INACTIVE_TITLE_BAR] = pmColorSilver;
+    colors[WM_COLOR_FOCUS_HIGHLIGHT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
     fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
     if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 11, WM_DEFAULT_DPI);
+    fonts[WM_FONT_UI_SYMBOLS] = fntLoad("/uisymbols.ttf");
+    if(fonts[WM_FONT_UI_SYMBOLS]) fntSetPointSize(fonts[WM_FONT_UI_SYMBOLS], 11, WM_DEFAULT_DPI);
     return res;
 }
 

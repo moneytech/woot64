@@ -3,7 +3,11 @@ LOOP_DEVICE = /dev/loop7
 QEMU = /usr/bin/qemu-system-x86_64
 IMGFILE = hdd.img
 
-EXTRA_FILES = root/logo.png root/file.png root/clock_small.png
+EXTRA_FILES = \
+	root/logo.png \
+	root/file.png \
+	root/clock_small.png \
+	root/uisymbols.ttf
 
 SUBDIRS = kernel user
 
@@ -42,6 +46,9 @@ root/file.png: file.png
 	cp $? $@
 
 root/clock_small.png: clock_small.png
+	cp $? $@
+
+root/uisymbols.ttf: uisymbols.ttf
 	cp $? $@
 
 try-mount:
