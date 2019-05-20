@@ -230,3 +230,71 @@ int uiScrollbarGetPosition(uiScrollbar_t *control)
     if(!control) return 0;
     return control->Position;
 }
+
+void uiScrollbarSetZoom(uiScrollbar_t *control, int zoom)
+{
+    if(!control) return;
+    uiScrollbar_t *scrollbar = (uiScrollbar_t *)control;
+
+    // clamp zoom value
+    if(zoom < 1) zoom = 1;
+    else if(zoom > (scrollbar->MaxPosition - scrollbar->MinPosition))
+        zoom = scrollbar->MaxPosition - scrollbar->MinPosition;
+
+    scrollbar->Zoom = zoom;
+    scrollbarUpdate(control, NULL);
+}
+
+int uiScrollbarGetZoom(uiScrollbar_t *control)
+{
+    if(!control) return 0;
+    return control->Zoom;
+}
+
+void uiScrollbarSetMinPosition(uiScrollbar_t *control, int position)
+{
+    if(!control) return;
+
+    if(position > control->MaxPosition)
+        position = control->MaxPosition;
+
+    if(control->Position < position)
+        control->Position = position;
+
+    control->MinPosition = position;
+
+    if(control->Zoom > (control->MaxPosition - control->MinPosition))
+        control->Zoom = (control->MaxPosition - control->MinPosition);
+
+    scrollbarUpdate(control, NULL);
+}
+
+int uiScrollbarGetMinPosition(uiScrollbar_t *control)
+{
+    if(!control) return 0;
+    return control->MinPosition;
+}
+
+void uiScrollbarSetMaxPosition(uiScrollbar_t *control, int position)
+{
+    if(!control) return;
+
+    if(position < control->MinPosition)
+        position = control->MinPosition;
+
+    if(control->Position > position)
+        control->Position = position;
+
+    control->MaxPosition = position;
+
+    if(control->Zoom > (control->MaxPosition - control->MinPosition))
+        control->Zoom = (control->MaxPosition - control->MinPosition);
+
+    scrollbarUpdate(control, NULL);
+}
+
+int uiScrollbarGetMaxPosition(uiScrollbar_t *control)
+{
+    if(!control) return 0;
+    return control->MaxPosition;
+}
