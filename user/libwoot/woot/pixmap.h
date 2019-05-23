@@ -211,6 +211,7 @@ pmColor_t pmColorFromIndex(pmPixMap_t *pixMap, unsigned index);
 void pmColorRGB2HSL(pmColorHSL_t *dst, pmColor_t src);
 pmColor_t pmColorHSL2RGB(pmColorHSL_t *src);
 pmColor_t pmColorBrighten(pmColor_t color, float amount);
+pmColor_t pmColorInvert(pmColor_t color);
 pmColor_t *pmPaletteCreate(pmPixelFormat_t *format);
 void pmPaletteDelete(pmColor_t *palette);
 

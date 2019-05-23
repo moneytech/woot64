@@ -113,9 +113,9 @@ int main(int argc, char *argv[])
         int quit = 0;
 
         int msgTimeout = 500;
-        while(ipcGetMessage(&msg, msgTimeout) >= 0)
+        while(ipcGetMessage(&msg, msgTimeout) >= 0) // <- some packets are lost if timeout > 0
         {
-            msgTimeout = 100;
+            msgTimeout = 200;
             ipcProcessMessage(&msg);
             if(msg.Number == MSG_QUIT)
             {

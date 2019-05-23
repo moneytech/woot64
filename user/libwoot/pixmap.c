@@ -562,6 +562,12 @@ pmColor_t pmColorBrighten(pmColor_t color, float amount)
     return pmColorHSL2RGB(&hsl);
 }
 
+pmColor_t pmColorInvert(pmColor_t color)
+{
+    pmColor_t res = { color.A, ~color.R, ~color.G, ~color.B };
+    return res;
+}
+
 pmColor_t *pmPaletteCreate(pmPixelFormat_t *format)
 {
     if(format->BPP > 8) return NULL;
