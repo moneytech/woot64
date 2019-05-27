@@ -90,6 +90,7 @@ File *File::Open(const char *name, int flags)
 {
     if(!name || !String::Length(name))
         name = ".";
+    name = (const char *)String::TrimStart((char *)name, " \t");
     Tokenizer path(name, PATH_SEPARATORS, 0);
     if(!path[0]) return nullptr;
     char *fsSep = path[0] ? String::Find(path[0], FS_SEPARATOR, false) : nullptr;
@@ -108,7 +109,17 @@ File *File::Open(const char *name, int flags)
             return nullptr;
         }
     }
-    bool absolute = !hasFs && path[0][0] == '/';
+    bool absolute = !hasFs && name[0] == '/';
+    if(absolute)
+    {
+        ::DEntry *cd = Process::GetCurrentDir();
+        if(!cd)
+        {
+            FileSystem::UnLock();
+            return nullptr;
+        }
+        fs = cd->INode->FS;
+    }
     ::DEntry *dentry = hasFs || absolute ? fs->GetRoot() : Process::GetCurrentDir();
 
     if(!dentry)

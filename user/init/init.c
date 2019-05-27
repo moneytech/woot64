@@ -13,18 +13,18 @@ int main(int argc, char *argv[])
     processWait(wmProc, 5000); // wait for demonetization of window manager
 
     //int testProc = processCreate("/bin/usertest");
-    //int fmProc = processCreate("/bin/filemanager");
+    int fmProc = processCreate("/bin/filemanager");
     int conProc = processCreate("/bin/console");
     if(conProc)
     {
         processWait(conProc, -1);
         processDelete(conProc);
     }
-    /*if(fmProc)
+    if(fmProc)
     {
         processWait(fmProc, -1);
         processDelete(fmProc);
-    }*/
+    }
     /*if(testProc)
     {
         processWait(testProc, -1);
