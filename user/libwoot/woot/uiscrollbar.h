@@ -2,6 +2,10 @@
 
 #include <woot/ui.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 typedef struct uiScrollbar uiScrollbar_t;
 
 typedef void (*uiScrollbarChangePositionHandler)(uiScrollbar_t *sender);
@@ -17,3 +21,6 @@ int uiScrollbarGetMinPosition(uiScrollbar_t *control);
 void uiScrollbarSetMaxPosition(uiScrollbar_t *control, int position);
 int uiScrollbarGetMaxPosition(uiScrollbar_t *control);
 
+#ifdef __cplusplus
+}
+#endif // __cplusplus

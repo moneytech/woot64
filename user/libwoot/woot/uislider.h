@@ -2,6 +2,10 @@
 
 #include <woot/ui.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 typedef struct uiSlider uiSlider_t;
 
 typedef void (*uiSliderChangeValueHandler)(uiSlider_t *sender);
@@ -15,3 +19,7 @@ int uiSliderGetMinValue(uiSlider_t *control);
 void uiSliderSetMaxValue(uiSlider_t *control, int value);
 int uiSliderGetMaxValue(uiSlider_t *control);
 void uiSliderDelete(uiSlider_t *control);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus

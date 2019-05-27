@@ -53,7 +53,6 @@ int rpcIPCFindServerRespond(pid_t dst, int reqMsgId)
 
 int rpcCall(const char *addr, const char *proc, void *args, size_t argsSize, void *respBuf, size_t respBufSize, int timeout)
 {
-    if(!timeout) return -EINVAL;
     int offs = 0;
     if((offs = startsWith(addr, "proc://")))
     {
@@ -78,7 +77,7 @@ int rpcCall(const char *addr, const char *proc, void *args, size_t argsSize, voi
         int reqMsgId = ipcSendMessage(pid, MSG_RPC_REQUEST, MSG_FLAG_NONE, msgBuf.Data, payloadSize);
         if(reqMsgId < 0) return reqMsgId;
 
-        // wait for response
+        // wait for response if not async (timeout == 0)
         int timeleft = timeout;
         while(timeout < 0 || timeleft > 0)
         {
@@ -96,7 +95,7 @@ int rpcCall(const char *addr, const char *proc, void *args, size_t argsSize, voi
                 return timeleft;
             }
         }
-        return -EBUSY;
+        return timeout ? -EBUSY : 0;
     }
     return -EINVAL;
 }

@@ -11,6 +11,7 @@
 #include <woot/input.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
+#include <woot/rpc.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
 #include <woot/uibutton.h>

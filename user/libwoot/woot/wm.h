@@ -25,17 +25,20 @@ extern "C" {
 // window messages
 
 // color ids
-#define WM_COLOR_BACKGROUND         0
-#define WM_COLOR_TEXT               1
-#define WM_COLOR_TITLE_BAR          2
-#define WM_COLOR_INACTIVE_TITLE_BAR 3
-#define WM_COLOR_FOCUS_HIGHLIGHT    4
-#define WM_COLOR_ID_COUNT           5
+#define WM_COLOR_BACKGROUND             0
+#define WM_COLOR_TEXT                   1
+#define WM_COLOR_TITLE_BAR              2
+#define WM_COLOR_INACTIVE_TITLE_BAR     3
+#define WM_COLOR_TITLE_TEXT             4
+#define WM_COLOR_INACTIVE_TITLE_TEXT    5
+#define WM_COLOR_FOCUS_HIGHLIGHT        6
+#define WM_COLOR_ID_COUNT               7
 
 // font ids
 #define WM_FONT_DEFAULT     0
 #define WM_FONT_UI_SYMBOLS  1
-#define WM_FONT_ID_COUNT    2
+#define WM_FONT_TITLE_BAR   2
+#define WM_FONT_ID_COUNT    3
 
 // event types
 #define WM_EVT_INVALID      0

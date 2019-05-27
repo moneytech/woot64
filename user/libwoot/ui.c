@@ -261,6 +261,31 @@ void uiControlDelete(uiControl_t *control)
         free(control->Text);
 }
 
+int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global)
+{
+    if(!control) return -EINVAL;
+    int rx = control->X;
+    int ry = control->Y;
+    uiControl_t *parent = control->Parent;
+    while(global && parent)
+    {
+        rx += parent->X;
+        ry += parent->Y;
+        parent = parent->Parent;
+    }
+    if(x) *x = rx;
+    if(y) *y = ry;
+    return 0;
+}
+
+rcRectangle_t uiControlGetSize(uiControl_t *control)
+{
+    if(!control) return rcRectangleEmpty;
+    rcRectangle_t rect = pmGetRectangle(control->PixMap);
+    rect.X = rect.Y = 0;
+    return rect;
+}
+
 uiControl_t *uiControlGetRoot(uiControl_t *control)
 {
     if(!control) return NULL;
@@ -367,6 +392,12 @@ void uiControlSetVisibility(uiControl_t *control, int visibility)
 {
     if(!control) return;
     control->Visibility = visibility;
+}
+
+int uiControlGetVisibility(uiControl_t *control)
+{
+    if(!control) return -EINVAL;
+    return control->Visibility;
 }
 
 int uiControlHasFocus(uiControl_t *control)

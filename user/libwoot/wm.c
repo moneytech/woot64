@@ -15,6 +15,18 @@
 static char wmServer[64] = { 0 };
 static pmColor_t colors[WM_COLOR_ID_COUNT];
 static fntFont_t *fonts[WM_FONT_ID_COUNT];
+static const char *fontNames[WM_FONT_ID_COUNT] =
+{
+    "/default.ttf",
+    "/uisymbols.ttf",
+    "/title.ttf"
+};
+static const int fontSizes[WM_FONT_ID_COUNT] =
+{
+    11,
+    12,
+    12
+};
 
 struct wmWindow
 {
@@ -61,14 +73,12 @@ int wmInitialize(int flags)
     memset(colors, 0, sizeof(colors));
     colors[WM_COLOR_BACKGROUND] = pmColorSeaGreen;
     colors[WM_COLOR_TEXT] = pmColorBlack;
-    colors[WM_COLOR_TITLE_BAR] = pmColorCornflowerBlue;
-    colors[WM_COLOR_INACTIVE_TITLE_BAR] = pmColorSilver;
+    colors[WM_COLOR_TITLE_BAR] = pmColorSlateBlue;
+    colors[WM_COLOR_INACTIVE_TITLE_BAR] = pmColorSeaGreen;
+    colors[WM_COLOR_TITLE_TEXT] = pmColorWhite;
+    colors[WM_COLOR_INACTIVE_TITLE_TEXT] = pmColorSilver;
     colors[WM_COLOR_FOCUS_HIGHLIGHT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
-    fonts[WM_FONT_DEFAULT] = fntLoad("/default.ttf");
-    if(fonts[WM_FONT_DEFAULT]) fntSetPointSize(fonts[WM_FONT_DEFAULT], 11, WM_DEFAULT_DPI);
-    fonts[WM_FONT_UI_SYMBOLS] = fntLoad("/uisymbols.ttf");
-    if(fonts[WM_FONT_UI_SYMBOLS]) fntSetPointSize(fonts[WM_FONT_UI_SYMBOLS], 11, WM_DEFAULT_DPI);
     return res;
 }
 
@@ -95,6 +105,16 @@ fntFont_t *wmGetFont(int fontId)
 {
     if(fontId < 0 || fontId >= WM_FONT_ID_COUNT)
         return NULL;
+
+    // load fonts on demand
+    if(!fonts[fontId])
+    {
+        fntFont_t *font = fntLoad(fontNames[fontId]);
+        if(!font) return NULL;
+        fntSetPointSize(font, fontSizes[fontId], WM_DEFAULT_DPI);
+        fonts[fontId] = font;
+    }
+
     return fonts[fontId];
 }
 
@@ -199,7 +219,7 @@ void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect)
 void wmSetWindowPos(wmWindow_t *window, int x, int y)
 {
     struct wmSetWindowPosArgs args = { window->id, x, y };
-    rpcCall(wmServer, "wmSetWindowPos", &args, sizeof(args), NULL, 0, DEFAULT_RPC_TIMEOUT);
+    rpcCall(wmServer, "wmSetWindowPos", &args, sizeof(args), NULL, 0, 0);//DEFAULT_RPC_TIMEOUT);
 }
 
 void wmSetWindowTitle(wmWindow_t *window, const char *title)
@@ -212,7 +232,7 @@ void wmSetWindowTitle(wmWindow_t *window, const char *title)
     int titleLen = strlen(title);
     a.args.windowId = window->id;
     memcpy((void *)a.args.title, title, titleLen + 1);
-    rpcCall(wmServer, "wmSetWindowTitle", &a.args, sizeof(a.args) + titleLen + 1, NULL, 0, DEFAULT_RPC_TIMEOUT);
+    rpcCall(wmServer, "wmSetWindowTitle", &a.args, sizeof(a.args) + titleLen + 1, NULL, 0, 0);//DEFAULT_RPC_TIMEOUT);
 }
 
 uiControl_t *wmGetRootControl(wmWindow_t *window)

@@ -1,9 +1,12 @@
 #pragma once
 
 typedef struct fntFont fntFont_t;
-typedef struct pmPixMap pmPixMap_t;
 typedef struct pmPixelFormat pmPixelFormat_t;
+typedef struct pmPixMap pmPixMap_t;
 typedef struct rcRectangle rcRectangle_t;
+typedef struct uiButton uiButton_t;
+typedef struct uiControl uiControl_t;
+typedef struct uiLabel uiLabel_t;
 
 class Window
 {
@@ -19,27 +22,36 @@ class Window
     pmPixMap_t *pixMap;
     char *title;
     bool active;
+    pmPixMap_t *dstPixMap;
+    pmPixMap_t *titleBarPixMap;
+    uiControl_t *titleBar;
+    uiLabel_t *titleBarText;
+    uiButton_t *closeButton;
+    uiButton_t *maxButton;
+    uiButton_t *minButton;
+    uiButton_t *progButton;
 public:
     static int TitleBarHeight;
-    static fntFont_t *TitleFont;
 
     static Window *GetByID(int id);
 
-    Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixelFormat_t *format);
+    Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride);
     int GetId() const;
     int GetOwner() const;
     pmPixelFormat_t GetPixelFormat() const;
     const char *GetShMemName() const;
     rcRectangle_t GetRect() const;
     rcRectangle_t GetDecoratedRect() const;
+    rcRectangle_t GetTitleRect() const;
     rcRectangle_t GetDragRect() const;
     pmPixMap_t *GetPixMap() const;
     unsigned GetFlags() const;
     void SetPosition(int x, int y);
     void SetTitle(const char *title);
     const char *GetTitle() const;
-    void UpdateWindowGraphics(pmPixMap_t *dst, rcRectangle_t *dstDirtyRect);
+    void UpdateWindowGraphics(rcRectangle_t *dstDirtyRect);
     rcRectangle_t SetActive(bool active);
     bool GetActive() const;
+    uiControl_t *GetTitleControl() const;
     ~Window();
 };

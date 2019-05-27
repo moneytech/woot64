@@ -13,6 +13,7 @@
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
 #include <woot/thread.h>
+#include <woot/ui.h>
 #include <woot/video.h>
 #include <woot/wm.h>
 
@@ -56,6 +57,7 @@ static int getWindowIdx(Windows *windows, Window *wnd);
 static void bringToTop(Windows *windows, Window *wnd);
 static Window *findTopWindow(Windows *windows);
 static void setActiveWindow(Windows *windows, Window *window);
+static void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
 
 static Window *mouseWnd = nullptr;
 static pmPixMap_t *fbPixMap = nullptr;
@@ -120,19 +122,6 @@ extern "C" int main(int argc, char *argv[])
         return -errno;
     }
 
-    fntFont_t *defaultFont = fntLoad("/default.ttf");
-    fntFont_t *titleFont = fntLoad("/title.ttf");
-    if(!defaultFont || !titleFont)
-    {
-        if(defaultFont) fntDelete(defaultFont);
-        if(titleFont) fntDelete(titleFont);
-        printf("[windowmanager] Couldn't load required font\n");
-        return -errno;
-    }
-    fntSetPointSize(defaultFont, 12, 96);
-    fntSetPointSize(titleFont, 12, 96);
-    Window::TitleFont = titleFont;
-
     pmPixelFormat_t fbFormat = pmFormatFromModeInfo(&mi);
 
     fbPixMap = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &fbFormat, pixels, 0);
@@ -155,7 +144,7 @@ extern "C" int main(int argc, char *argv[])
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
 
     // create desktop window
-    Window *desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, &bbPixMap->Format);
+    Window *desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, bbPixMap, nullptr);
     windows.Prepend(desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
@@ -175,7 +164,7 @@ extern "C" int main(int argc, char *argv[])
     {
         mouseWnd = new Window(currentPId, mouseX - cursorHotX, mouseY - cursorHotY,
                               cursor->Contents.Width, cursor->Contents.Height,
-                              WM_CWF_USEALPHA, &cursor->Format);
+                              WM_CWF_USEALPHA, bbPixMap, &cursor->Format);
         pmBlit(mouseWnd->GetPixMap(), cursor, 0, 0, 0, 0, -1, -1);
         pmDelete(cursor);
         windows.Append(mouseWnd);
@@ -251,6 +240,7 @@ extern "C" int main(int argc, char *argv[])
 
                     bool doBreak = false;
 
+                    // handle window activation and deactivation
                     rcRectangle_t rect = wnd->GetDecoratedRect();
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
@@ -266,7 +256,30 @@ extern "C" int main(int argc, char *argv[])
                         }
                     }
 
+                    // handle titlebar buttons
                     rcRectangle_t decoRect = rect;
+                    rect = wnd->GetTitleRect();
+                    if(rcContainsPointP(&rect, mouseX, mouseY))
+                    {
+                        uiControl_t *titleBar = wnd->GetTitleControl();
+                        if(titleBar)
+                        {
+                            doBreak = true;
+                            wmEvent_t event;
+                            wmEventMouse(&rect, wnd->GetId(), mouseX, mouseY, &event, mouseEv);
+                            uiControlProcessEvent(titleBar, &event);
+                            pmPixMap_t *pm = uiControlGetPixMap(titleBar);
+                            rcRectangle_t dr = pmGetAndClearDirtyRectangle(pm);
+                            if(!rcIsEmptyP(&dr))
+                            {
+                                dr.X += rect.X;
+                                dr.Y += rect.Y;
+                                dirtyRect = rcAddP(&dirtyRect, &dr);
+                            }
+                        }
+                    }
+
+                    // handle window dragging
                     rect = wnd->GetDragRect();
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
@@ -277,25 +290,16 @@ extern "C" int main(int argc, char *argv[])
                             dragDeltaY = mouseY - decoRect.Y;
                         }
                     }
-
                     if(dragWindow && (mouseEv->Delta[0] || mouseEv->Delta[1]))
                         moveWindow(&dirtyRect, dragWindow, mouseX - dragDeltaX, mouseY - dragDeltaY);
 
+                    // handle client area events
                     rect = wnd->GetRect();
                     if(rcContainsPointP(&rect, mouseX, mouseY))
                     {
                         doBreak = true;
                         wmEvent_t event;
-                        memset(&event, 0, sizeof(event));
-                        event.Type = WM_EVT_MOUSE;
-                        event.WindowId = wnd->GetId();
-                        event.Mouse.Coords[0] = mouseX - rect.X;
-                        event.Mouse.Coords[1] = mouseY - rect.Y;
-                        for(int i = 0; i < WM_EVT_MOUSE_AXES && i < INP_MAX_MOUSE_AXES; ++i)
-                            event.Mouse.Delta[i] = mouseEv->Delta[i];
-                        event.Mouse.ButtonsPressed = mouseEv->ButtonsPressed;
-                        event.Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
-                        event.Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
+                        wmEventMouse(&rect, wnd->GetId(), mouseX, mouseY, &event, mouseEv);
                         ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
                     }
 
@@ -319,7 +323,7 @@ extern "C" int main(int argc, char *argv[])
                     if(y == WM_CW_USEDEFAULT) y = (bbPixMap->Contents.Height - h) / 2;
 
                     //printf("[windowmanager] wmCreateWindow(%d, %d, %d, %d, %#.8x)\n", x, y, w, h, flags);
-                    Window *wnd = new Window(msg.Source, x, y, w, h, flags, &fbFormat);
+                    Window *wnd = new Window(msg.Source, x, y, w, h, flags, bbPixMap, nullptr);
                     dirtyRect = rcAdd(dirtyRect, wnd->GetDecoratedRect());
 
                     // add new window before mouse cursor window (if possible)
@@ -427,8 +431,6 @@ extern "C" int main(int argc, char *argv[])
     }
     if(bbPixMap) pmDelete(bbPixMap);
     if(fbPixMap) pmDelete(fbPixMap);
-    if(defaultFont) fntDelete(defaultFont);
-    if(titleFont) fntDelete(titleFont);
 
     return 0;
 }
@@ -453,7 +455,7 @@ void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y)
 void updateRect(Windows *windows, rcRectangle_t *rect)
 {
     for(Window *wnd : *windows)
-        wnd->UpdateWindowGraphics(bbPixMap, rect);
+        wnd->UpdateWindowGraphics(rect);
     pmBlit(fbPixMap, bbPixMap, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
     //pmRectangleRect(fbPixMap, rect, pmColorFromRGB(rand(), rand(), rand()));
 }
@@ -511,15 +513,29 @@ static void setActiveWindow(Windows *windows, Window *window)
         if(activeWindow)
         {
             rcRectangle_t rc = activeWindow->SetActive(false);
-            activeWindow->UpdateWindowGraphics(bbPixMap, &rc);
+            activeWindow->UpdateWindowGraphics(&rc);
             updateRect(windows, &rc);
         }
         activeWindow = window;
         if(activeWindow)
         {
             rcRectangle_t rc = activeWindow->SetActive(true);
-            activeWindow->UpdateWindowGraphics(bbPixMap, &rc);
+            activeWindow->UpdateWindowGraphics(&rc);
             updateRect(windows, &rc);
         }
     }
+}
+
+static void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv)
+{
+    memset(event, 0, sizeof(*event));
+    event->Type = WM_EVT_MOUSE;
+    event->WindowId = wndId;
+    event->Mouse.Coords[0] = mouseX - rect->X;
+    event->Mouse.Coords[1] = mouseY - rect->Y;
+    for(int i = 0; i < WM_EVT_MOUSE_AXES && i < INP_MAX_MOUSE_AXES; ++i)
+        event->Mouse.Delta[i] = mouseEv->Delta[i];
+    event->Mouse.ButtonsPressed = mouseEv->ButtonsPressed;
+    event->Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
+    event->Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
 }

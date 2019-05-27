@@ -31,7 +31,28 @@
 	<bottom_limit>-27.0000000000</bottom_limit>
 </horizontal>
 
+<grid width="1.0000"/>
+<grid width="2.0000"/>
+<grid width="4.0000"/>
+<grid width="1.0000"/>
+<grid width="1.0000"/>
+<grid width="2.0000"/>
+<grid width="4.0000"/>
+<grid width="1.0000"/>
+<grid width="2.0000"/>
+<grid width="1.0000"/>
+<grid width="2.0000"/>
+<grid width="4.0000"/>
+<grid width="1.0000"/>
+<grid width="2.0000"/>
+<grid width="4.0000"/>
 <background scale="1" />
+
+<collection unicode="U+20">
+	<selected id="0"/>
+	<glyph id="0" left="0" right="27">
+	</glyph>
+</collection>
 
 <collection unicode="U+23">
 	<selected id="0"/>
@@ -43,11 +64,32 @@
 	</glyph>
 </collection>
 
+<collection name=".notdef">
+	<selected id="0"/>
+	<glyph id="0" left="-20" right="33">
+		<layer name= "Layer" visible="true">
+			<path data="S -15.0000000000,10.0000000000 M 15.0000000000,10.0000000000 M 15.0000000000,62.0000000000 M -15.0000000000,62.0000000000 M -15.0000000000,10.0000000000" />
+			<path data="S -20.0000000000,67.0000000000 M 20.0000000000,67.0000000000 M 20.0000000000,5.0000000000 M -20.0000000000,5.0000000000 M -20.0000000000,67.0000000000" />
+		</layer>
+	</glyph>
+</collection>
+
 <collection unicode="U+3c">
 	<selected id="0"/>
 	<glyph id="0" left="-28" right="0">
 		<layer name= "Layer" visible="true">
 			<path data="S -28.0000000000,28.0000000000 L 0.0000000000,56.0000000000 L 0.0000000000,0.0000000000 L -28.0000000000,28.0000000000" />
+		</layer>
+	</glyph>
+</collection>
+
+<collection unicode="U+3d">
+	<selected id="0"/>
+	<glyph id="0" left="-28" right="28">
+		<layer name= "Layer" visible="true">
+			<path data="S -24.0000000000,18.0000000000 L -24.0000000000,14.0000000000 L 24.0000000000,14.0000000000 L 24.0000000000,18.0000000000 L -24.0000000000,18.0000000000" />
+			<path data="S -24.0000000000,30.0000000000 L -24.0000000000,26.0000000000 L 24.0000000000,26.0000000000 L 24.0000000000,30.0000000000 L -24.0000000000,30.0000000000" />
+			<path data="S -24.0000000000,42.0000000000 L -24.0000000000,38.0000000000 L 24.0000000000,38.0000000000 L 24.0000000000,42.0000000000 L -24.0000000000,42.0000000000" />
 		</layer>
 	</glyph>
 </collection>
