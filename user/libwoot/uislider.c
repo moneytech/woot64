@@ -25,7 +25,7 @@ static void sliderUpdate(uiSlider_t *slider, wmEvent_t *event)
 {
     if(event)
     {
-        rcRectangle_t rect = pmGetRectangle(slider->Control.PixMap);
+        rcRectangle_t rect = slider->Control.Rectangle;
 
         int val = slider->Value;
 
@@ -46,7 +46,7 @@ static void sliderPaint(uiControl_t *control)
 {
     if(!control) return;
     uiSlider_t *slider = (uiSlider_t *)control;
-    rcRectangle_t rect = pmGetRectangle(slider->Control.PixMap);
+    rcRectangle_t rect = slider->Control.Rectangle;
     pmPixMap_t *pm = control->PixMap;
     rect.X = rect.Y = 0;
     if(slider->Horizontal)

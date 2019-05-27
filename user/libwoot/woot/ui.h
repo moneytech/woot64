@@ -53,7 +53,8 @@ struct uiControl
     uiControl_t *Children;
     wmWindow_t *Window;
 
-    int X, Y;
+    //int X, Y;
+    rcRectangle_t Rectangle;
     pmPixMap_t *PixMap;
     void *Context;
     int Visibility;
@@ -105,6 +106,7 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
 void uiControlDelete(uiControl_t *control);
 int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global);
 rcRectangle_t uiControlGetSize(uiControl_t *control);
+rcRectangle_t uiControlGetRect(uiControl_t *control);
 uiControl_t *uiControlGetRoot(uiControl_t *control);
 uiControl_t *uiControlFindFocus(uiControl_t *control);
 void uiControlSetFocus(uiControl_t *control);

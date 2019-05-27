@@ -26,7 +26,7 @@ static void calculateFaceSize(uiControl_t *control, int *w, int *h)
     {   // no icon
         if(!control->Font || !control->Text || !control->Text[0])
             return; // no icon nor text
-        if(w) *w = fntMeasureString(control->Font, control->Text);
+        if(w) *w = fntMeasureString(control->Font, control->Text, -1);
         if(h) *h = fntGetPixelHeight(control->Font);
         return;
     }
@@ -39,7 +39,7 @@ static void calculateFaceSize(uiControl_t *control, int *w, int *h)
     }
 
     // we have both icon and text
-    int textWidth = fntMeasureString(control->Font, control->Text);
+    int textWidth = fntMeasureString(control->Font, control->Text, -1);
     int textHeight = fntGetPixelHeight(control->Font);
     int iconWidth = control->Icon->Contents.Width;
     int iconHeight = control->Icon->Contents.Height;
@@ -121,25 +121,28 @@ static void calculateFaceRect(uiControl_t *control, rcRectangle_t *rect, rcRecta
 
 static void drawDefaultFace(uiControl_t *control)
 {
-    rcRectangle_t rect = pmGetRectangle(control->PixMap);
     rcRectangle_t faceRect;
-    calculateFaceRect(control, &rect, &faceRect);
+    calculateFaceRect(control, &control->Rectangle, &faceRect);
     if(!control->Icon)
     {   // text only
         fntDrawString(control->Font, control->PixMap, faceRect.X, faceRect.Y, control->Text, control->TextColor);
+        if(control->HasFocus)
+            pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
         return;
     }
 
     if(!control->Font || !control->Text || !control->Text[0])
     {   // icon only
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X, faceRect.Y, -1, -1);
+        if(control->HasFocus)
+            pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
         return;
     }
 
     // text with icon
     int cx = faceRect.X + faceRect.Width / 2;
     int cy = faceRect.Y + faceRect.Height / 2;
-    int textWidth = fntMeasureString(control->Font, control->Text);
+    int textWidth = fntMeasureString(control->Font, control->Text, -1);
     int textHeight = fntGetPixelHeight(control->Font);
     switch(control->IconPosition)
     {
@@ -171,7 +174,7 @@ static void drawDefaultFace(uiControl_t *control)
 
 static void drawDefaultBorder(uiControl_t *control)
 {
-    rcRectangle_t rect = pmGetRectangle(control->PixMap);
+    rcRectangle_t rect = control->Rectangle;
     switch(control->BorderStyle)
     {
     case UI_BORDER_SIMPLE:
@@ -207,8 +210,7 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
         else ctrl->Next = control;
     }
     control->Window = parent ? parent->Window : NULL;
-    control->X = x;
-    control->Y = y;
+    control->Rectangle = rcCreate(x, y, width, height);
     control->PixMap = pmSubPixMap(parent ? parent->PixMap : parentPixMap, x, y, width, height);
     if(!control->PixMap)
     {
@@ -264,13 +266,13 @@ void uiControlDelete(uiControl_t *control)
 int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global)
 {
     if(!control) return -EINVAL;
-    int rx = control->X;
-    int ry = control->Y;
+    int rx = control->Rectangle.X;
+    int ry = control->Rectangle.Y;
     uiControl_t *parent = control->Parent;
     while(global && parent)
     {
-        rx += parent->X;
-        ry += parent->Y;
+        rx += parent->Rectangle.X;
+        ry += parent->Rectangle.Y;
         parent = parent->Parent;
     }
     if(x) *x = rx;
@@ -281,9 +283,15 @@ int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global)
 rcRectangle_t uiControlGetSize(uiControl_t *control)
 {
     if(!control) return rcRectangleEmpty;
-    rcRectangle_t rect = pmGetRectangle(control->PixMap);
+    rcRectangle_t rect = control->Rectangle;
     rect.X = rect.Y = 0;
     return rect;
+}
+
+rcRectangle_t uiControlGetRect(uiControl_t *control)
+{
+    if(!control) return rcRectangleEmpty;
+    return control->Rectangle;
 }
 
 uiControl_t *uiControlGetRoot(uiControl_t *control)
@@ -462,7 +470,7 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
     {
         for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
         {
-            rcRectangle_t rect = pmGetRectangle(ctrl->PixMap);
+            rcRectangle_t rect = ctrl->Rectangle;
             if(rcContainsPointP(&rect, event->Mouse.Coords[0], event->Mouse.Coords[1]))
             {
                 int origX = event->Mouse.Coords[0];

@@ -89,10 +89,11 @@ float fntDrawString(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, const cha
     return a;
 }
 
-float fntMeasureString(fntFont_t *font, const char *str)
+float fntMeasureString(fntFont_t *font, const char *str, int n)
 {
     float x = 0;
-    while(*str)
+    int len = strlen(str);
+    for(int i = 0; (n < 0 || i < n) && *str; ++i)
     {
         int dx = fntMeasureCharacter(font, *str++);
         if(dx < 0) return dx;

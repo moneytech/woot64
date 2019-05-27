@@ -34,7 +34,7 @@ static void scrollbarUpdate(uiScrollbar_t *scrollbar, wmEvent_t *event)
 {
     if(event && event->Type == WM_EVT_MOUSE)
     {
-        rcRectangle_t rect = pmGetRectangle(scrollbar->Control.PixMap);
+        rcRectangle_t rect = scrollbar->Control.Rectangle;
         rect.X = rect.Y = 0;
 
         int btnSize = min(rect.Width, rect.Height);
@@ -62,7 +62,7 @@ static void scrollbarPaint(uiControl_t *control)
 {
     if(!control) return;
     uiScrollbar_t *scroll = (uiScrollbar_t *)control;
-    rcRectangle_t rect = pmGetRectangle(scroll->Control.PixMap);
+    rcRectangle_t rect = scroll->Control.Rectangle;
     pmPixMap_t *pm = control->PixMap;
     int btnSize = min(rect.Width, rect.Height);
     rect.X = rect.Y = 0;

@@ -6,6 +6,7 @@ IMGFILE = hdd.img
 EXTRA_FILES = \
 	root/logo.png \
 	root/file.png \
+	root/directory.png \
 	root/clock_small.png \
 	root/uisymbols.ttf
 
@@ -43,6 +44,9 @@ root/logo.png: logo.png
 	cp $? $@
 
 root/file.png: file.png
+	cp $? $@
+
+root/directory.png: directory.png
 	cp $? $@
 
 root/clock_small.png: clock_small.png

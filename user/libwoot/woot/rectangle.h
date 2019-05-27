@@ -12,6 +12,7 @@ typedef struct rcRectangle
 
 extern rcRectangle_t rcRectangleEmpty;
 
+rcRectangle_t rcCreate(int x, int y, int w, int h);
 rcRectangle_t rcAdd(rcRectangle_t a, rcRectangle_t b);
 rcRectangle_t rcAddP(rcRectangle_t *a, rcRectangle_t *b);
 rcRectangle_t rcIntersect(rcRectangle_t a, rcRectangle_t b);

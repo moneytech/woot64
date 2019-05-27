@@ -15,7 +15,7 @@ int fntSetPointSize(fntFont_t *font, double size, int dpi);
 float fntDrawCharacter(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, int chr, pmColor_t color);
 float fntMeasureCharacter(fntFont_t *font, int chr);
 float fntDrawString(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, const char *str, pmColor_t color);
-float fntMeasureString(fntFont_t *font, const char *str);
+float fntMeasureString(fntFont_t *font, const char *str, int n);
 float fntGetPixelAscender(fntFont_t *font);
 float fntGetPixelHeight(fntFont_t *font);
 void fntDelete(fntFont_t *font);

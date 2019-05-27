@@ -21,7 +21,7 @@ static void calculateFaceSize(uiButton_t *button, int *w, int *h)
     {   // no icon
         if(!button->Control.Font || !button->Control.Text || !button->Control.Text[0])
             return; // no icon nor text
-        if(w) *w = fntMeasureString(button->Control.Font, button->Control.Text);
+        if(w) *w = fntMeasureString(button->Control.Font, button->Control.Text, -1);
         if(h) *h = fntGetPixelHeight(button->Control.Font);
         return;
     }
@@ -34,7 +34,7 @@ static void calculateFaceSize(uiButton_t *button, int *w, int *h)
     }
 
     // we have both icon and text
-    int textWidth = fntMeasureString(button->Control.Font, button->Control.Text);
+    int textWidth = fntMeasureString(button->Control.Font, button->Control.Text, -1);
     int textHeight = fntGetPixelHeight(button->Control.Font);
     int iconWidth = button->Control.Icon->Contents.Width;
     int iconHeight = button->Control.Icon->Contents.Height;
@@ -120,25 +120,28 @@ static void calculateFaceRect(uiButton_t *button, rcRectangle_t *rect, rcRectang
 
 static void buttonDrawFace(uiButton_t *button)
 {
-    rcRectangle_t rect = pmGetRectangle(button->Control.PixMap);
     rcRectangle_t faceRect;
-    calculateFaceRect(button, &rect, &faceRect);
+    calculateFaceRect(button, &button->Control.Rectangle, &faceRect);
     if(!button->Control.Icon)
     {   // text only
         fntDrawString(button->Control.Font, button->Control.PixMap, faceRect.X, faceRect.Y, button->Control.Text, button->Control.TextColor);
+        if(button->Control.HasFocus)
+            pmRectanglePattern(button->Control.PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
         return;
     }
 
     if(!button->Control.Font || !button->Control.Text || !button->Control.Text[0])
     {   // icon only
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, faceRect.X, faceRect.Y, -1, -1);
+        if(button->Control.HasFocus)
+            pmRectanglePattern(button->Control.PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
         return;
     }
 
     // text with icon
     int cx = faceRect.X + faceRect.Width / 2;
     int cy = faceRect.Y + faceRect.Height / 2;
-    int textWidth = fntMeasureString(button->Control.Font, button->Control.Text);
+    int textWidth = fntMeasureString(button->Control.Font, button->Control.Text, -1);
     int textHeight = fntGetPixelHeight(button->Control.Font);
     switch(button->Control.IconPosition)
     {
@@ -170,7 +173,7 @@ static void buttonDrawFace(uiButton_t *button)
 
 static void buttonDrawBorder(uiButton_t *button)
 {
-    rcRectangle_t rect = pmGetRectangle(button->Control.PixMap);
+    rcRectangle_t rect = button->Control.Rectangle;
     rect.X = rect.Y = 0;
     switch(button->Control.BorderStyle)
     {
@@ -222,10 +225,14 @@ static void buttonPostMouseRelease(uiControl_t *control, wmEvent_t *event)
     if(!(event->Mouse.ButtonsReleased & 1))
         return;
     uiButton_t *button = (uiButton_t *)control;
+    int pressed = button->Pressed;
     button->Pressed = 0;
     uiControlRedraw(control, 1);
-    if(control->OnActivate)
-        control->OnActivate(control);
+    if(pressed)
+    {
+        if(control->OnActivate)
+            control->OnActivate(control);
+    }
 }
 
 uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)

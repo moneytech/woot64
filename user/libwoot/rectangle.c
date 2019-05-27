@@ -5,6 +5,12 @@
 
 rcRectangle_t rcRectangleEmpty = { 0, 0, 0, 0 };
 
+rcRectangle_t rcCreate(int x, int y, int w, int h)
+{
+    rcRectangle_t rect = { x, y, w, h };
+    return rect;
+}
+
 rcRectangle_t rcAdd(rcRectangle_t a, rcRectangle_t b)
 {
     return rcAddP(&a, &b);
