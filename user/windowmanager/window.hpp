@@ -30,6 +30,8 @@ class Window
     uiButton_t *maxButton;
     uiButton_t *minButton;
     uiButton_t *progButton;
+
+    static void titleBarButtonActivate(uiControl_t *sender);
 public:
     static int TitleBarHeight;
 

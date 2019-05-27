@@ -19,6 +19,19 @@
 int Window::ids = 0;
 int Window::TitleBarHeight = 24;
 
+void Window::titleBarButtonActivate(uiControl_t *sender)
+{
+    Window *wnd = (Window *)uiControlGetContext(sender);
+    uiButton_t *btn = (uiButton_t *)sender;
+
+    if(btn == wnd->closeButton)
+    {
+        wmEvent_t event;
+        event.Type = WM_EVT_CLOSE;
+        ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+    }
+}
+
 Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
     id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
     pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr), active(true),
@@ -55,28 +68,48 @@ Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, 
         rcRectangle_t lblRect = uiControlGetSize((uiControl_t *)titleBarText);
         int btnMargin = 4;
         int btnSize = lblRect.Height - btnMargin;
+
+        // close button
         int closeX = lblRect.Width - btnSize - btnMargin / 2;
-        closeButton = uiButtonCreate((uiControl_t *)titleBarText, closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X", nullptr);
+        if(flags & WM_CWF_CLOSEBUTTON)
+        {
+            closeButton = uiButtonCreate((uiControl_t *)titleBarText, closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X", nullptr);
+            uiControlSetBackColor((uiControl_t *)closeButton, defBg);
+            uiControlSetFont((uiControl_t *)closeButton, symFont);
+            uiControlSetContext((uiControl_t *)closeButton, this);
+            uiControlSetOnActivate((uiControl_t *)closeButton, titleBarButtonActivate);
+        }
+        else closeX = lblRect.Width + 1 - btnMargin / 2;
+
         int maxX = closeX - btnSize - 1;
-        maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#", nullptr);
+        if(flags & WM_CWF_MAXIMIZEBUTTON)
+        {
+            maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#", nullptr);
+            uiControlSetBackColor((uiControl_t *)maxButton, defBg);
+            uiControlSetFont((uiControl_t *)maxButton, symFont);
+        } else maxX = closeX - 1;
+
         int minX = maxX - btnSize;
-        minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_", nullptr);
-        progButton = uiButtonCreate((uiControl_t *)titleBarText, btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=", nullptr);
+        if(flags & WM_CWF_MINIMIZEBUTTON)
+        {
+            minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_", nullptr);
+            uiControlSetBackColor((uiControl_t *)minButton, defBg);
+            uiControlSetFont((uiControl_t *)minButton, symFont);
+        } else minX = maxX;
+
+        if(flags & WM_CWF_SHOWICON)
+        {
+            progButton = uiButtonCreate((uiControl_t *)titleBarText, btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=", nullptr);
+            uiControlSetFont((uiControl_t *)progButton, symFont);
+        }
 
         uiControlSetBackColor(titleBar, bg);
+        uiControlSetBorderStyle(titleBar, UI_BORDER_RAISED);
+
         uiControlSetTextColor((uiControl_t *)titleBarText, fg);
         uiControlSetBackColor((uiControl_t *)titleBarText, bg);
-
-        uiControlSetTextHAlign((uiControl_t *)titleBarText, UI_HALIGN_CENTER);
-        uiControlSetBorderStyle(titleBar, UI_BORDER_RAISED);
-        uiControlSetBackColor((uiControl_t *)closeButton, defBg);
-        uiControlSetBackColor((uiControl_t *)maxButton, defBg);
-        uiControlSetBackColor((uiControl_t *)minButton, defBg);
-        uiControlSetFont((uiControl_t *)closeButton, symFont);
-        uiControlSetFont((uiControl_t *)maxButton, symFont);
-        uiControlSetFont((uiControl_t *)minButton, symFont);
-        uiControlSetFont((uiControl_t *)progButton, symFont);
         uiControlSetFont((uiControl_t *)titleBarText, titleFont);
+
         uiControlRedraw(titleBar, 0);
     }
 }
@@ -137,22 +170,22 @@ rcRectangle_t Window::GetDragRect() const
 #undef WINDOW_BUTTON_DRAG
 #define WINDOW_BUTTON_DRAG 1 // set to 0 to disable dragging by titlebar buttons
 #if !WINDOW_BUTTON_DRAG
-    if(minButton && uiControlGetVisibility((uiControl_t *)minButton) == UI_VISIBLE)
+    if(minButton)
     {
         int x; uiControlGetPosition((uiControl_t *)minButton, &x, NULL, 1);
         r.Width = min(x, r.Width);
     }
-    if(maxButton && uiControlGetVisibility((uiControl_t *)maxButton) == UI_VISIBLE)
+    if(maxButton)
     {
         int x; uiControlGetPosition((uiControl_t *)maxButton, &x, NULL, 1);
         r.Width = min(x, r.Width);
     }
-    if(closeButton && uiControlGetVisibility((uiControl_t *)closeButton) == UI_VISIBLE)
+    if(closeButton)
     {
         int x; uiControlGetPosition((uiControl_t *)closeButton, &x, NULL, 1);
         r.Width = min(x, r.Width);
     }
-    if(progButton && uiControlGetVisibility((uiControl_t *)progButton) == UI_VISIBLE)
+    if(progButton)
     {
         int x; uiControlGetPosition((uiControl_t *)progButton, &x, NULL, 1);
         rcRectangle_t size = uiControlGetSize((uiControl_t *)progButton);

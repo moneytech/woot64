@@ -128,7 +128,12 @@ int main(int argc, char *argv[])
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
                 if(event->WindowId == wmGetWindowId(window))
                     wmProcessEvent(window, event);
-                if(event->Type == WM_EVT_KEYBOARD)
+                if(event->Type == WM_EVT_CLOSE)
+                {
+                    quit = 1;
+                    break;
+                }
+                else if(event->Type == WM_EVT_KEYBOARD)
                 {
                     if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
                     {

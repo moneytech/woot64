@@ -215,7 +215,12 @@ extern "C" int main(int argc, char *argv[])
             else if(msg.Number == MSG_WM_EVENT)
             {
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
-                if(event->Type == WM_EVT_KEYBOARD)
+                if(event->Type == WM_EVT_CLOSE)
+                {
+                    quit = true;
+                    break;
+                }
+                else if(event->Type == WM_EVT_KEYBOARD)
                 {
                     int chr = event->Keyboard.Character;
                     if(chr)
