@@ -10,7 +10,6 @@
 static int64_t debugRead(void *buffer, int64_t n);
 static int64_t debugWrite(const void *buffer, int64_t n);
 
-static CallBackStream DebugStream(debugRead, debugWrite);
 static Mutex DebugStreamLock(true, "DebugStreamLock");
 
 static bool framebufferDisabled = false;
@@ -253,6 +252,8 @@ int64_t debugWrite(const void *buffer, int64_t n)
     }
     return n;
 }
+
+CallBackStream Debug::DebugStream(debugRead, debugWrite);
 
 void Debug::Initialize()
 {

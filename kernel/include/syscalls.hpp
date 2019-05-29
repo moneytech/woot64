@@ -16,6 +16,7 @@
 #define SYS_brk                 12
 #define SYS_readv               19
 #define SYS_writev              20
+#define SYS_dup                 32
 #define SYS_getpid              39
 #define SYS_exit                60
 #define SYS_getdents            78
@@ -94,6 +95,7 @@ class SysCalls
     static long sys_brk(uintptr_t brk);
     static long sys_readv(int fd, const struct iovec *vec, size_t vlen);
     static long sys_writev(int fd, const struct iovec *vec, size_t vlen);
+    static long sys_dup(int fd);
     static long sys_getpid();
     static long sys_exit(intn retVal);
     static long sys_getdents(int fd, struct dirent *de, size_t count);

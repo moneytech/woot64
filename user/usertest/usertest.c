@@ -51,7 +51,6 @@ void editAccept(uiLineEdit_t *sender)
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
-
     int res = wmInitialize(WM_INITIALIZE_NONE);
     const char *wmServer = wmGetServer();
     if(res < 0)

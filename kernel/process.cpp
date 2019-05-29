@@ -437,9 +437,9 @@ Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, b
         Paging::BuildAddressSpace(AddressSpace);
     }
 
-    Handles.Append(Handle(nullptr));
-    Handles.Append(Handle(nullptr));
-    Handles.Append(Handle(nullptr));
+    Handles.Append(Handle(&Debug::DebugStream));
+    Handles.Append(Handle(&Debug::DebugStream));
+    Handles.Append(Handle(&Debug::DebugStream));
 
     DEntry *cdir = Parent ? Parent->GetCurrentDir() : nullptr;
     if(cdir) CurrentDirectory = FileSystem::GetDEntry(cdir);
@@ -680,6 +680,46 @@ int Process::Close(int handle)
     return -EBADF;
 }
 
+long Process::Read(int handle, void *buffer, size_t size)
+{
+    if(!Lock()) return -EBUSY;
+    Handle h = Handles.Get(handle);
+    long res = -EBADF;
+    switch(h.Type)
+    {
+    case Handle::HandleType::File:
+        res = h.File->Read(buffer, size);
+        break;
+    case Handle::HandleType::Stream:
+        res = h.Stream->Read(buffer, size);
+        break;
+    default:
+        break;
+    }
+    UnLock();
+    return res;
+}
+
+long Process::Write(int handle, const void *buffer, size_t size)
+{
+    if(!Lock()) return -EBUSY;
+    Handle h = Handles.Get(handle);
+    long res = -EBADF;
+    switch(h.Type)
+    {
+    case Handle::HandleType::File:
+        res = h.File->Write(buffer, size);
+        break;
+    case Handle::HandleType::Stream:
+        res = h.Stream->Write(buffer, size);
+        break;
+    default:
+        break;
+    }
+    UnLock();
+    return res;
+}
+
 void *Process::GetHandleData(int handle, Process::Handle::HandleType type)
 {
     if(!Lock()) return nullptr;
@@ -692,6 +732,20 @@ void *Process::GetHandleData(int handle, Process::Handle::HandleType type)
     }
     UnLock();
     return h.Unknown;
+}
+
+int Process::DuplicateFileDescriptor(int fd)
+{
+    if(!Lock()) return -EBUSY;
+    Handle h = Handles.Get(fd);
+    if(h.Type == Handle::HandleType::Free)
+    {
+        UnLock();
+        return -EBADF;
+    }
+    int newFd = allocHandleSlot(h);
+    UnLock();
+    return newFd;
 }
 
 int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal)
@@ -953,6 +1007,12 @@ Process::Handle::Handle() :
 Process::Handle::Handle(nullptr_t) :
     Type(HandleType::Unknown),
     Unknown(nullptr)
+{
+}
+
+Process::Handle::Handle(::Stream *stream) :
+    Type(HandleType::Stream),
+    Stream(stream)
 {
 }
 

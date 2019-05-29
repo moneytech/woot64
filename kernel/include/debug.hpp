@@ -1,5 +1,6 @@
 #pragma once
 
+#include <callbackstream.hpp>
 #include <types.h>
 
 #define DEBUG Debug::DebugFmt
@@ -8,6 +9,7 @@
 class Debug
 {
 public:
+    static CallBackStream DebugStream;
     static void Initialize();
     static void DebugFmt(const char *fmt, ...);
     static int DebugIn(void *buffer, size_t bufSize);

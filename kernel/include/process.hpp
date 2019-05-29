@@ -73,6 +73,7 @@ public:
         {
             Free = 0,
             Unknown,
+            Stream,
             File,
             Thread,
             Process,
@@ -85,6 +86,7 @@ public:
         union
         {
             void *Unknown;
+            ::Stream *Stream;
             ::File *File;
             ::Thread *Thread;
             ::Process *Process;
@@ -97,6 +99,7 @@ public:
         Handle();
         Handle(nullptr_t);
         Handle(void *obj);
+        Handle(::Stream *stream);
         Handle(::File *file);
         Handle(::Thread *thread);
         Handle(::Process *process);
@@ -180,6 +183,8 @@ public:
 
     int Open(const char *filename, int flags);
     int Close(int handle);
+    long Read(int handle, void *buffer, size_t size);
+    long Write(int handle, const void *buffer, size_t size);
     template<class T> int NewHandle(T obj)
     {
         if(!Lock()) return -EBUSY;
@@ -188,6 +193,7 @@ public:
         return res;
     }
     void *GetHandleData(int handle, Handle::HandleType type);
+    int DuplicateFileDescriptor(int fd);
 
     // thread syscall support routines
     int NewThread(const char *name, void *entry, uintptr_t arg, int *retVal);

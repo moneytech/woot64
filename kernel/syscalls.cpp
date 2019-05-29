@@ -206,19 +206,13 @@ long SysCalls::InvalidHandler()
 long SysCalls::sys_read(int fd, char *buf, size_t count)
 {
     BUFFER_CHECK(buf, count);
-    if(fd < 3) return Debug::DebugRead(buf, count); // temporary hack
-    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
-    if(!f) return -EBADF;
-    return f->Read(buf, count);
+    return Process::GetCurrent()->Read(fd, buf, count);
 }
 
 long SysCalls::sys_write(int fd, const char *buf, size_t count)
 {
     BUFFER_CHECK(buf, count);
-    if(fd < 3) return Debug::DebugWrite(buf, count); // temporary hack
-    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
-    if(!f) return -EBADF;
-    return f->Write(buf, count);
+    return Process::GetCurrent()->Write(fd, buf, count);
 }
 
 long SysCalls::sys_open(const char *filename, int flags, int mode)
@@ -354,29 +348,14 @@ long SysCalls::sys_readv(int fd, const iovec *vec, size_t vlen)
 
     if(vlen < 0) return -EINVAL;
     long res = 0;
-    if(fd < 3)
-    {   // temporary hack
-        for(int i = 0; i < vlen; ++i)
-        {
-            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+    Process *cp = Process::GetCurrent();
 
-            long r = Debug::DebugRead(vec[i].iov_base, vec[i].iov_len);
-            if(r < 0) return r;
-            res += r;
-        }
-    }
-    else
+    for(int i = 0; i < vlen; ++i)
     {
-        File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
-        if(!f) return -EBADF;
-        for(int i = 0; i < vlen; ++i)
-        {
-            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
-
-            long r = f->Read(vec[i].iov_base, vec[i].iov_len);
-            if(r < 0) return r;
-            res += r;
-        }
+        BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+        long r = cp->Read(fd, vec[i].iov_base, vec[i].iov_len);
+        if(r < 0) return r;
+        res += r;
     }
     return res;
 }
@@ -387,31 +366,21 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
 
     if(vlen < 0) return -EINVAL;
     long res = 0;
-    if(fd < 3)
-    {   // temporary hack
-        for(int i = 0; i < vlen; ++i)
-        {
-            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+    Process *cp = Process::GetCurrent();
 
-            long r = Debug::DebugWrite(vec[i].iov_base, vec[i].iov_len);
-            if(r < 0) return r;
-            res += r;
-        }
-    }
-    else
+    for(int i = 0; i < vlen; ++i)
     {
-        File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
-        if(!f) return -EBADF;
-        for(int i = 0; i < vlen; ++i)
-        {
-            BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
-
-            long r = f->Write(vec[i].iov_base, vec[i].iov_len);
-            if(r < 0) return r;
-            res += r;
-        }
+        BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+        long r = cp->Write(fd, vec[i].iov_base, vec[i].iov_len);
+        if(r < 0) return r;
+        res += r;
     }
     return res;
+}
+
+long SysCalls::sys_dup(int fd)
+{
+    return Process::GetCurrent()->DuplicateFileDescriptor(fd);
 }
 
 long SysCalls::sys_getpid()
@@ -923,6 +892,7 @@ void SysCalls::Initialize()
     Handlers[SYS_brk] = (SysCallHandler)sys_brk;
     Handlers[SYS_readv] = (SysCallHandler)sys_readv;
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
+    Handlers[SYS_dup] = (SysCallHandler)sys_dup;
     Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
     Handlers[SYS_getdents] = (SysCallHandler)sys_getdents;
