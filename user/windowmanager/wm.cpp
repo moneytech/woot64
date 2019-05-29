@@ -54,11 +54,14 @@ static Window *getWindowById(Windows *windows, int id);
 static void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
 static void updateRect(Windows *windows, rcRectangle_t *rect);
 static int getWindowIdx(Windows *windows, Window *wnd);
-static void bringToTop(Windows *windows, Window *wnd);
-static Window *findTopWindow(Windows *windows);
+static void bringToFront(Windows *windows, Window *wnd);
+static void sendToBack(Windows *windows, Window *wnd);
+static Window *findFrontWindow(Windows *windows);
+static Window *findBackWindow(Windows *windows);
 static void setActiveWindow(Windows *windows, Window *window);
 static void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
 
+static Window *desktopWnd = nullptr;
 static Window *mouseWnd = nullptr;
 static pmPixMap_t *fbPixMap = nullptr;
 static pmPixMap_t *bbPixMap = nullptr;
@@ -144,7 +147,7 @@ extern "C" int main(int argc, char *argv[])
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
 
     // create desktop window
-    Window *desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, bbPixMap, nullptr);
+    desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, bbPixMap, nullptr);
     windows.Prepend(desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
@@ -188,11 +191,32 @@ extern "C" int main(int argc, char *argv[])
             }
             else if(msg.Number == MSG_KEYBOARD_EVENT)
             {
+                static bool altTabPhase = true;
+                static bool changeAltTabPhase = false;
                 inpKeyboardEvent_t *kbdEv = (inpKeyboardEvent_t *)msg.Data;
                 inpProcessKeyboardEvent(kbdEv, &modifiers);
                 int chr = kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? 0 : inpTranslateKey(kbdEv->Key, modifiers);
                 //printf("[usertest] key: %d %s\n", kbdEv->Key, kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE ? "released" : "pressed");
-                if(activeWindow)
+                if(modifiers & INP_MOD_ALT && kbdEv->Key == VK_TAB && kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE)
+                {   // alt+tab switch
+                    if((modifiers & INP_MOD_SHIFT) != altTabPhase)
+                    {
+                        Window *backWnd = findBackWindow(&windows);
+                        if(backWnd) bringToFront(&windows, backWnd);
+                    }
+                    else
+                    {
+                        Window *frontWnd = findFrontWindow(&windows);
+                        if(frontWnd) sendToBack(&windows, frontWnd);
+                    }
+                    changeAltTabPhase = true;
+                }
+                else if(changeAltTabPhase && (kbdEv->Key == VK_LMENU || kbdEv->Key == VK_RMENU) && kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE)
+                {
+                    altTabPhase = !altTabPhase;
+                    changeAltTabPhase = false;
+                }
+                else if(activeWindow)
                 {
                     wmEvent_t event;
                     event.Type = WM_EVT_KEYBOARD;
@@ -249,7 +273,7 @@ extern "C" int main(int argc, char *argv[])
                         {
                             if(topWindow != wnd) // bring window to the top
                             {
-                                bringToTop(&windows, wnd);
+                                bringToFront(&windows, wnd);
                                 topWindow = wnd;
                             }
                             setActiveWindow(&windows, wnd);
@@ -360,7 +384,7 @@ extern "C" int main(int argc, char *argv[])
                         windows.RemoveOne(wnd);
                         if(dragWindow == wnd)
                             dragWindow = nullptr;
-                        topWindow = findTopWindow(&windows);
+                        topWindow = findFrontWindow(&windows);
                         setActiveWindow(&windows, topWindow);
                         delete wnd;
                     }
@@ -471,18 +495,10 @@ int getWindowIdx(Windows *windows, Window *wnd)
     return -1;
 }
 
-void bringToTop(Windows *windows, Window *wnd)
+void bringToFront(Windows *windows, Window *wnd)
 {
     int wndIdx = getWindowIdx(windows, wnd);
-    int wndCnt = windows->Size();
-    int topWndIdx = -1;
-    for(int i = wndCnt - 1; i >= 0; --i)
-    {
-        if(windows->Get(i) == mouseWnd)
-            continue;
-        topWndIdx = i;
-        break;
-    }
+    int topWndIdx = getWindowIdx(windows, findFrontWindow(windows));
     if(wndIdx >= 0 && topWndIdx >= 0 && topWndIdx > wndIdx)
     {
         windows->RemoveAt(wndIdx);
@@ -492,18 +508,43 @@ void bringToTop(Windows *windows, Window *wnd)
     }
 }
 
-static Window *findTopWindow(Windows *windows)
+void sendToBack(Windows *windows, Window *wnd)
+{
+    int wndIdx = getWindowIdx(windows, wnd);
+    int backWndIdx = getWindowIdx(windows, findBackWindow(windows));
+    if(wndIdx >= 0 && backWndIdx >= 0 && backWndIdx < wndIdx)
+    {
+        windows->RemoveAt(wndIdx);
+        windows->InsertBefore(backWndIdx, wnd);
+        rcRectangle_t wndRect = wnd->GetDecoratedRect();
+        updateRect(windows, &wndRect);
+    }
+}
+
+static Window *findFrontWindow(Windows *windows)
 {
     Window *prevWnd = nullptr;
     int wndCnt = windows->Size();
     for(int i = 0; i < wndCnt; ++i)
     {
         Window *wnd = windows->Get(i);
-        if(wnd == mouseWnd)
-            break;
+        if(wnd == mouseWnd) break;
         prevWnd = wnd;
     }
     return prevWnd;
+}
+
+static Window *findBackWindow(Windows *windows)
+{
+    int wndCnt = windows->Size();
+    for(int i = 0; i < wndCnt; ++i)
+    {
+        Window *wnd = windows->Get(i);
+        if(wnd == desktopWnd) continue;
+        if(wnd == mouseWnd) break;
+        return wnd;
+    }
+    return nullptr;
 }
 
 static void setActiveWindow(Windows *windows, Window *window)
