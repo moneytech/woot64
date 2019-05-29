@@ -2,15 +2,77 @@
 #include <ft2build.h>
 #include <woot/font.h>
 #include <woot/pixmap.h>
+#include <woot/vector.h>
 
 #include FT_FREETYPE_H
+#include <freetype/ftbitmap.h>
+
+typedef struct cacheGlyph
+{
+    FT_Bitmap *bitmap;
+    float advance;
+    int bitmapLeft;
+    int bitmapTop;
+} cacheGlyph_t;
+
+static cacheGlyph_t invalidGlyph = { NULL, 0.0f };
+
+// TODO: implement lru
+typedef struct cacheEntry
+{
+    unsigned idx;
+    cacheGlyph_t glyph;
+} cacheEntry_t;
 
 struct fntFont
 {
     FT_Face face;
+    vecVector_t *glyphCache;
 };
 
 static FT_Library library;
+
+static cacheGlyph_t getGlyph(fntFont_t *font, unsigned idx)
+{
+    // do binary search
+    vecVector_t *cache = font->glyphCache;
+    unsigned l = 0, r = vecSize(font->glyphCache) - 1;
+
+    unsigned m = 0;
+    while(l <= r)
+    {
+        m = (l + r) >> 1;
+        cacheEntry_t *a = vecGet(cache, m);
+        if(!a) break;
+        if(a->idx < idx) l = m + 1;
+        else if(a->idx > idx) r = m - 1;
+        else return a->glyph;
+    }
+
+    // not in cache so include
+    FT_Error error = FT_Load_Glyph(font->face, idx, FT_LOAD_DEFAULT);
+    if(error) return invalidGlyph;
+    error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
+    if(error) return invalidGlyph;
+
+    FT_Bitmap *bmp = (FT_Bitmap *)calloc(1, sizeof(FT_Bitmap));
+    FT_Bitmap_Copy(library, &font->face->glyph->bitmap, bmp);
+
+    cacheGlyph_t glyph =
+    {
+        bmp,
+        font->face->glyph->advance.x / 64.0f,
+        font->face->glyph->bitmap_left,
+        font->face->glyph->bitmap_top
+    };
+    cacheEntry_t entry = { idx, glyph };
+    int res = l == m + 1 ? vecInsertAfter(cache, m, &entry) : vecInsertBefore(cache, m, &entry);
+    if(res < 0)
+    {
+        // TODO: add lru algorithm
+    }
+    return entry.glyph;
+}
 
 static int fntInitialize()
 {
@@ -39,6 +101,12 @@ fntFont_t *fntLoad(const char *filename)
         fntDelete(font);
         return NULL;
     }
+    font->glyphCache = vecCreate(sizeof(cacheEntry_t), 256, 16, 4096);
+    if(!font->glyphCache)
+    {
+        fntDelete(font);
+        return NULL;
+    }
     return font;
 }
 
@@ -56,29 +124,27 @@ int fntSetPointSize(fntFont_t *font, double size, int dpi)
 
 float fntDrawCharacter(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, int chr, pmColor_t color)
 {
-    FT_Error error = FT_Load_Char(font->face, chr, FT_LOAD_DEFAULT);
-    if(error) return -EINVAL;
-    error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
-    if(error) return -EINVAL;
+    cacheGlyph_t glyph = getGlyph(font, FT_Get_Char_Index(font->face, chr));
+    if(!glyph.bitmap) return 8.0f;
     y += font->face->size->metrics.ascender >> 6;
-    for(int i = 0; i < font->face->glyph->bitmap.rows; ++i)
+    for(int i = 0; i < glyph.bitmap->rows; ++i)
     {
-        unsigned char *line = (unsigned char *)(font->face->glyph->bitmap.buffer + i * font->face->glyph->bitmap.pitch);
-        int _y = y + i - font->face->glyph->bitmap_top;
-        for(int j = 0; j < font->face->glyph->bitmap.width; ++j)
+        unsigned char *line = (unsigned char *)(glyph.bitmap->buffer + i * glyph.bitmap->pitch);
+        int _y = y + i - glyph.bitmapTop;
+        for(int j = 0; j < glyph.bitmap->width; ++j)
         {
-            int _x = x + j + font->face->glyph->bitmap_left;
+            int _x = x + j + glyph.bitmapLeft;
             pmSetPixel(pixMap, _x, _y, pmBlendPixel(pmGetPixel(pixMap, _x, _y), pmColorFromARGB(line[j], color.R, color.G, color.B)));
         }
     }
-    return font->face->glyph->advance.x / 64.0f;
+    return glyph.advance;
 }
 
 float fntMeasureCharacter(fntFont_t *font, int chr)
 {
-    FT_Error error = FT_Load_Char(font->face, chr, FT_LOAD_ADVANCE_ONLY);
-    if(error) return -EINVAL;
-    return font->face->glyph->advance.x / 64.0f;
+    cacheGlyph_t glyph = getGlyph(font, FT_Get_Char_Index(font->face, chr));
+    if(!glyph.bitmap) return 8.0f;
+    return glyph.advance;
 }
 
 float fntDrawString(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, const char *str, pmColor_t color)
@@ -115,6 +181,17 @@ float fntGetPixelHeight(fntFont_t *font)
 void fntDelete(fntFont_t *font)
 {
     if(!font) return;
-    if(font->face)
-        FT_Done_Face(font->face);
+    if(font->glyphCache)
+    {
+        unsigned cacheSize = vecSize(font->glyphCache);
+        for(int i = 0; i < cacheSize; ++i)
+        {
+            cacheEntry_t *glyph = vecGet(font->glyphCache, i);
+            if(!glyph) continue;
+            printf("%d\n", glyph->idx);
+            if(glyph->glyph.bitmap) FT_Bitmap_Done(library, glyph->glyph.bitmap);
+        }
+        vecDelete(font->glyphCache);
+    }
+    if(font->face) FT_Done_Face(font->face);
 }

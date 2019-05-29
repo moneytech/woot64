@@ -50,17 +50,17 @@ static void calculateFaceSize(uiControl_t *control, int *w, int *h)
     switch(control->IconPosition)
     {
     default:
-    case UI_ICON_BEHIND:
+    case UI_BEHIND:
         width = max(textWidth, iconWidth);
         height = max(textHeight, iconHeight);
         break;
-    case UI_ICON_OVER:
-    case UI_ICON_BELOW:
+    case UI_OVER:
+    case UI_BELOW:
         width = max(textWidth, iconWidth);
         height = control->TextIconSeparation + textHeight + iconHeight;
         break;
-    case UI_ICON_LEFT:
-    case UI_ICON_RIGHT:
+    case UI_LEFT:
+    case UI_RIGHT:
         width = control->TextIconSeparation + textWidth + iconWidth;
         height = max(textHeight, iconHeight);
         break;
@@ -147,23 +147,23 @@ static void drawDefaultFace(uiControl_t *control)
     switch(control->IconPosition)
     {
     default:
-    case UI_ICON_BEHIND:
+    case UI_BEHIND:
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, cy - control->Icon->Contents.Height / 2, -1, -1);
         fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, cy - textHeight / 2, control->Text, control->TextColor);
         break;
-    case UI_ICON_OVER:
+    case UI_OVER:
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y, -1, -1);
         fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, faceRect.Y + faceRect.Height - textHeight, control->Text, control->TextColor);
         break;
-    case UI_ICON_BELOW:
+    case UI_BELOW:
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, cx - control->Icon->Contents.Width / 2, faceRect.Y + faceRect.Height - control->Icon->Contents.Height, -1, -1);
         fntDrawString(control->Font, control->PixMap, cx - textWidth / 2, faceRect.Y, control->Text, control->TextColor);
         break;
-    case UI_ICON_LEFT:
+    case UI_LEFT:
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X, cy - control->Icon->Contents.Height / 2, -1, -1);
         fntDrawString(control->Font, control->PixMap, faceRect.X + faceRect.Width - textWidth, cy - textHeight / 2, control->Text, control->TextColor);
         break;
-    case UI_ICON_RIGHT:
+    case UI_RIGHT:
         pmAlphaBlit(control->PixMap, control->Icon, 0, 0, faceRect.X + faceRect.Width - control->Icon->Contents.Width, cy - control->Icon->Contents.Height / 2, -1, -1);
         fntDrawString(control->Font, control->PixMap, faceRect.X, cy - textHeight / 2, control->Text, control->TextColor);
         break;
@@ -177,6 +177,8 @@ static void drawDefaultBorder(uiControl_t *control)
     rcRectangle_t rect = control->Rectangle;
     switch(control->BorderStyle)
     {
+    default:
+        break;
     case UI_BORDER_SIMPLE:
         pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;
@@ -228,7 +230,7 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
     control->TextVAlign = UI_VALIGN_MIDDLE;
     control->BorderStyle = UI_BORDER_NONE;
     control->MarginSize = 4;
-    control->IconPosition = UI_ICON_OVER;
+    control->IconPosition = UI_OVER;
     control->OnCreate = onCreate;
     control->OnPaint = defaultOnPaint;
     if(control->OnCreate)
@@ -292,6 +294,21 @@ rcRectangle_t uiControlGetRect(uiControl_t *control)
 {
     if(!control) return rcRectangleEmpty;
     return control->Rectangle;
+}
+
+void uiControlSetRect(uiControl_t *control, rcRectangle_t rect)
+{
+    if(!control) return;
+    control->Rectangle = rect;
+    if(!control->PixMap)
+        return;
+
+    // resize underlying pixmap
+    pmPixMap_t *pmParent = control->PixMap->Parent;
+    pmPixelFormat_t origFormat = control->PixMap->Format;
+    pmDelete(control->PixMap);
+    if(pmParent) control->PixMap = pmSubPixMap(pmParent, rect.X, rect.Y, rect.Width, rect.Height);
+    else control->PixMap = pmCreate(rect.Width, rect.Height, &origFormat);
 }
 
 uiControl_t *uiControlGetRoot(uiControl_t *control)
@@ -396,22 +413,22 @@ void uiControlSetContext(uiControl_t *control, void *context)
     control->Context = context;
 }
 
-void uiControlSetVisibility(uiControl_t *control, int visibility)
+void uiControlSetVisibility(uiControl_t *control, uiVisibility_t visibility)
 {
     if(!control) return;
     control->Visibility = visibility;
 }
 
-int uiControlGetVisibility(uiControl_t *control)
+uiVisibility_t uiControlGetVisibility(uiControl_t *control)
 {
     if(!control) return -EINVAL;
     return control->Visibility;
 }
 
-int uiControlHasFocus(uiControl_t *control)
+uiBool_t uiControlHasFocus(uiControl_t *control)
 {
-    if(!control) return 0;
-    return control->HasFocus ? 1 : 0;
+    if(!control) return UI_FALSE;
+    return control->HasFocus ? UI_TRUE : UI_FALSE;
 }
 
 char *uiControlGetText(uiControl_t *control)
@@ -567,6 +584,14 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
     return 1;
 }
 
+int uiControlRecalcRects(uiControl_t *control)
+{
+    if(!control) return -EINVAL;
+    if(control->OnRecalcRects)
+        control->OnRecalcRects(control);
+    return 0;
+}
+
 void uiControlSetTextColor(uiControl_t *control, pmColor_t color)
 {
     if(!control) return;
@@ -585,19 +610,19 @@ void uiControlSetBorderColor(uiControl_t *control, pmColor_t color)
     control->BorderColor = color;
 }
 
-void uiControlSetTextHAlign(uiControl_t *control, int align)
+void uiControlSetTextHAlign(uiControl_t *control, uiHAlignment_t align)
 {
     if(!control) return;
     control->TextHAlign = align;
 }
 
-void uiControlSetTextVAlign(uiControl_t *control, int align)
+void uiControlSetTextVAlign(uiControl_t *control, uiVAlignment_t align)
 {
     if(!control) return;
     control->TextVAlign = align;
 }
 
-void uiControlSetBorderStyle(uiControl_t *control, int style)
+void uiControlSetBorderStyle(uiControl_t *control, uiBorderStyle_t style)
 {
     if(!control) return;
     control->BorderStyle = style;
@@ -609,7 +634,7 @@ void uiControlSetMarginSize(uiControl_t *control, int size)
     control->MarginSize = size;
 }
 
-void uiControlSetIconPosition(uiControl_t *control, int position)
+void uiControlSetIconPosition(uiControl_t *control, uiRelPosition_t position)
 {
     if(!control) return;
     control->IconPosition = position;

@@ -45,17 +45,17 @@ static void calculateFaceSize(uiButton_t *button, int *w, int *h)
     switch(button->Control.IconPosition)
     {
     default:
-    case UI_ICON_BEHIND:
+    case UI_BEHIND:
         width = max(textWidth, iconWidth);
         height = max(textHeight, iconHeight);
         break;
-    case UI_ICON_OVER:
-    case UI_ICON_BELOW:
+    case UI_OVER:
+    case UI_BELOW:
         width = max(textWidth, iconWidth);
         height = button->Control.TextIconSeparation + textHeight + iconHeight;
         break;
-    case UI_ICON_LEFT:
-    case UI_ICON_RIGHT:
+    case UI_LEFT:
+    case UI_RIGHT:
         width = button->Control.TextIconSeparation + textWidth + iconWidth;
         height = max(textHeight, iconHeight);
         break;
@@ -146,23 +146,23 @@ static void buttonDrawFace(uiButton_t *button)
     switch(button->Control.IconPosition)
     {
     default:
-    case UI_ICON_BEHIND:
+    case UI_BEHIND:
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, cx - button->Control.Icon->Contents.Width / 2, cy - button->Control.Icon->Contents.Height / 2, -1, -1);
         fntDrawString(button->Control.Font, button->Control.PixMap, cx - textWidth / 2, cy - textHeight / 2, button->Control.Text, button->Control.TextColor);
         break;
-    case UI_ICON_OVER:
+    case UI_OVER:
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, cx - button->Control.Icon->Contents.Width / 2, faceRect.Y, -1, -1);
         fntDrawString(button->Control.Font, button->Control.PixMap, cx - textWidth / 2, faceRect.Y + faceRect.Height - textHeight, button->Control.Text, button->Control.TextColor);
         break;
-    case UI_ICON_BELOW:
+    case UI_BELOW:
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, cx - button->Control.Icon->Contents.Width / 2, faceRect.Y + faceRect.Height - button->Control.Icon->Contents.Height, -1, -1);
         fntDrawString(button->Control.Font, button->Control.PixMap, cx - textWidth / 2, faceRect.Y, button->Control.Text, button->Control.TextColor);
         break;
-    case UI_ICON_LEFT:
+    case UI_LEFT:
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, faceRect.X, cy - button->Control.Icon->Contents.Height / 2, -1, -1);
         fntDrawString(button->Control.Font, button->Control.PixMap, faceRect.X + faceRect.Width - textWidth, cy - textHeight / 2, button->Control.Text, button->Control.TextColor);
         break;
-    case UI_ICON_RIGHT:
+    case UI_RIGHT:
         pmAlphaBlit(button->Control.PixMap, button->Control.Icon, 0, 0, faceRect.X + faceRect.Width - button->Control.Icon->Contents.Width, cy - button->Control.Icon->Contents.Height / 2, -1, -1);
         fntDrawString(button->Control.Font, button->Control.PixMap, faceRect.X, cy - textHeight / 2, button->Control.Text, button->Control.TextColor);
         break;
@@ -177,6 +177,8 @@ static void buttonDrawBorder(uiButton_t *button)
     rect.X = rect.Y = 0;
     switch(button->Control.BorderStyle)
     {
+    default:
+        break;
     case UI_BORDER_SIMPLE:
         pmRectangleRect(button->Control.PixMap, &rect, button->Pressed ? pmColorInvert(button->Control.BorderColor) : button->Control.BorderColor);
         break;

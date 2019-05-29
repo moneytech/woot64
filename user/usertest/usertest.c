@@ -19,6 +19,7 @@
 #include <woot/uilineedit.h>
 #include <woot/uiscrollbar.h>
 #include <woot/uislider.h>
+#include <woot/uitoolbar.h>
 #include <woot/video.h>
 #include <woot/wm.h>
 
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
     }
     else printf("[usertest] Window manager server: '%s'\n", wmServer);
 
-    window = wmCreateWindow(100, 200, 300, 200, WM_CWF_DEFAULT);
+    window = wmCreateWindow(100, 200, 300, 230, WM_CWF_DEFAULT);
     if(!window) return -errno;
     wmSetWindowTitle(window, "Test window");
 
@@ -93,17 +94,24 @@ int main(int argc, char *argv[])
     uiScrollbar_t *scroll = uiScrollbarCreate(rootControl, 283, 1, 16, 182, 0, 0, 99, 0, 5);
     uiScrollbar_t *scroll2 = uiScrollbarCreate(rootControl, 1, 183, 283, 16, 1, 0, 99, 88, 40);
 
+    uiToolbar_t *bar = uiToolbarCreate(rootControl, 1, 199, pm->Contents.Width - 2, 30, UI_HORIZONTAL);
+    for(int i = 0; i < 4; ++i)
+        uiButtonCreate((uiControl_t *)bar, 10, 0, 64, 24, "Abcd", NULL);
+    uiToolbarSetChildSpacing(bar, 4);
+    uiControlRecalcRects((uiControl_t *)bar);
+
+
     uiControlSetBorderColor(rootControl, pmColorWhite);
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
 
     uiControlSetTextColor(lbl, pmColorWhite);
     uiControlSetBackColor(lbl, pmColorBrighten(wmGetColor(WM_COLOR_BACKGROUND), -0.05f));
     uiControlSetTextIconSeparation(lbl, 4);
-    uiControlSetIconPosition(lbl, UI_ICON_LEFT);
+    uiControlSetIconPosition(lbl, UI_LEFT);
     uiControlSetIcon(lbl, clockIcon);
 
     uiControlSetIcon(btn, fileIcon);
-    uiControlSetIconPosition(btn, UI_ICON_OVER);
+    uiControlSetIconPosition(btn, UI_OVER);
     uiControlSetTextIconSeparation(btn, 2);
     uiControlSetOnMousePress(btn, btnClick);
 

@@ -45,6 +45,8 @@ static void lineEditDrawBorder(uiControl_t *control)
     rcRectangle_t rect = control->Rectangle;
     switch(control->BorderStyle)
     {
+    default:
+        break;
     case UI_BORDER_SIMPLE:
         pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;

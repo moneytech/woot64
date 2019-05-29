@@ -5,6 +5,8 @@ uilabel.c
 uilineedit.c
 uiscrollbar.c
 uislider.c
+uitoolbar.c
+vector.c
 wm.c
 woot/font.h
 woot/ui.h
@@ -13,6 +15,8 @@ woot/uilabel.h
 woot/uilineedit.h
 woot/uiscrollbar.h
 woot/uislider.h
+woot/uitoolbar.h
+woot/vector.h
 woot/wm.h
 ipc.c
 misc.c

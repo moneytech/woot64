@@ -198,7 +198,7 @@ pmPixMap_t *wmGetPixMap(wmWindow_t *window)
 
 void wmRedrawWindow(wmWindow_t *window)
 {
-    rpcCall(wmServer, "wmRedrawWindow", &window->id, sizeof(int), NULL, 0, DEFAULT_RPC_TIMEOUT);
+    rpcCall(wmServer, "wmRedrawWindow", &window->id, sizeof(int), NULL, 0, 0);//DEFAULT_RPC_TIMEOUT);
 }
 
 void wmUpdateWindow(wmWindow_t *window)
@@ -213,7 +213,7 @@ void wmUpdateWindow(wmWindow_t *window)
 void wmRedrawRect(wmWindow_t *window, rcRectangle_t *rect)
 {
     struct wmRedrawRectArgs args = { window->id, *rect };
-    rpcCall(wmServer, "wmRedrawRect", &args, sizeof(args), NULL, 0, DEFAULT_RPC_TIMEOUT);
+    rpcCall(wmServer, "wmRedrawRect", &args, sizeof(args), NULL, 0, 0);//DEFAULT_RPC_TIMEOUT);
 }
 
 void wmSetWindowPos(wmWindow_t *window, int x, int y)
