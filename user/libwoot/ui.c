@@ -429,6 +429,8 @@ void uiControlSetText(uiControl_t *control, const char *text)
         control->Text = text ? strdup(text) : NULL;
     }
     uiControlRedraw(control, 1);
+    if(control->OnTextChanged)
+        control->OnTextChanged(control);
 }
 
 void uiControlSetIcon(uiControl_t *control, pmPixMap_t *icon)
@@ -441,6 +443,100 @@ void uiControlSetFont(uiControl_t *control, fntFont_t *font)
 {
     if(!control) return;
     control->Font = font;
+}
+
+static int doProcessMouseEvent(uiControl_t *control, wmEvent_t *event)
+{
+    if(!control || !event || event->Type != WM_EVT_MOUSE)
+        return -EINVAL;
+
+    int x, y;
+    uiControlGetPosition(control, &x, &y, UI_TRUE);
+
+    // convert x and y to local coords
+    event->Mouse.Coords[0] -= x;
+    event->Mouse.Coords[1] -= y;
+
+    if((event->Mouse.Delta[0] || event->Mouse.Delta[1]))
+    {
+        if(control->PreMouseMove) control->PreMouseMove(control, event);
+        if(control->OnMouseMove) control->OnMouseMove(control, event);
+        if(control->PostMouseMove) control->PostMouseMove(control, event);
+    }
+
+    if(event->Mouse.ButtonsPressed)
+    {
+        if(event->Mouse.ButtonsPressed & 1)
+            uiControlSetFocus(control);
+
+        if(control->PreMousePress) control->PreMousePress(control, event);
+        if(control->OnMousePress) control->OnMousePress(control, event);
+        if(control->PostMousePress) control->PostMousePress(control, event);
+    }
+
+    if(event->Mouse.ButtonsReleased)
+    {
+        if(control->PreMouseRelease) control->PreMouseRelease(control, event);
+        if(control->OnMouseRelease) control->OnMouseRelease(control, event);
+        if(control->PostMouseRelease) control->PostMouseRelease(control, event);
+    }
+
+    // convert x and y back to global coords
+    event->Mouse.Coords[0] += x;
+    event->Mouse.Coords[1] += y;
+
+    return 0;
+}
+
+static uiControl_t *findControl(uiControl_t *root, int x, int y)
+{
+    if(!root)
+        return NULL;
+
+    uiControl_t *control;
+    for(control = root; control && control->Children;)
+    {
+        uiControl_t *nextControl = NULL;
+        for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
+        {
+            if(ctrl->Visibility != UI_VISIBLE)
+                continue;
+
+            if(rcContainsPointP(&ctrl->Rectangle, x, y))
+            {
+                x -= ctrl->Rectangle.X;
+                y -= ctrl->Rectangle.Y;
+                nextControl = ctrl;
+                break;
+            }
+        }
+        if(!nextControl)
+            return control;
+
+        control = nextControl;
+    }
+
+    return control;
+}
+
+static int processMouseEvent(uiControl_t *control, wmEvent_t *event)
+{
+    static int i = 0;
+
+    if(!control || !event || event->Type != WM_EVT_MOUSE)
+        return -EINVAL;
+
+    if(control->LockedControl)
+    {
+        int res = doProcessMouseEvent(control->LockedControl, event);
+        if(!event->Mouse.ButtonsHeld || event->Mouse.ButtonsReleased)
+            control->LockedControl = NULL;
+        return res;
+    }
+
+    uiControl_t *ctrl = findControl(control, event->Mouse.Coords[0], event->Mouse.Coords[1]);
+    if(event->Mouse.ButtonsPressed) control->LockedControl = ctrl;
+    return ctrl ? doProcessMouseEvent(ctrl, event) : 0;
 }
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
@@ -467,52 +563,7 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
         return 1;
     }
     else if(event->Type == WM_EVT_MOUSE)
-    {
-        for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
-        {
-            rcRectangle_t rect = ctrl->Rectangle;
-            if(rcContainsPointP(&rect, event->Mouse.Coords[0], event->Mouse.Coords[1]))
-            {
-                int origX = event->Mouse.Coords[0];
-                int origY = event->Mouse.Coords[1];
-                event->Mouse.Coords[0] -= rect.X;
-                event->Mouse.Coords[1] -= rect.Y;
-                int res = uiControlProcessEvent(ctrl, event);
-                event->Mouse.Coords[0] = origX;
-                event->Mouse.Coords[1] = origY;
-                if(res) return res;
-            }
-        }
-
-        int res = 0;
-        if((event->Mouse.Delta[0] || event->Mouse.Delta[1]))
-        {
-            if(control->PreMouseMove) control->PreMouseMove(control, event);
-            if(control->OnMouseMove) control->OnMouseMove(control, event);
-            if(control->PostMouseMove) control->PostMouseMove(control, event);
-            res = 1;
-        }
-
-        if(event->Mouse.ButtonsPressed)
-        {
-            if(event->Mouse.ButtonsPressed & 1)
-                uiControlSetFocus(control);
-
-            if(control->PreMousePress) control->PreMousePress(control, event);
-            if(control->OnMousePress) control->OnMousePress(control, event);
-            if(control->PostMousePress) control->PostMousePress(control, event);
-            res = 1;
-        }
-
-        if(event->Mouse.ButtonsReleased)
-        {
-            if(control->PreMouseRelease) control->PreMouseRelease(control, event);
-            if(control->OnMouseRelease) control->OnMouseRelease(control, event);
-            if(control->PostMouseRelease) control->PostMouseRelease(control, event);
-            res = 1;
-        }
-        return res;
-    }
+        return processMouseEvent(control, event);
     return 1;
 }
 
@@ -610,4 +661,10 @@ void uiControlSetOnActivate(uiControl_t *control, uiActivateHandler handler)
 {
     if(!control) return;
     control->OnActivate = handler;
+}
+
+void uiControlSetOnTextChanged(uiControl_t *control, uiTextChangedHandler handler)
+{
+    if(!control) return;
+    control->OnTextChanged = handler;
 }

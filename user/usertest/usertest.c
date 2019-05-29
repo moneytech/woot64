@@ -42,6 +42,11 @@ void sldChange(uiSlider_t *sender)
     uiControlSetText((uiControl_t *)edit, text);
 }
 
+void editAccept(uiLineEdit_t *sender)
+{
+    wmSetWindowTitle(window, uiControlGetText((uiControl_t *)sender));
+}
+
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
@@ -105,6 +110,8 @@ int main(int argc, char *argv[])
     uiSliderSetOnValueChange(sld, sldChange);
     uiControlSetContext((uiControl_t *)sld, edit);
 
+    uiLineEditSetOnAcceptInput(edit, editAccept);
+
     uiControlRedraw(rootControl, 1);
 
     srand(time(NULL));
@@ -113,8 +120,8 @@ int main(int argc, char *argv[])
     {
         int quit = 0;
 
-        int msgTimeout = 500;
-        while(ipcGetMessage(&msg, msgTimeout) >= 0) // <- some packets are lost if timeout > 0
+        int msgTimeout = 400;
+        while(ipcGetMessage(&msg, msgTimeout) >= 0)
         {
             msgTimeout = 200;
             ipcProcessMessage(&msg);

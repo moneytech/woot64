@@ -23,6 +23,8 @@ typedef struct ipcMessage
 int ipcSendMessage(pid_t dst, int num, int flags, void *payload, size_t payloadSize);
 int ipcAckMessage(ipcMessage_t *msg);
 int ipcGetMessage(ipcMessage_t *msg, int timeout);
+int ipcPeekMessage(ipcMessage_t *msg, unsigned offset);
+int ipcWaitMessage(ipcMessage_t *msg, int number, int source, int rangeStart, int rangeSize, int timeout);
 int ipcProcessMessage(ipcMessage_t *msg);
 
 int ipcCreateSharedMem(const char *name, size_t size);

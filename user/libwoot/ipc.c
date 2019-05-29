@@ -13,6 +13,16 @@ int ipcGetMessage(ipcMessage_t *msg, int timeout)
     return sysIPCGetMessage(msg, timeout);
 }
 
+int ipcPeekMessage(ipcMessage_t *msg, unsigned offset)
+{
+    return sysIPCPeekMessage(msg, offset);
+}
+
+int ipcWaitMessage(ipcMessage_t *msg, int number, int source, int rangeStart, int rangeSize, int timeout)
+{
+    return sysIPCWaitMessage(msg, number, source, rangeStart, rangeSize, timeout);
+}
+
 int ipcProcessMessage(ipcMessage_t *msg)
 {
     if(!msg) return -EINVAL;

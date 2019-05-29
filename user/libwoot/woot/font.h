@@ -1,5 +1,4 @@
-#ifndef FONT_H
-#define FONT_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,5 +22,3 @@ void fntDelete(fntFont_t *font);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-
-#endif // FONT_H

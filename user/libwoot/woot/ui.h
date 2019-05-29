@@ -1,5 +1,4 @@
-#ifndef UI_H
-#define UI_H
+#pragma once
 
 #include <woot/font.h>
 #include <woot/pixmap.h>
@@ -7,6 +6,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
+
+// logic constants
+#define UI_FALSE 0
+#define UI_TRUE 1
 
 // horizontal element alignment
 #define UI_HALIGN_LEFT      0
@@ -45,6 +48,7 @@ typedef void (*uiWMEventHandler)(uiControl_t *sender, wmEvent_t *event);
 typedef void (*uiGotFocusHandler)(uiControl_t *sender);
 typedef void (*uiFocusLostHandler)(uiControl_t *sender);
 typedef void (*uiActivateHandler)(uiControl_t *sender);
+typedef void (*uiTextChangedHandler)(uiControl_t *sender);
 
 struct uiControl
 {
@@ -53,9 +57,9 @@ struct uiControl
     uiControl_t *Children;
     wmWindow_t *Window;
 
-    //int X, Y;
     rcRectangle_t Rectangle;
     pmPixMap_t *PixMap;
+    uiControl_t *LockedControl;
     void *Context;
     int Visibility;
     int CanHaveFocus;
@@ -100,6 +104,7 @@ struct uiControl
     uiGotFocusHandler OnGotFocus;
     uiFocusLostHandler OnFocusLost;
     uiActivateHandler OnActivate;
+    uiTextChangedHandler OnTextChanged;
 };
 
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
@@ -141,9 +146,8 @@ void uiControlSetOnMouseMove(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnGotFocus(uiControl_t *control, uiGotFocusHandler handler);
 void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler);
 void uiControlSetOnActivate(uiControl_t *control, uiActivateHandler handler);
+void uiControlSetOnTextChanged(uiControl_t *control, uiTextChangedHandler handler);
 
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-
-#endif // UI_H

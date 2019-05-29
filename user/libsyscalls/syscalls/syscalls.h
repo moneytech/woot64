@@ -67,6 +67,8 @@
 #define SYS_IPC_GET_SHMEM_SIZE  0x345
 #define SYS_IPC_MAP_SHMEM       0x346
 #define SYS_IPC_UNMAP_SHMEM     0x347
+#define SYS_IPC_PEEK_MESSAGE    0x348
+#define SYS_IPC_WAIT_MESSAGE    0x349
 
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
@@ -197,6 +199,8 @@ long sysIPCCloseSharedMem(int fd);
 long sysIPCGetSharedMemSize(int fd);
 void *sysIPCMapSharedMem(int fd, void *hint, unsigned flags);
 long sysIPCUnMapSharedMem(int fd, void *addr);
+long sysIPCPeekMessage(void *msg, unsigned offset);
+long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout);
 
 #ifdef __cplusplus
 }

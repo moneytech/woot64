@@ -858,6 +858,18 @@ long SysCalls::sysIPCUnMapSharedMem(int fd, uintptr_t addr)
     return shm->UnMap(cp, addr);
 }
 
+long SysCalls::sysIPCPeekMessage(void *msg, unsigned offset)
+{
+    BUFFER_CHECK(msg, sizeof(ipcMessage));
+    return IPC::PeekMessage((ipcMessage *)msg, offset);
+}
+
+long SysCalls::sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout)
+{
+    BUFFER_CHECK(msg, sizeof(ipcMessage));
+    return IPC::WaitMessage((ipcMessage *)msg, number, source, rangeStart, rangeSize, timeout);
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -928,6 +940,8 @@ void SysCalls::Initialize()
     Handlers[SYS_IPC_GET_SHMEM_SIZE] = (SysCallHandler)sysIPCGetSharedMemSize;
     Handlers[SYS_IPC_MAP_SHMEM] = (SysCallHandler)sysIPCMapSharedMem;
     Handlers[SYS_IPC_UNMAP_SHMEM] = (SysCallHandler)sysIPCUnMapSharedMem;
+    Handlers[SYS_IPC_PEEK_MESSAGE] = (SysCallHandler)sysIPCPeekMessage;
+    Handlers[SYS_IPC_WAIT_MESSAGE] = (SysCallHandler)sysIPCWaitMessage;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

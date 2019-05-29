@@ -305,3 +305,13 @@ long sysIPCUnMapSharedMem(int fd, void *addr)
 {
     return __syscall2(SYS_IPC_UNMAP_SHMEM, fd, (long)addr);
 }
+
+long sysIPCPeekMessage(void *msg, unsigned offset)
+{
+    return __syscall2(SYS_IPC_PEEK_MESSAGE, (long)msg, offset);
+}
+
+long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout)
+{
+    return __syscall6(SYS_IPC_WAIT_MESSAGE, (long)msg, number, source, rangeStart, rangeSize, timeout);
+}

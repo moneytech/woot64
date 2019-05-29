@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,15 +31,14 @@ int rpcFindServer(const char *type, char *addr, size_t addrBufSize, int timeout)
     int timeleft = timeout;
     while(timeout < 0 || timeleft > 0)
     {
-        int res = ipcGetMessage(&msgBuf, timeleft);
-        if(res < 0) return res;
-        timeleft = res;
-        ipcProcessMessage(&msgBuf);
-        if(msgBuf.Number == MSG_RPC_FIND_SERVER_RESP && rpcResponse->RequestMessageID == id)
-        {   // we have response
-            if(addr) snprintf(addr, addrBufSize, "proc://%d", msgBuf.Source);
-            return timeleft;
-        }
+        rpcResponse->RequestMessageID = id;
+        timeleft = ipcWaitMessage(&msgBuf, MSG_RPC_FIND_SERVER_RESP, -1,
+                                  offsetof(ipcRPCResponse_t, RequestMessageID),
+                                  sizeof(rpcResponse->RequestMessageID), timeleft);
+        if(timeleft < 0) return timeleft;
+        if(addr) snprintf(addr, addrBufSize, "proc://%d", msgBuf.Source);
+        return timeleft;
+
     }
     return -ENOENT;
 }
@@ -81,19 +81,17 @@ int rpcCall(const char *addr, const char *proc, void *args, size_t argsSize, voi
         int timeleft = timeout;
         while(timeout < 0 || timeleft > 0)
         {
-            int res = ipcGetMessage(&msgBuf, timeleft);
-            if(res < 0) return res;
-            timeleft = res;
-            ipcProcessMessage(&msgBuf);
-            if(msgBuf.Number == MSG_RPC_RESPONSE && msgBuf.Source == pid && rpcResponse->RequestMessageID == reqMsgId)
-            {   // we have response
-                if(respBuf)
-                {
-                    memcpy(respBuf, rpcResponse->Results, sizeof(rpcResponse->Results) < respBufSize ?
-                               sizeof(rpcResponse->Results) : respBufSize);
-                }
-                return timeleft;
+            rpcResponse->RequestMessageID = reqMsgId;
+            timeleft = ipcWaitMessage(&msgBuf, MSG_RPC_RESPONSE, pid,
+                                      offsetof(ipcRPCResponse_t, RequestMessageID),
+                                      sizeof(rpcResponse->RequestMessageID), timeleft);
+            if(timeleft < 0) return timeleft;
+            if(respBuf)
+            {
+                memcpy(respBuf, rpcResponse->Results, sizeof(rpcResponse->Results) < respBufSize ?
+                           sizeof(rpcResponse->Results) : respBufSize);
             }
+            return timeleft;
         }
         return timeout ? -EBUSY : 0;
     }

@@ -172,5 +172,7 @@ int inpTranslateKey(int vKey, int modifiers)
         return '\b';
     else if(vKey == VK_ESCAPE)
         return 0x1B;
+    else if(vKey == VK_DELETE)
+        return 127;
     return 0;
 }

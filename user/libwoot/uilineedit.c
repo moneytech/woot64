@@ -10,6 +10,8 @@ struct uiLineEdit
     uiControl_t Control;
     int CursorPosition;
     int EditOffset;
+
+    uiLineEditAcceptInputHandler OnAcceptInput;
 };
 
 static char *stringInsert(char *str, int *pos, char chr)
@@ -23,6 +25,13 @@ static char *stringInsert(char *str, int *pos, char chr)
             return str;
         memmove(str + *pos - 1, str + *pos, len - *pos + 1);
         --(*pos);
+        return str;
+    }
+    else if(chr == 127)
+    {
+        if(*pos < 0 || *pos >= len)
+            return str;
+        memmove(str + *pos, str + *pos + 1, len - *pos + 1);
         return str;
     }
     str = realloc(str, len + 2);
@@ -166,6 +175,13 @@ static void lineEditPreKeyPress(uiControl_t *control, wmEvent_t *event)
     {
         if(edit->CursorPosition > 0)
             --edit->CursorPosition;
+        else if(edit->CursorPosition < 0)
+        {
+            int len = strlen(control->Text);
+            if(edit->CursorPosition < 0) edit->CursorPosition = len;
+            if(edit->CursorPosition > 0)
+                --edit->CursorPosition;
+        }
         uiControlRedraw(control, 1);
         return;
     }
@@ -190,12 +206,18 @@ static void lineEditPreKeyPress(uiControl_t *control, wmEvent_t *event)
         return;
     }
     else if(event->Keyboard.Key == VK_RETURN)
+    {
+        if(edit->OnAcceptInput)
+            edit->OnAcceptInput(edit);
         return;
+    }
 
     if(!chr) return;
 
     control->Text = stringInsert(control->Text, &edit->CursorPosition, chr);
     uiControlRedraw(control, 1);
+    if(control->OnTextChanged)
+        control->OnTextChanged(control);
 }
 
 uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
@@ -217,4 +239,16 @@ uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int
 void uiLineEditDelete(uiLineEdit_t *control)
 {
     uiControlDelete((uiControl_t *)control);
+}
+
+void uiLineEditSetOnAcceptInput(uiLineEdit_t *control, uiLineEditAcceptInputHandler handler)
+{
+    if(!control) return;
+    control->OnAcceptInput = handler;
+}
+
+uiLineEditAcceptInputHandler uiLineEditGetOnAcceptInput(uiLineEdit_t *control)
+{
+    if(!control) return NULL;
+    return control->OnAcceptInput;
 }

@@ -71,6 +71,8 @@
 #define SYS_IPC_GET_SHMEM_SIZE  0x345
 #define SYS_IPC_MAP_SHMEM       0x346
 #define SYS_IPC_UNMAP_SHMEM     0x347
+#define SYS_IPC_PEEK_MESSAGE    0x348
+#define SYS_IPC_WAIT_MESSAGE    0x349
 
 class SysCalls
 {
@@ -145,6 +147,8 @@ class SysCalls
     static long sysIPCGetSharedMemSize(int fd);
     static long sysIPCMapSharedMem(int fd, uintptr_t hint, unsigned flags);
     static long sysIPCUnMapSharedMem(int fd, uintptr_t addr);
+    static long sysIPCPeekMessage(void *msg, unsigned offset);
+    static long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout);
 
 public:
     static void Initialize();
