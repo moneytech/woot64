@@ -188,7 +188,6 @@ void fntDelete(fntFont_t *font)
         {
             cacheEntry_t *glyph = vecGet(font->glyphCache, i);
             if(!glyph) continue;
-            printf("%d\n", glyph->idx);
             if(glyph->glyph.bitmap) FT_Bitmap_Done(library, glyph->glyph.bitmap);
         }
         vecDelete(font->glyphCache);
