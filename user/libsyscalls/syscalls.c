@@ -85,6 +85,11 @@ long sys_chdir(char *pathname)
     return __syscall1(SYS_chdir, (long)pathname);
 }
 
+long sys_sysinfo(void *info)
+{
+    return __syscall1(SYS_sysinfo, (long)info);
+}
+
 int sys_arch_prctl(int code, uintptr_t addr)
 {
     return __syscall2(SYS_arch_prctl, code, addr);

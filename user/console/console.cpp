@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
@@ -348,6 +349,26 @@ extern "C" int main(int argc, char *argv[])
                 }
                 closedir(dir);
             }
+        }
+        else if(!strcmp(conCmdArgs[0], "sysinfo"))
+        {
+            struct sysinfo si;
+            if(!sysinfo(&si))
+            {
+                char buf[64];
+                snprintf(buf, sizeof(buf), "uptime: %ld\n", si.uptime); putStr(buf);
+                snprintf(buf, sizeof(buf), "loads: %lu %lu %lu\n", si.loads[0],
+                        si.loads[1], si.loads[2]); putStr(buf);
+                snprintf(buf, sizeof(buf), "totalram: %lu\n", si.totalram * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "freeram: %lu\n", si.freeram * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "sharedram: %lu\n", si.sharedram * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "bufferram: %lu\n", si.bufferram * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "totalswap: %lu\n", si.totalswap * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "freeswap: %lu\n", si.freeswap * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "procs: %u\n", si.procs); putStr(buf);
+                snprintf(buf, sizeof(buf), "totalhigh: %lu\n", si.totalhigh * si.mem_unit); putStr(buf);
+                snprintf(buf, sizeof(buf), "freehigh: %lu\n", si.freehigh * si.mem_unit); putStr(buf);
+            } else putStr("sysinfo() failed\n");
         }
         else
         {

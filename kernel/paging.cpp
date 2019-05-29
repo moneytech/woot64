@@ -587,3 +587,52 @@ void Paging::FreeMMIO(void *ptr, size_t size)
     UnMapPages(PG_CURRENT_ADDR_SPC, (uintptr_t)ptr, size >> PAGE_SHIFT);
 }
 
+size_t Paging::GetTotalFrames()
+{
+    return pageFrameBitmap->GetBitCount();
+}
+
+size_t Paging::GetFreeFrames()
+{
+    bool ints = cpuDisableInterrupts();
+    size_t res = pageFrameBitmap->GetCountOf(false);
+    cpuRestoreInterrupts(ints);
+    return res;
+}
+
+size_t Paging::GetUsedFrames()
+{
+    bool ints = cpuDisableInterrupts();
+    size_t res = pageFrameBitmap->GetCountOf(true);
+    cpuRestoreInterrupts(ints);
+    return res;
+}
+
+size_t Paging::GetTotalBytes()
+{
+    return PAGE_SIZE * GetTotalFrames();
+}
+
+size_t Paging::GetFreeBytes()
+{
+    return PAGE_SIZE * GetFreeFrames();
+}
+
+size_t Paging::GetUsedBytes()
+{
+    return PAGE_SIZE * GetUsedFrames();
+}
+
+#include <debug.hpp>
+
+void Paging::DumpAddressSpace(AddressSpace as)
+{
+    bool ints = cpuDisableInterrupts();
+    for(uintptr_t va = PAGE_SIZE; va; va += PAGE_SIZE)
+    {
+        uintptr_t pa = GetPhysicalAddress(as, va);
+        if(pa == ~0) continue;
+        DEBUG("%p -> %p\n", va, pa);
+    }
+    cpuRestoreInterrupts(ints);
+}

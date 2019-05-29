@@ -18,6 +18,7 @@
 #define SYS_getdents            78
 #define SYS_getcwd              79
 #define SYS_chdir               80
+#define SYS_sysinfo             99
 #define SYS_arch_prctl          158
 #define SYS_getdents64          217
 #define SYS_set_tid_address     218
@@ -150,6 +151,7 @@ long sys_exit(long error_code);
 long sys_getdents(int fd, void *de, size_t count);
 long sys_getcwd(char *buf, size_t size);
 long sys_chdir(char *pathname);
+long sys_sysinfo(void *info);
 int sys_arch_prctl(int code, uintptr_t addr);
 long sys_getdents64(int fd, void *de, size_t count);
 int sys_set_tid_address(int *tidptr);

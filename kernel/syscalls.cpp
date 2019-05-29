@@ -178,6 +178,23 @@ SysCalls::SysCallHandler SysCalls::Handlers[1024];
     if((size + (uintptr_t)buf) >= USER_END) return -EFAULT; \
 }
 
+struct sysinfo
+{
+    long uptime;             /* Seconds since boot */
+    unsigned long loads[3];  /* 1, 5, and 15 minute load averages */
+    unsigned long totalram;  /* Total usable main memory size */
+    unsigned long freeram;   /* Available memory size */
+    unsigned long sharedram; /* Amount of shared memory */
+    unsigned long bufferram; /* Memory used by buffers */
+    unsigned long totalswap; /* Total swap space size */
+    unsigned long freeswap;  /* swap space still available */
+    unsigned short procs;    /* Number of current processes */
+    unsigned long totalhigh; /* Total high memory size */
+    unsigned long freehigh;  /* Available high memory size */
+    unsigned int mem_unit;   /* Memory unit size in bytes */
+    char _f[20-2*sizeof(long)-sizeof(int)]; /* Padding to 64 bytes */
+};
+
 long SysCalls::InvalidHandler()
 {
     // not sure if this is stable
@@ -432,6 +449,26 @@ long SysCalls::sys_chdir(char *pathname)
     Process::SetCurrentDir(FileSystem::GetDEntry(dir->DEntry));
     delete dir;
     return ESUCCESS;
+}
+
+long SysCalls::sys_sysinfo(struct sysinfo *info)
+{
+    BUFFER_CHECK(info, sizeof(sysinfo));
+    info->uptime = (long)Time::GetSystemUpTime();
+    info->loads[0] = 0;
+    info->loads[1] = 0;
+    info->loads[2] = 0;
+    info->totalram = Paging::GetTotalFrames();
+    info->freeram = Paging::GetFreeFrames();
+    info->sharedram = 0;
+    info->bufferram = 0;
+    info->totalswap = 0;
+    info->freeswap = 0;
+    info->procs = Process::GetCount();
+    info->totalhigh = 0;
+    info->freehigh = 0;
+    info->mem_unit = PAGE_SIZE;
+    return 0;
 }
 
 long SysCalls::sys_arch_prctl(int code, uintptr_t addr)
@@ -891,6 +928,7 @@ void SysCalls::Initialize()
     Handlers[SYS_getdents] = (SysCallHandler)sys_getdents;
     Handlers[SYS_getcwd] = (SysCallHandler)sys_getcwd;
     Handlers[SYS_chdir] = (SysCallHandler)sys_chdir;
+    Handlers[SYS_sysinfo] = (SysCallHandler)sys_sysinfo;
     Handlers[SYS_arch_prctl] = (SysCallHandler)sys_arch_prctl;
     Handlers[SYS_getdents64] = (SysCallHandler)sys_getdents64;
     Handlers[SYS_set_tid_address] = (SysCallHandler)sys_set_tid_address;

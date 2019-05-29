@@ -81,6 +81,7 @@ typedef struct AuxVector
 #define AT_EGID         14              /* Effective gid */
 #define AT_CLKTCK       17              /* Frequency of times() */
 #define AT_SECURE       23
+#define AT_SYSINFO      32
 
 uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer)
 {
@@ -405,6 +406,15 @@ int Process::ForEach(bool (*handler)(Process *proc, void *arg), void *arg)
     }
     listLock.Release();
     return ESUCCESS;
+}
+
+size_t Process::GetCount()
+{
+    if(!listLock.Acquire(0, false))
+        return (size_t)(-EBUSY);
+    size_t res = processList.Count();
+    listLock.Release();
+    return res;
 }
 
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :

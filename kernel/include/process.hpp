@@ -159,6 +159,7 @@ public:
     static bool Finalize(pid_t pid, int retVal);
     static void Dump();
     static int ForEach(bool (*handler)(Process *proc, void *arg), void *arg);
+    static size_t GetCount();
 
     Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool SelfDestruct);
     bool Lock();

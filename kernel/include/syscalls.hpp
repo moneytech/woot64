@@ -21,6 +21,7 @@
 #define SYS_getdents            78
 #define SYS_getcwd              79
 #define SYS_chdir               80
+#define SYS_sysinfo             99
 #define SYS_arch_prctl          158
 #define SYS_getdents64          217
 #define SYS_set_tid_address     218
@@ -98,6 +99,7 @@ class SysCalls
     static long sys_getdents(int fd, struct dirent *de, size_t count);
     static long sys_getcwd(char *buf, size_t size);
     static long sys_chdir(char *pathname);
+    static long sys_sysinfo(struct sysinfo *info);
     static long sys_arch_prctl(int code, uintptr_t addr);
     static long sys_getdents64(int fd, struct dirent *de, size_t count);
     static long sys_set_tid_address(int *tidptr);
