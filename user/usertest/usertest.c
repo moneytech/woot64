@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     }
     fntSetPointSize(fnt, 14, 96);
 
-    pmPixMap_t *fileIcon = pmLoadPNG("/file.png");
+    pmPixMap_t *fileIcon = pmLoadPNG("/data/common/icons/file.png");
     pmPixMap_t *clockIcon = pmLoadPNG("/clock_small.png");
 
     uiControl_t *rootControl = wmGetRootControl(window);

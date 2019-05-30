@@ -64,7 +64,7 @@ static void loadDir(char *dirname)
             uiButton_t *btn = uiButtonCreate(files, 4, 4 + i * 52, 256, 48, de->d_name, nullptr);
             uiControlSetOnActivate((uiControl_t *)btn, fileActivate);
             uiControlSetTextHAlign((uiControl_t *)btn, UI_HALIGN_LEFT);
-            uiControlSetIconPosition((uiControl_t *)btn, UI_ICON_LEFT);
+            uiControlSetIconPosition((uiControl_t *)btn, UI_LEFT);
             uiControlSetTextIconSeparation((uiControl_t *)btn, 8);
             if(!stat(de->d_name, &st))
                 uiControlSetIcon((uiControl_t *)btn, S_ISDIR(st.st_mode) ? directory : file);
@@ -98,8 +98,8 @@ extern "C" int main(int argc, char *argv[])
     if(argc > 1)
         chdir(argv[1]);
 
-    file = pmLoadPNG("/file.png");
-    directory = pmLoadPNG("/directory.png");
+    file = pmLoadPNG("/data/common/icons/file.png");
+    directory = pmLoadPNG("/data/common/icons/directory.png");
 
     wmInitialize(WM_INITIALIZE_NONE);
 

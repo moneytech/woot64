@@ -12,7 +12,8 @@ SUBDIRS = \
 	init \
 	inputhandler \
 	usertest \
-	windowmanager
+	windowmanager \
+	icons
 
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
