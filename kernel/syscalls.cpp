@@ -383,6 +383,11 @@ long SysCalls::sys_dup(int fd)
     return Process::GetCurrent()->DuplicateFileDescriptor(fd);
 }
 
+long SysCalls::sys_dup2(int oldfd, int newfd)
+{
+    return Process::GetCurrent()->DuplicateFileDescriptor(oldfd, newfd);
+}
+
 long SysCalls::sys_getpid()
 {
     return Process::GetCurrent()->Id;
@@ -893,6 +898,7 @@ void SysCalls::Initialize()
     Handlers[SYS_readv] = (SysCallHandler)sys_readv;
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
     Handlers[SYS_dup] = (SysCallHandler)sys_dup;
+    Handlers[SYS_dup2] = (SysCallHandler)sys_dup2;
     Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
     Handlers[SYS_exit] = (SysCallHandler)sys_exit;
     Handlers[SYS_getdents] = (SysCallHandler)sys_getdents;

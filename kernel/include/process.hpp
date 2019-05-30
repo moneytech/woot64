@@ -16,6 +16,7 @@ class FrameBuffer;
 class NamedMutex;
 class NamedObject;
 class Semaphore;
+class Stream;
 class Thread;
 
 #define MAX_HANDLES 1024
@@ -72,6 +73,7 @@ public:
         enum class HandleType
         {
             Free = 0,
+            Invalid,
             Unknown,
             Stream,
             File,
@@ -97,6 +99,7 @@ public:
             ::InputDevice *InputDevice;
         };
         Handle();
+        Handle(HandleType type);
         Handle(nullptr_t);
         Handle(void *obj);
         Handle(::Stream *stream);
@@ -194,6 +197,7 @@ public:
     }
     void *GetHandleData(int handle, Handle::HandleType type);
     int DuplicateFileDescriptor(int fd);
+    int DuplicateFileDescriptor(int oldfd, int newfd);
 
     // thread syscall support routines
     int NewThread(const char *name, void *entry, uintptr_t arg, int *retVal);

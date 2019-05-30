@@ -14,6 +14,7 @@
 #define SYS_readv               19
 #define SYS_writev              20
 #define SYS_dup                 32
+#define SYS_dup2                33
 #define SYS_getpid              39
 #define SYS_exit                60
 #define SYS_getdents            78
@@ -148,6 +149,7 @@ void *sys_brk(void *brk);
 long sys_readv(int fd, const void *vec, size_t vlen);
 long sys_writev(int fd, const void *vec, size_t vlen);
 long sys_dup(int fd);
+long sys_dup2(int oldfd, int newfd);
 long sys_getpid();
 long sys_exit(long error_code);
 long sys_getdents(int fd, void *de, size_t count);

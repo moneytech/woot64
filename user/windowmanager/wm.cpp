@@ -209,6 +209,8 @@ extern "C" int main(int argc, char *argv[])
                         Window *frontWnd = findFrontWindow(&windows);
                         if(frontWnd) sendToBack(&windows, frontWnd);
                     }
+                    topWindow = findFrontWindow(&windows);
+                    setActiveWindow(&windows, topWindow);
                     changeAltTabPhase = true;
                 }
                 else if(changeAltTabPhase && (kbdEv->Key == VK_LMENU || kbdEv->Key == VK_RMENU) && kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE)

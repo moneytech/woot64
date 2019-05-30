@@ -214,7 +214,8 @@ int Process::allocHandleSlot(Handle handle)
     size_t handlesSize = Handles.Size();
     for(int i = 0; i < handlesSize; ++i)
     {
-        if(Handles.Get(i).Type == Handle::HandleType::Free)
+        if(Handles.Get(i).Type == Handle::HandleType::Free ||
+                Handles.Get(i).Type == Handle::HandleType::Invalid)
         {
             Handles.Set(i, handle);
             return i;
@@ -230,7 +231,7 @@ void Process::freeHandleSlot(int handle)
     size_t handlesSize = Handles.Size();
     if(handle < 0 || handle >= handlesSize)
         return;
-    Handles.Set(handle, Handle());
+    Handles.Set(handle, Handle(Handle::HandleType::Free));
 }
 
 uintptr_t Process::brk(uintptr_t brk, bool allocPages)
@@ -748,6 +749,30 @@ int Process::DuplicateFileDescriptor(int fd)
     return newFd;
 }
 
+int Process::DuplicateFileDescriptor(int oldfd, int newfd)
+{
+    if(!Lock()) return -EBUSY;
+    Process *cp = Process::GetCurrent();
+    Handle h = Handles.Get(oldfd);
+    if(h.Type == Handle::HandleType::Free)
+    {
+        UnLock();
+        return -EBADF;
+    }
+    Handle h2 = Handles.Get(newfd);
+    if(h2.Type == Handle::HandleType::Invalid)
+    {
+        newfd = allocHandleSlot(h);
+        UnLock();
+        return newfd;
+    }
+    else if(h2.Type != Handle::HandleType::Free)
+        cp->Close(newfd);
+    Handles.Set(newfd, h);
+    UnLock();
+    return newfd;
+}
+
 int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal)
 {
     if(!Lock()) return -EBUSY;
@@ -999,7 +1024,13 @@ Process::~Process()
 }
 
 Process::Handle::Handle() :
-    Type(HandleType::Free),
+    Type(HandleType::Invalid),
+    Unknown(nullptr)
+{
+}
+
+Process::Handle::Handle(Process::Handle::HandleType type) :
+    Type(type),
     Unknown(nullptr)
 {
 }

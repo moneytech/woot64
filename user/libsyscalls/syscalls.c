@@ -65,6 +65,11 @@ long sys_dup(int fd)
     return __syscall1(SYS_dup, fd);
 }
 
+long sys_dup2(int oldfd, int newfd)
+{
+    return __syscall2(SYS_dup2, oldfd, newfd);
+}
+
 long sys_getpid()
 {
     return __syscall0(SYS_getpid);
