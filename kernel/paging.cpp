@@ -264,8 +264,10 @@ bool Paging::UnMapPages(AddressSpace as, uintptr_t va, size_t n)
 
 void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
 {
+    AddressSpace curAS = GetCurrentAddressSpace();
     if(as == PG_CURRENT_ADDR_SPC)
-        as = GetCurrentAddressSpace();
+        as = curAS;
+    bool invalidate = as == curAS;
 
     uintptr_t endVA = startVA + rangeSize;
     uintptr_t scanStartVA = ((startVA >> 39) & 511) << 39;
@@ -302,26 +304,75 @@ void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
                         continue;
                     FreeFrame(pml1[pml1idx] & ~PAGE_MASK);
                     pml1[pml1idx] = 0;
-                    InvalidatePage(va);
+                    if(invalidate)
+                        InvalidatePage(va);
                 }
-
-                /*bool freeIt = true;
-                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
-                {
-                    if(pml1[pml1idx] & 1)
-                    {
-                        freeIt = false;
-                        break;
-                    }
-                }
-                if(freeIt)
-                {
-                    FreeFrame(pml2[pml2idx] & ~PAGE_MASK);
-                    pml2[pml2idx] = 0;
-                }*/
             }
         }
     }
+}
+
+void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, size_t rangeSize)
+{
+    startVA &= ~PAGE_MASK;
+    rangeSize &= ~PAGE_MASK;
+
+    uintptr_t endVA = startVA + rangeSize;
+    uintptr_t scanStartVA = ((startVA >> 39) & 511) << 39;
+    uintptr_t scanEndVA = align(endVA, (1ull << 39));
+
+    AddressSpace curAS = GetCurrentAddressSpace();
+    if(dstAS == PG_CURRENT_ADDR_SPC) dstAS = curAS;
+    if(srcAS == PG_CURRENT_ADDR_SPC) srcAS = curAS;
+    if(dstAS == srcAS) return; // nothing to do
+    bool invalidate = dstAS == curAS;
+
+    bool ints = cpuDisableInterrupts();
+
+    uintptr_t *pml4 = (uintptr_t *)(srcAS + KERNEL_BASE);
+    for(uintptr_t scanVA = scanStartVA; scanVA < scanEndVA; scanVA += (1ull << 39))
+    {
+        uintptr_t pml4idx = (scanVA >> 39) & 511;
+        if(!(pml4[pml4idx] & 1))
+            continue;
+
+        uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+        for(uintptr_t pml3idx = 0; pml3idx < 511; ++pml3idx)
+        {
+            if(!(pml3[pml3idx] & 1))
+                continue;
+
+            uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
+            for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
+            {
+                if(!(pml2[pml2idx] & 1))
+                    continue;
+
+                uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
+                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                {
+                    uintptr_t va = pml4idx << 39 | pml3idx << 30 | pml2idx << 21 | pml1idx << 12;
+                    if(va < startVA || va >= endVA)
+                        continue;
+                    if(!(pml1[pml1idx] & 1))
+                        continue;
+
+                    uintptr_t entry = pml1[pml1idx] & ~PAGE_MASK;
+                    uintptr_t srcPA = entry;
+                    uintptr_t dstPA = AllocFrame();
+                    if(dstPA == PG_INVALID_ADDRESS)
+                        return;
+
+                    // TODO: implement copy on write
+                    Memory::Move((void *)(dstPA + KERNEL_BASE), (void *)(srcPA + KERNEL_BASE), PAGE_SIZE);
+                    Paging::MapPage(dstAS, va, dstPA, entry & 0x04, entry & 0x02);
+                    if(invalidate)
+                        InvalidatePage(va);
+                }
+            }
+        }
+    }
+    cpuRestoreInterrupts(ints);
 }
 
 uintptr_t Paging::GetPhysicalAddress(AddressSpace as, uintptr_t va)

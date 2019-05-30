@@ -43,7 +43,7 @@ public:
     static bool MapPages(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write, size_t n);
     static bool UnMapPages(AddressSpace as, uintptr_t va, size_t n);
     static void UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize);
-    static void CloneRange(AddressSpace dstPd, uintptr_t srcPd, uintptr_t startVA, size_t rangeSize);
+    static void CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, size_t rangeSize);
     static uintptr_t GetPhysicalAddress(AddressSpace as, uintptr_t va);
     static uintptr_t AllocFrame();
     static uintptr_t AllocFrame(size_t alignment);
