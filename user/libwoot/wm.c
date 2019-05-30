@@ -17,9 +17,9 @@ static pmColor_t colors[WM_COLOR_ID_COUNT];
 static fntFont_t *fonts[WM_FONT_ID_COUNT];
 static const char *fontNames[WM_FONT_ID_COUNT] =
 {
-    "/default.ttf",
-    "/uisymbols.ttf",
-    "/title.ttf"
+    "/data/common/fonts/default.ttf",
+    "/data/common/fonts/uisymbols.ttf",
+    "/data/common/fonts/title.ttf"
 };
 static const int fontSizes[WM_FONT_ID_COUNT] =
 {

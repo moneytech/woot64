@@ -5,8 +5,7 @@ IMGFILE = hdd.img
 
 EXTRA_FILES = \
 	root/logo.png \
-	root/clock_small.png \
-	root/uisymbols.ttf
+	root/clock_small.png
 
 SUBDIRS = kernel user
 
@@ -42,9 +41,6 @@ root/logo.png: logo.png
 	cp $? $@
 
 root/clock_small.png: clock_small.png
-	cp $? $@
-
-root/uisymbols.ttf: uisymbols.ttf
 	cp $? $@
 
 try-mount:
