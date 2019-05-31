@@ -71,14 +71,6 @@ int main(int argc, char *argv[])
         return -errno;
     }
 
-    fntFont_t *fnt = fntLoad("/default.ttf");
-    if(!fnt)
-    {
-        wmDeleteWindow(window);
-        return -errno;
-    }
-    fntSetPointSize(fnt, 14, 96);
-
     pmPixMap_t *fileIcon = pmLoadPNG("/data/common/icons/file.png");
     pmPixMap_t *clockIcon = pmLoadPNG("/clock_small.png");
 
@@ -171,7 +163,6 @@ int main(int argc, char *argv[])
 
     printf("[usertest] Closing usertest\n");
 
-    fntDelete(fnt);
     wmDeleteWindow(window);
 
     return 0;

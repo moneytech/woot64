@@ -40,7 +40,7 @@ static void updateConsole();
 
 static inline void putChar(uint x, uint y, int chr)
 {
-    unsigned char *glyph = font[chr];
+    unsigned char *glyph = font[chr & 0xFF];
     for(int iy = 0; iy < FONT_SCANLINES; ++iy)
     {
         for(int ix = 0; ix < 8; ++ix)
@@ -144,14 +144,56 @@ void operator delete[](void *ptr)
     free(ptr);
 }
 
+int stdListener(uintptr_t arg)
+{
+    int fd = (int)arg;
+    char buf[1024];
+    for(int i = 0;; ++i)
+    {
+        ssize_t br = read(fd, buf, sizeof(buf));
+        if(br < 0) return br;
+        for(int i = 0; i < br; ++i)
+            putChar(buf[i]);
+        if(br > 0) updateConsole();
+    }
+    return 0;
+}
+
 extern "C" int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
+
+    int res = 0;
+    int pipeFDs[2];
+    if((res = pipe(pipeFDs)) < 0)
+    {
+        fprintf(stderr, "[console] Couldn't create stdout/stderr listener thread\n");
+        return res;
+    }
+
+    if((res = dup2(pipeFDs[1], 1)) < 0)
+    {
+        close(pipeFDs[0]);
+        close(pipeFDs[1]);
+        fprintf(stderr, "[console] Couldn't redirect stdout\n");
+        return res;
+    }
+    close(pipeFDs[1]);
+
+    int listener = threadCreate("stdout/stderr listener", (void *)stdListener, pipeFDs[0], nullptr);
+    if(listener < 0)
+    {
+        fprintf(stderr, "[console] Couldn't create stdout/stderr listener thread\n");
+        return listener;
+    }
+
     wmInitialize(WM_INITIALIZE_NONE);
 
     conWindow = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 600, 400, WM_CWF_DEFAULT);
     if(!conWindow)
     {
+        close(pipeFDs[0]);
+        threadDelete(listener);
         fprintf(stderr, "[console] Couldn't create main window\n");
         return -errno;
     }
@@ -176,8 +218,12 @@ extern "C" int main(int argc, char *argv[])
     conCmdArgs = new char *[maxCmdArgC];
     conCWD = new char[conCWDSize];
 
+    // do that before resuming listener thread
     putStr("WOOT console.\n");
     updateConsole();
+
+    threadResume(listener);
+
 
     ipcMessage_t msg;
     unsigned conCmdIdx;
@@ -194,15 +240,10 @@ extern "C" int main(int argc, char *argv[])
             char title[64];
             snprintf(title, sizeof(title), "Console - %s", conCWD);
             wmSetWindowTitle(conWindow, title);
-            putStr(conCWD);
         }
         else
-        {
             wmSetWindowTitle(conWindow, "Console");
-            putChar('?');
-        }
-        putStr("> ");
-        updateConsole();
+        printf("%s>", conCWD[0] ? conCWD : "?");
 
         bool quit = false;
         for(;;)
@@ -229,7 +270,7 @@ extern "C" int main(int argc, char *argv[])
                         if(conCmdIdx > 0 && chr == '\b')
                         {
                             conCmdBuf[--conCmdIdx] = 0;
-                            putChar(chr);
+                            putchar(chr);
                         }
                         else if(chr != '\b' && conCmdIdx < (conCmdBufSize - 1))
                         {
@@ -238,9 +279,9 @@ extern "C" int main(int argc, char *argv[])
                                 conCmdBuf[conCmdIdx++] = chr;
                                 conCmdBuf[conCmdIdx] = 0;
                             }
-                            putChar(chr);
+                            putchar(chr);
+                            updateConsole();
                         }
-                        updateConsole();
                         if(chr == '\n')
                             break;
                     }
@@ -250,11 +291,11 @@ extern "C" int main(int argc, char *argv[])
                         if(event->Keyboard.Key == VK_UP)
                         {
                             for(int i = 0; i < conCmdIdx; ++i)
-                                putChar('\b');
+                                putchar('\b');
                             memcpy(conCmdBuf, conOldCmd, conCmdBufSize);
                             conCmdIdx = strlen(conCmdBuf);
                             for(int i = 0; i < conCmdIdx; ++i)
-                                putChar(((unsigned)conCmdBuf[i]) & 0xFF);
+                                putchar(((unsigned)conCmdBuf[i]) & 0xFF);
                             updateConsole();
                         }
                     }
@@ -284,36 +325,30 @@ extern "C" int main(int argc, char *argv[])
             break;
         }
         else if(!strcmp(conCmdArgs[0], "pwd"))
-        {
-            putStr(conCWD);
-            putStr("\n");
-        }
+            printf("%s\n", conCWD);
         else if(!strcmp(conCmdArgs[0], "env"))
         {
             for(char **env = environ; *env; ++env)
-            {
-                putStr(*env);
-                putStr("\n");
-            }
+                puts(*env);
         }
         else if(!strcmp(conCmdArgs[0], "cd"))
         {
             if(!conCmdArgs[1])
-                putStr("missing directory name\n");
+                puts("missing directory name");
             else
             {
                 if(chdir(conCmdArgs[1]) < 0)
-                    putStr("couldn't change directory\n");
+                    puts("couldn't change directory");
             }
         }
         else if(!strcmp(conCmdArgs[0], "cat") || !strcmp(conCmdArgs[0], "type"))
         {
             if(!conCmdArgs[1])
-                putStr("missing filename\n");
+                puts("missing filename");
             else
             {
                 FILE *f = fopen(conCmdArgs[1], "rb");
-                if(!f) putStr("couldn't open file\n");
+                if(!f) printf("couldn't open '%s'\n", conCmdArgs[1]);
                 else
                 {
                     unsigned char buf[512];
@@ -324,12 +359,12 @@ extern "C" int main(int argc, char *argv[])
                         for(int i = 0; i < r; ++i)
                         {
                             lastChr = buf[i];
-                            putChar(lastChr);
+                            putchar(lastChr);
                         }
                     }
                     fclose(f);
                     if(lastChr != '\n')
-                        putStr("\n");
+                        putchar('\n');
                 }
             }
         }
@@ -337,17 +372,26 @@ extern "C" int main(int argc, char *argv[])
         {
             char *dirName = conCmdArgs[1] ? conCmdArgs[1] : conCWD;
             DIR *dir = opendir(dirName);
-            if(!dir) putStr("couldn't open directory\n");
+            if(!dir) puts("couldn't open directory");
             else
             {
                 struct dirent *de = nullptr;
                 while((de = readdir(dir)))
-                {
-                    char line[64];
-                    snprintf(line, sizeof(line), "%s\n", de->d_name);
-                    putStr(line);
-                }
+                    printf("%s\n", de->d_name);
                 closedir(dir);
+            }
+        }
+        else if(!strcmp(conCmdArgs[0], "ps"))
+        {
+            int ids[128];
+            char buf[128];
+            int procCnt = processListIds(ids, sizeof(ids) / sizeof(*ids));
+            for(int i = 0; i < procCnt; ++i)
+            {
+                int pid = ids[i];
+                char name[64];
+                if(processGetName(pid, name, sizeof(name)) < 0) continue;
+                printf("%d. %s\n", ids[i], name);
             }
         }
         else if(!strcmp(conCmdArgs[0], "sysinfo"))
@@ -356,19 +400,18 @@ extern "C" int main(int argc, char *argv[])
             if(!sysinfo(&si))
             {
                 char buf[64];
-                snprintf(buf, sizeof(buf), "uptime: %ld\n", si.uptime); putStr(buf);
-                snprintf(buf, sizeof(buf), "loads: %lu %lu %lu\n", si.loads[0],
-                        si.loads[1], si.loads[2]); putStr(buf);
-                snprintf(buf, sizeof(buf), "totalram: %lu\n", si.totalram * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "freeram: %lu\n", si.freeram * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "sharedram: %lu\n", si.sharedram * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "bufferram: %lu\n", si.bufferram * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "totalswap: %lu\n", si.totalswap * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "freeswap: %lu\n", si.freeswap * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "procs: %u\n", si.procs); putStr(buf);
-                snprintf(buf, sizeof(buf), "totalhigh: %lu\n", si.totalhigh * si.mem_unit); putStr(buf);
-                snprintf(buf, sizeof(buf), "freehigh: %lu\n", si.freehigh * si.mem_unit); putStr(buf);
-            } else putStr("sysinfo() failed\n");
+                printf("uptime: %ld\n", si.uptime);
+                printf("loads: %lu %lu %lu\n", si.loads[0], si.loads[1], si.loads[2]);
+                printf("totalram: %lu\n", si.totalram * si.mem_unit);
+                printf("freeram: %lu\n", si.freeram * si.mem_unit);
+                printf("sharedram: %lu\n", si.sharedram * si.mem_unit);
+                printf("bufferram: %lu\n", si.bufferram * si.mem_unit);
+                printf("totalswap: %lu\n", si.totalswap * si.mem_unit);
+                printf("freeswap: %lu\n", si.freeswap * si.mem_unit);
+                printf("procs: %u\n", si.procs);
+                printf("totalhigh: %lu\n", si.totalhigh * si.mem_unit);
+                printf("freehigh: %lu\n", si.freehigh * si.mem_unit);
+            } else puts("sysinfo() failed");
         }
         else
         {
@@ -378,19 +421,17 @@ extern "C" int main(int argc, char *argv[])
             int r = stat(conCmdArgs[0] + (noWait ? 1 : 0), &st);
             int cmdProc = r < 0 ? r : processCreate(cmdLine);
             if(cmdProc < 0)
-            {
-                putStr("unknown command: '");
-                putStr(conCmdArgs[0]);
-                putStr("'\n");
-            }
+                printf("unknown command '%s'\n", conCmdArgs[0]);
             else if(!noWait)
             {
                 processWait(cmdProc, -1);
                 processDelete(cmdProc);
             }
         }
-        updateConsole();
     }
+
+    close(pipeFDs[0]);
+    threadDelete(listener);
 
     if(conCWD) delete[] conCWD;
     if(conCmdArgs) delete[] conCmdArgs;
@@ -401,7 +442,7 @@ extern "C" int main(int argc, char *argv[])
 
     wmCleanup();
 
-    if(shutdown) ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, nullptr, 0);
+    //if(shutdown) ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, nullptr, 0);
 
     return 0;
 }

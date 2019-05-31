@@ -68,6 +68,18 @@ struct pthread {
 class Process
 {
 public:
+    class Handle;
+
+    class Pipe
+    {
+    public:
+        MessageQueue<uint8_t> *Data;
+        int FDs[2];
+
+        Pipe(size_t size, int *fds);
+        ~Pipe();
+    };
+
     struct Handle
     {
         enum class HandleType
@@ -83,7 +95,8 @@ public:
             Mutex,
             Semaphore,
             FrameBuffer,
-            InputDevice
+            InputDevice,
+            Pipe
         } Type;
         union
         {
@@ -97,6 +110,7 @@ public:
             ::Semaphore *Semaphore;
             ::FrameBuffer *FrameBuffer;
             ::InputDevice *InputDevice;
+            Process::Pipe *Pipe;
         };
         Handle();
         Handle(HandleType type);
@@ -109,6 +123,7 @@ public:
         Handle(::NamedObject *namedObject);
         Handle(::FrameBuffer *frameBuffer);
         Handle(::InputDevice *inputDevice);
+        Handle(Process::Pipe *pipe);
     };
 private:
     static Sequencer<pid_t> id;
@@ -166,6 +181,8 @@ public:
     static void Dump();
     static int ForEach(bool (*handler)(Process *proc, void *arg), void *arg);
     static size_t GetCount();
+    static int ListIds(pid_t *buf, size_t bufSize);
+    static int GetName(pid_t pid, char *buf, size_t bufSize);
 
     Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool SelfDestruct);
     bool Lock();
@@ -198,6 +215,7 @@ public:
     void *GetHandleData(int handle, Handle::HandleType type);
     int DuplicateFileDescriptor(int fd);
     int DuplicateFileDescriptor(int oldfd, int newfd);
+    int CreatePipe(int fds[2]);
 
     // thread syscall support routines
     int NewThread(const char *name, void *entry, uintptr_t arg, int *retVal);

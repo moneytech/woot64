@@ -418,6 +418,37 @@ size_t Process::GetCount()
     return res;
 }
 
+int Process::ListIds(pid_t *buf, size_t bufSize)
+{
+    if(!buf || !bufSize)
+        return -EINVAL;
+    if(!listLock.Acquire(0, false))
+        return -EBUSY;
+    int res = 0;
+    for(Process *proc : processList)
+    {
+        if(res >= bufSize)
+            break;
+        buf[res++] = proc->Id;
+    }
+    listLock.Release();
+    return res;
+}
+
+int Process::GetName(pid_t pid, char *buf, size_t bufSize)
+{
+    if(!buf || !bufSize)
+        return -EINVAL;
+    if(!listLock.Acquire(0, false))
+        return -EBUSY;
+    Process *proc = GetByID(pid);
+    int res = ESUCCESS;
+    if(!proc) res = -ESRCH;
+    else String::Copy(buf, proc->Name, bufSize);
+    listLock.Release();
+    return res;
+}
+
 Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, bool selfDestruct) :
     lock(true, "processLock"),
     UserStackPtr(USER_END - PAGE_SIZE),
@@ -626,7 +657,11 @@ int Process::Open(const char *filename, int flags)
     if(!filename) return -EINVAL;
     if(!Lock()) return -EBUSY;
     File *f = File::Open(filename, flags);
-    if(!f) return -ENOENT;
+    if(!f)
+    {
+        UnLock();
+        return -ENOENT;
+    }
     int res = allocHandleSlot(Handle(f));
     if(res < 0) delete f;
     UnLock();
@@ -677,6 +712,18 @@ int Process::Close(int handle)
         UnLock();
         return res;
     }
+    else if(h.Type == Handle::HandleType::Pipe)
+    {
+        if(h.Pipe->FDs[0] == handle)
+            h.Pipe->FDs[0] = -EBADF;
+        if(h.Pipe->FDs[1] == handle)
+            h.Pipe->FDs[1] = -EBADF;
+
+        if(h.Pipe->FDs[0] < 0 && h.Pipe->FDs[1] < 0)
+            delete h.Pipe;
+        UnLock();
+        return ESUCCESS;
+    }
     UnLock();
     return -EBADF;
 }
@@ -689,11 +736,28 @@ long Process::Read(int handle, void *buffer, size_t size)
     switch(h.Type)
     {
     case Handle::HandleType::File:
-        res = h.File->Read(buffer, size);
-        break;
+    {
+        auto file = h.File;
+        UnLock();
+        return file->Read(buffer, size);
+    }
     case Handle::HandleType::Stream:
-        res = h.Stream->Read(buffer, size);
-        break;
+    {
+        auto stream = h.Stream;
+        UnLock();
+        return stream->Read(buffer, size);
+    }
+    case Handle::HandleType::Pipe:
+    {
+        auto data = h.Pipe->Data;
+        UnLock();
+        for(res = 0; res < size; ++res)
+        {
+            if(data->Read(res + (uint8_t *)buffer, res <= 0 ? -1 : 0) < 0)
+                break;
+        }
+        return res;
+    }
     default:
         break;
     }
@@ -709,11 +773,25 @@ long Process::Write(int handle, const void *buffer, size_t size)
     switch(h.Type)
     {
     case Handle::HandleType::File:
-        res = h.File->Write(buffer, size);
-        break;
+    {
+        auto file = h.File;
+        UnLock();
+        return file->Write(buffer, size);
+    }
     case Handle::HandleType::Stream:
-        res = h.Stream->Write(buffer, size);
-        break;
+    {
+        auto stream = h.Stream;
+        UnLock();
+        return stream->Write(buffer, size);
+    }
+    case Handle::HandleType::Pipe:
+    {
+        auto data = h.Pipe->Data;
+        UnLock();
+        for(res = 0; res < size; ++res)
+            data->Write(*(res + (uint8_t *)buffer), -1);
+        return res;
+    }
     default:
         break;
     }
@@ -752,7 +830,6 @@ int Process::DuplicateFileDescriptor(int fd)
 int Process::DuplicateFileDescriptor(int oldfd, int newfd)
 {
     if(!Lock()) return -EBUSY;
-    Process *cp = Process::GetCurrent();
     Handle h = Handles.Get(oldfd);
     if(h.Type == Handle::HandleType::Free)
     {
@@ -767,10 +844,36 @@ int Process::DuplicateFileDescriptor(int oldfd, int newfd)
         return newfd;
     }
     else if(h2.Type != Handle::HandleType::Free)
-        cp->Close(newfd);
+        Close(newfd);
     Handles.Set(newfd, h);
     UnLock();
     return newfd;
+}
+
+int Process::CreatePipe(int fds[2])
+{
+    if(!Lock()) return -EBUSY;
+
+    fds[0] = allocHandleSlot(Handle((Pipe *)nullptr));
+    if(fds[0] < 0)
+    {
+        UnLock();
+        return fds[0];
+    }
+    fds[1] = allocHandleSlot(Handle((Pipe *)nullptr));
+    if(fds[1] < 0)
+    {
+        freeHandleSlot(fds[0]);
+        UnLock();
+        return fds[1];
+    }
+
+    Pipe *pipe = new Pipe(16 << 10, fds);
+    Handles.Set(fds[0], Handle(pipe));
+    Handles.Set(fds[1], Handle(pipe));
+
+    UnLock();
+    return ESUCCESS;
 }
 
 int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal)
@@ -788,6 +891,15 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
 
     t->PThread = (struct pthread *)SBrk(PAGE_SIZE, true);
     t->PThread->self = t->PThread;
+
+    t->PThread->detach_state = 1; // DT_JOINABLE
+    t->PThread->tid = t->Id;
+    t->PThread->robust_list.head = &t->PThread->robust_list.head;
+    t->PThread->next = t->PThread;
+
+    t->FS = (uintptr_t)t->PThread;
+    cpuWriteMSR(0xC0000100, t->FS);
+    cpuWriteMSR(0xC0000101, t->GS);
 
     t->Enable();
     UnLock();
@@ -1081,4 +1193,21 @@ Process::Handle::Handle(::InputDevice *inputDevice) :
     Type(HandleType::InputDevice),
     InputDevice(inputDevice)
 {
+}
+
+Process::Handle::Handle(Process::Pipe *pipe) :
+    Type(HandleType::Pipe),
+    Pipe(pipe)
+{
+}
+
+Process::Pipe::Pipe(size_t size, int *fds) :
+    Data(new MessageQueue<uint8_t>(size)),
+    FDs { fds[0], fds[1] }
+{
+}
+
+Process::Pipe::~Pipe()
+{
+    if(Data) delete Data;
 }

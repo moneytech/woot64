@@ -20,3 +20,13 @@ int processAbort(int handle, int result)
 {
     return sysProcessAbort(handle, result);
 }
+
+int processListIds(int *buf, unsigned bufSize)
+{
+    return sysProcessListIds(buf, bufSize);
+}
+
+int processGetName(int pid, char *buf, unsigned bufSize)
+{
+    return sysProcessGetName(pid, buf, bufSize);
+}

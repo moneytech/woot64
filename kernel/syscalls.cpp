@@ -378,6 +378,12 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
     return res;
 }
 
+long SysCalls::sys_pipe(int *fds)
+{
+    BUFFER_CHECK(fds, 2 * sizeof(*fds));
+    return Process::GetCurrent()->CreatePipe(fds);
+}
+
 long SysCalls::sys_dup(int fd)
 {
     return Process::GetCurrent()->DuplicateFileDescriptor(fd);
@@ -535,13 +541,13 @@ long SysCalls::sysFBGetDefault()
 
 long SysCalls::sysFBListIds(int *buf, size_t bufSize)
 {
-    BUFFER_CHECK(buf, bufSize);
+    BUFFER_CHECK(buf, bufSize * sizeof(*buf));
     return FrameBuffer::ListIds(buf, bufSize);
 }
 
 long SysCalls::sysFBGetName(int id, char *buf, size_t bufSize)
 {
-    BUFFER_CHECK(buf, bufSize);
+    BUFFER_CHECK(buf, bufSize * sizeof(*buf));
     FrameBuffer *fb = FrameBuffer::GetById(id);
     if(!fb) return -ENODEV;
     const char *fbName = fb->GetName();
@@ -658,7 +664,7 @@ long SysCalls::sysInDevGetCount()
 
 long SysCalls::sysInDevListIds(int *buf, size_t bufSize)
 {
-    BUFFER_CHECK(buf, bufSize);
+    BUFFER_CHECK(buf, bufSize * sizeof(*buf));
     return InputDevice::ListIds(buf, bufSize);
 }
 
@@ -789,6 +795,18 @@ long SysCalls::sysProcessAbort(int fd, int result)
     return Process::GetCurrent()->AbortProcess(fd, result);
 }
 
+long SysCalls::sysProcessListIds(int *buf, size_t bufSize)
+{
+    BUFFER_CHECK(buf, bufSize * sizeof(*buf));
+    return Process::ListIds(buf, bufSize);
+}
+
+long SysCalls::sysProcessGetName(int pid, char *buf, size_t bufSize)
+{
+    BUFFER_CHECK(buf, bufSize * sizeof(*buf));
+    return Process::GetName(pid, buf, bufSize);
+}
+
 long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
 {
     BUFFER_CHECK(payload, payloadSize);
@@ -897,6 +915,7 @@ void SysCalls::Initialize()
     Handlers[SYS_brk] = (SysCallHandler)sys_brk;
     Handlers[SYS_readv] = (SysCallHandler)sys_readv;
     Handlers[SYS_writev] = (SysCallHandler)sys_writev;
+    Handlers[SYS_pipe] = (SysCallHandler)sys_pipe;
     Handlers[SYS_dup] = (SysCallHandler)sys_dup;
     Handlers[SYS_dup2] = (SysCallHandler)sys_dup2;
     Handlers[SYS_getpid] = (SysCallHandler)sys_getpid;
@@ -945,6 +964,8 @@ void SysCalls::Initialize()
     Handlers[SYS_PROCESS_DELETE] = (SysCallHandler)sysProcessDelete;
     Handlers[SYS_PROCESS_WAIT] = (SysCallHandler)sysProcessWait;
     Handlers[SYS_PROCESS_ABORT] = (SysCallHandler)sysProcessAbort;
+    Handlers[SYS_PROCESS_LIST_IDS] = (SysCallHandler)sysProcessListIds;
+    Handlers[SYS_PROCESS_GET_NAME] = (SysCallHandler)sysProcessGetName;
 
     Handlers[SYS_IPC_SEND_MESSAGE] = (SysCallHandler)sysIPCSendMessage;
     Handlers[SYS_IPC_GET_MESSAGE] = (SysCallHandler)sysIPCGetMessage;

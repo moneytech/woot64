@@ -60,6 +60,11 @@ long sys_writev(int fd, const void *vec, size_t vlen)
     return __syscall3(SYS_writev, fd, (long)vec, vlen);
 }
 
+long sys_pipe(int *fds)
+{
+    return __syscall1(SYS_pipe, (long)fds);
+}
+
 long sys_dup(int fd)
 {
     return __syscall1(SYS_dup, fd);
@@ -279,6 +284,16 @@ long sysProcessWait(int fd, int timeout)
 long sysProcessAbort(int fd, int result)
 {
     return __syscall2(SYS_PROCESS_ABORT, fd, result);
+}
+
+long sysProcessListIds(int *buf, unsigned size)
+{
+    return __syscall2(SYS_PROCESS_LIST_IDS, (long)buf, size);
+}
+
+long sysProcessGetName(int pid, char *buf, unsigned size)
+{
+    return __syscall3(SYS_PROCESS_GET_NAME, pid, (long)buf, size);
 }
 
 long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)

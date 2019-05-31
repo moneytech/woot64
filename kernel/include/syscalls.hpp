@@ -16,6 +16,7 @@
 #define SYS_brk                 12
 #define SYS_readv               19
 #define SYS_writev              20
+#define SYS_pipe                22
 #define SYS_dup                 32
 #define SYS_dup2                33
 #define SYS_getpid              39
@@ -65,6 +66,8 @@
 #define SYS_PROCESS_DELETE      0x331
 #define SYS_PROCESS_WAIT        0x332
 #define SYS_PROCESS_ABORT       0x333
+#define SYS_PROCESS_LIST_IDS    0x334
+#define SYS_PROCESS_GET_NAME    0x335
 
 #define SYS_IPC_SEND_MESSAGE    0x340
 #define SYS_IPC_GET_MESSAGE     0x341
@@ -96,6 +99,7 @@ class SysCalls
     static long sys_brk(uintptr_t brk);
     static long sys_readv(int fd, const struct iovec *vec, size_t vlen);
     static long sys_writev(int fd, const struct iovec *vec, size_t vlen);
+    static long sys_pipe(int *fds);
     static long sys_dup(int fd);
     static long sys_dup2(int oldfd, int newfd);
     static long sys_getpid();
@@ -144,6 +148,8 @@ class SysCalls
     static long sysProcessDelete(int fd);
     static long sysProcessWait(int fd, int timeout);
     static long sysProcessAbort(int fd, int result);
+    static long sysProcessListIds(int *buf, size_t bufSize);
+    static long sysProcessGetName(int pid, char *buf, size_t bufSize);
 
     static long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
     static long sysIPCGetMessage(void *msg, int timeout);

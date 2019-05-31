@@ -81,7 +81,6 @@ public:
             if(cmp)
             {
                 if(buf) *buf = *cur;
-                //*cur = T(); // replace found message with empty one
                 break;
             }
         } while(timeout < 0 || timeLeft);
