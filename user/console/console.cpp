@@ -439,7 +439,7 @@ extern "C" int main(int argc, char *argv[])
 
     wmCleanup();
 
-    //if(shutdown) ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, nullptr, 0);
+    if(shutdown) ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, nullptr, 0);
 
     return 0;
 }

@@ -38,7 +38,7 @@ Elf_Shdr *ELF::getShdr(int i)
 
 ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs)
 {
-    File *f = File::Open(filename, O_RDONLY);
+    File *f = File::Open(filename, O_RDONLY, 0);
     if(!f)
     {
         DEBUG("[elf] Couldn't find '%s' file\n", filename);

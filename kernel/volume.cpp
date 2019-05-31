@@ -77,6 +77,16 @@ bool Volume::ForEach(bool (*callback)(Volume *, void *), void *arg)
     return true;
 }
 
+#include <debug.hpp>
+
+void Volume::SynchronizeAll()
+{
+    lockList();
+    for(Volume *volume : volumes)
+        volume->Synchronize();
+    unLockList();
+}
+
 size_t Volume::GetSectorSize()
 {
     return drive->SectorSize;

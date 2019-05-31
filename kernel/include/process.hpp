@@ -201,7 +201,7 @@ public:
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
 
-    int Open(const char *filename, int flags);
+    int Open(const char *filename, int flags, mode_t mode);
     int Close(int handle);
     long Read(int handle, void *buffer, size_t size);
     long Write(int handle, const void *buffer, size_t size);

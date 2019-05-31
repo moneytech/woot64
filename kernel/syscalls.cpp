@@ -218,7 +218,7 @@ long SysCalls::sys_write(int fd, const char *buf, size_t count)
 long SysCalls::sys_open(const char *filename, int flags, int mode)
 {
     BUFFER_CHECK(filename, String::Size(filename));
-    int res = Process::GetCurrent()->Open(filename, flags);
+    int res = Process::GetCurrent()->Open(filename, flags, mode);
     DEBUG("sys_open(\"%s\", %p) returned %d\n", filename, flags, res);
     return res;
 }
@@ -234,7 +234,7 @@ long SysCalls::sys_stat(const char *filename, stat *statbuf)
     BUFFER_CHECK(statbuf, sizeof(stat));
 
     Memory::Zero(statbuf, sizeof(struct stat));
-    File *f = File::Open(filename, 0);
+    File *f = File::Open(filename, 0, 0);
     if(!f) return -EBADF;
     INode *inode = f->DEntry->INode;
     statbuf->st_ino = inode->Number;
@@ -422,7 +422,7 @@ long SysCalls::sys_getcwd(char *buf, size_t size)
 long SysCalls::sys_chdir(char *pathname)
 {
     BUFFER_CHECK(pathname, String::Size(pathname));
-    File *dir = File::Open(pathname, O_DIRECTORY);
+    File *dir = File::Open(pathname, O_DIRECTORY, 0);
     if(!dir) return -ENOENT;
     DEntry *dentry = Process::GetCurrentDir();
     if(dentry) FileSystem::PutDEntry(dentry);

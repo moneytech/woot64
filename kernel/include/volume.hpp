@@ -30,6 +30,7 @@ public:
 
     static int DetectAll();
     static bool ForEach(bool (*callback)(Volume *volume, void *arg), void *arg);
+    static void SynchronizeAll();
 
     virtual size_t GetSectorSize();
     virtual uint64_t GetSectorCount();

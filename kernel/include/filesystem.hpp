@@ -46,6 +46,7 @@ public:
     static void AddDEntry(DEntry *dentry);
     static void RemoveDEntry(DEntry *dentry);
     static FileSystem *GetByName(const char *name);
+    static void SynchronizeAll();
 
     static void PutINode(INode *inode);
     static DEntry *LookupDEntry(DEntry *parent, const char *name);

@@ -670,11 +670,11 @@ uintptr_t Process::MMapSBrk(intptr_t incr, bool allocPages)
     return oEBrk;
 }
 
-int Process::Open(const char *filename, int flags)
+int Process::Open(const char *filename, int flags, mode_t mode)
 {
     if(!filename) return -EINVAL;
     if(!Lock()) return -EBUSY;
-    File *f = File::Open(filename, flags);
+    File *f = File::Open(filename, flags, mode);
     if(!f)
     {
         UnLock();

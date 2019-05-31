@@ -68,7 +68,7 @@ class Mutex;
 
 class File
 {
-    static File *open(::DEntry *parent, const char *name, int flags);
+    static File *open(::DEntry *parent, const char *name, int flags, mode_t createMode);
 
     File(::DEntry *dentry, int flags, mode_t mode);
     int64_t getSize();
@@ -78,8 +78,8 @@ public:
     int64_t Position;
     mode_t Mode;
 
-    static File *Open(::DEntry *parent, const char *name, int flags);
-    static File *Open(const char *name, int flags);
+    static File *Open(::DEntry *parent, const char *name, int flags, mode_t mode);
+    static File *Open(const char *name, int flags, mode_t mode);
 
     int64_t GetSize();
     bool SetAccessTime(time_t time);

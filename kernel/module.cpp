@@ -69,7 +69,7 @@ int Module::Load(const char *filename)
 
 void Module::LoadBootModules()
 {
-    File *listFile = File::Open("/system/modulelist", O_RDONLY);
+    File *listFile = File::Open("/system/modulelist", O_RDONLY, 0);
     if(!listFile)
     {
         DEBUG("[module] Couldn't open boot module list\n");

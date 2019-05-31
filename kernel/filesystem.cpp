@@ -142,6 +142,14 @@ FileSystem *FileSystem::GetByName(const char *name)
     return res;
 }
 
+void FileSystem::SynchronizeAll()
+{
+    lockList();
+    for(FileSystem *fs : fileSystems)
+        fs->Synchronize();
+    unLockList();
+}
+
 void FileSystem::PutINode(INode *inode)
 {
     if(!inode || !Lock()) return;

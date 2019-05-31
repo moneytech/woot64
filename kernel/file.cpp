@@ -12,7 +12,7 @@
 #include <tokenizer.hpp>
 #include <volume.hpp>
 
-File *File::open(::DEntry *parent, const char *name, int flags)
+File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMode)
 {
     //printf("open %s\n", name);
     if(!parent || !parent->INode || !name)
@@ -39,7 +39,14 @@ File *File::open(::DEntry *parent, const char *name, int flags)
         ::DEntry *nextDe = FileSystem::LookupDEntry(dentry, t.String);
         FileSystem::PutDEntry(dentry);
         if(!nextDe)
+        {
+            if(flags & O_CREAT)
+            {
+                parent->INode->Create(name, S_IFREG | createMode);
+                return open(parent, name, flags & ~O_CREAT, 0);
+            }
             return nullptr;
+        }
         dentry = nextDe;
     }
     if((flags & O_ACCMODE) != O_RDONLY && flags & O_TRUNC)
@@ -76,17 +83,17 @@ int64_t File::getSize()
     return size;
 }
 
-File *File::Open(::DEntry *parent, const char *name, int flags)
+File *File::Open(::DEntry *parent, const char *name, int flags, mode_t mode)
 {
     //printf("open %s\n", name);
     if(!FileSystem::Lock())
         return nullptr;
-    File *file = open(parent, name, flags);
+    File *file = open(parent, name, flags, mode);
     FileSystem::UnLock();
     return file;
 }
 
-File *File::Open(const char *name, int flags)
+File *File::Open(const char *name, int flags, mode_t mode)
 {
     if(!name || !String::Length(name))
         name = ".";
@@ -128,7 +135,7 @@ File *File::Open(const char *name, int flags)
         return nullptr;
     }
 
-    File *file = open(dentry, name + (hasFs ? path.Tokens[1].Offset : 0), flags);
+    File *file = open(dentry, name + (hasFs ? path.Tokens[1].Offset : 0), flags, mode);
     FileSystem::UnLock();
     return file;
 }

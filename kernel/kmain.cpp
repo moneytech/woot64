@@ -47,7 +47,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Process *kernelProc = Process::GetCurrent();
 
     // initialize current directory for kernel process
-    File *rootDir = File::Open("WOOT_OS~/", O_RDONLY);
+    File *rootDir = File::Open("WOOT_OS~/", O_RDONLY, 0);
     if(rootDir)
     {
         kernelProc->CurrentDirectory = FileSystem::GetDEntry(rootDir->DEntry);
@@ -77,6 +77,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     }
     else DEBUG("Couldn't start '%s'\n", procExec);
 
+    FileSystem::SynchronizeAll();
+    Volume::SynchronizeAll();
     Module::CleanupAll();
 
     EXT2::Cleanup();
