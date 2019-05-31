@@ -103,7 +103,6 @@ struct uiControl
     uiRelPosition_t IconPosition;
     int TextIconSeparation;
 
-    uiEventHandler OnCreate;
     uiEventHandler OnDelete;
     uiEventHandler OnPaint;
 
@@ -134,7 +133,7 @@ struct uiControl
     uiRecalcRectsHandler OnRecalcRects;
 };
 
-uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
+uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text);
 void uiControlDelete(uiControl_t *control);
 int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global);
 rcRectangle_t uiControlGetSize(uiControl_t *control);
@@ -152,6 +151,8 @@ void *uiControlGetContext(uiControl_t *control);
 void uiControlSetContext(uiControl_t *control, void *context);
 void uiControlSetVisibility(uiControl_t *control, uiVisibility_t visibility);
 uiVisibility_t uiControlGetVisibility(uiControl_t *control);
+void uiControlSetCanHaveFocus(uiControl_t *control, uiBool_t value);
+uiBool_t uiControlGetCanHaveFocus(uiControl_t *control);
 uiBool_t uiControlHasFocus(uiControl_t *control);
 char *uiControlGetText(uiControl_t *control);
 void uiControlSetText(uiControl_t *control, const char *text);

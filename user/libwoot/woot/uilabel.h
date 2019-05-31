@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct uiLabel uiLabel_t;
 
-uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
+uiLabel_t *uiLabelCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text);
 void uiLabelDelete(uiLabel_t *control);
 
 #ifdef __cplusplus

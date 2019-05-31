@@ -149,17 +149,17 @@ static void onButtonActivate(uiControl_t *control)
 
 uiScrollbar_t *uiScrollbarCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minPos, int maxPos, int pos, int zoom)
 {
-    uiScrollbar_t *control = (uiScrollbar_t *)uiControlCreate(parent, sizeof(uiScrollbar_t), NULL, x, y, width, height, NULL, NULL);
+    uiScrollbar_t *control = (uiScrollbar_t *)uiControlCreate(parent, sizeof(uiScrollbar_t), NULL, x, y, width, height, NULL);
     if(!control) return NULL;
 
     int btnSize = min(width, height);
-    control->LeftUpButton = uiButtonCreate((uiControl_t *)control, 0, 0, btnSize, btnSize, horizontal ? "<" : "^", NULL);
+    control->LeftUpButton = uiButtonCreate((uiControl_t *)control, 0, 0, btnSize, btnSize, horizontal ? "<" : "^");
     if(!control->LeftUpButton)
     {
         uiScrollbarDelete(control);
         return NULL;
     }
-    control->RightDownButton = uiButtonCreate((uiControl_t *)control, horizontal ? width - btnSize : 0, horizontal ? 0 : height - btnSize, btnSize, btnSize, horizontal ? ">" : "v", NULL);
+    control->RightDownButton = uiButtonCreate((uiControl_t *)control, horizontal ? width - btnSize : 0, horizontal ? 0 : height - btnSize, btnSize, btnSize, horizontal ? ">" : "v");
     if(!control->RightDownButton)
     {
         uiScrollbarDelete(control);

@@ -12,6 +12,8 @@ uiToolbar_t *uiToolbarCreate(uiControl_t *parent, int x, int y, int w, int h, ui
 void uiToolbarDelete(uiToolbar_t *bar);
 void uiToolbarSetChildSpacing(uiToolbar_t *bar, int spacing);
 int uiToolbarGetChildSpacing(uiToolbar_t *bar);
+int uiToolbarGetNextControlPos(uiToolbar_t *bar);
+int uiToolbarGetFreeSpace(uiToolbar_t *bar);
 
 #ifdef __cplusplus
 }

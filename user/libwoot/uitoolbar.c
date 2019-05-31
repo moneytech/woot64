@@ -53,7 +53,7 @@ static void toolbarRecalcRects(uiControl_t *sender)
 
 uiToolbar_t *uiToolbarCreate(uiControl_t *parent, int x, int y, int w, int h, uiOrientation_t orient)
 {
-    uiToolbar_t *bar = (uiToolbar_t *)uiControlCreate(parent, sizeof(uiToolbar_t), NULL, x, y, w, h, NULL, NULL);
+    uiToolbar_t *bar = (uiToolbar_t *)uiControlCreate(parent, sizeof(uiToolbar_t), NULL, x, y, w, h, NULL);
     if(!bar) return NULL;
 
     bar->Orientation = orient;
@@ -77,4 +77,25 @@ int uiToolbarGetChildSpacing(uiToolbar_t *bar)
 {
     if(!bar) return 0;
     return bar->ChildSpacing;
+}
+
+int uiToolbarGetNextControlPos(uiToolbar_t *bar)
+{
+    int curPos = bar->ChildSpacing;
+    if(bar->Orientation == UI_HORIZONTAL)
+    {
+        for(uiControl_t *ctrl = bar->Control.Children; ctrl; ctrl = ctrl->Next)
+            curPos += ctrl->Rectangle.Width + bar->ChildSpacing;
+    }
+    else if(bar->Orientation == UI_VERTICAL)
+    {
+        for(uiControl_t *ctrl = bar->Control.Children; ctrl; ctrl = ctrl->Next)
+            curPos += ctrl->Rectangle.Height + bar->ChildSpacing;
+    }
+    return curPos + bar->ChildSpacing;
+}
+
+int uiToolbarGetFreeSpace(uiToolbar_t *bar)
+{
+    return bar->Control.Rectangle.Width - uiToolbarGetNextControlPos(bar) - bar->ChildSpacing;
 }

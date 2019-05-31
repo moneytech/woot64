@@ -53,7 +53,7 @@ Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, 
     {
         titleBarPixMap = pmCreate(w, TitleBarHeight, &dstPixMap->Format);
         if(titleBarPixMap)
-            titleBar = uiControlCreate(nullptr, 0, titleBarPixMap, 0, 0, w, TitleBarHeight, nullptr, nullptr);
+            titleBar = uiControlCreate(nullptr, 0, titleBarPixMap, 0, 0, w, TitleBarHeight, nullptr);
     }
 
     if(titleBar)
@@ -64,7 +64,7 @@ Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, 
         fntFont_t *titleFont = wmGetFont(WM_FONT_TITLE_BAR);
         fntFont_t *symFont = wmGetFont(WM_FONT_UI_SYMBOLS);
 
-        titleBarText = uiLabelCreate(titleBar, 1, 1, w - 2, TitleBarHeight - 2, "Window", nullptr);
+        titleBarText = uiLabelCreate(titleBar, 1, 1, w - 2, TitleBarHeight - 2, "Window");
         rcRectangle_t lblRect = uiControlGetSize((uiControl_t *)titleBarText);
         int btnMargin = 4;
         int btnSize = lblRect.Height - btnMargin;
@@ -73,33 +73,36 @@ Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, 
         int closeX = lblRect.Width - btnSize - btnMargin / 2;
         if(flags & WM_CWF_CLOSEBUTTON)
         {
-            closeButton = uiButtonCreate((uiControl_t *)titleBarText, closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X", nullptr);
+            closeButton = uiButtonCreate((uiControl_t *)titleBarText, closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X");
             uiControlSetBackColor((uiControl_t *)closeButton, defBg);
             uiControlSetFont((uiControl_t *)closeButton, symFont);
             uiControlSetContext((uiControl_t *)closeButton, this);
             uiControlSetOnActivate((uiControl_t *)closeButton, titleBarButtonActivate);
+            uiControlSetCanHaveFocus((uiControl_t *)closeButton, UI_FALSE);
         }
         else closeX = lblRect.Width + 1 - btnMargin / 2;
 
         int maxX = closeX - btnSize - 1;
         if(flags & WM_CWF_MAXIMIZEBUTTON)
         {
-            maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#", nullptr);
+            maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#");
             uiControlSetBackColor((uiControl_t *)maxButton, defBg);
             uiControlSetFont((uiControl_t *)maxButton, symFont);
+            uiControlSetCanHaveFocus((uiControl_t *)maxButton, UI_FALSE);
         } else maxX = closeX - 1;
 
         int minX = maxX - btnSize;
         if(flags & WM_CWF_MINIMIZEBUTTON)
         {
-            minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_", nullptr);
+            minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_");
             uiControlSetBackColor((uiControl_t *)minButton, defBg);
             uiControlSetFont((uiControl_t *)minButton, symFont);
+            uiControlSetCanHaveFocus((uiControl_t *)minButton, UI_FALSE);
         } else minX = maxX;
 
         if(flags & WM_CWF_SHOWICON)
         {
-            progButton = uiButtonCreate((uiControl_t *)titleBarText, btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=", nullptr);
+            progButton = uiButtonCreate((uiControl_t *)titleBarText, btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=");
             uiControlSetFont((uiControl_t *)progButton, symFont);
         }
 

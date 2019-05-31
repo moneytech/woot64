@@ -111,7 +111,7 @@ static void sliderPreKeyPress(uiControl_t *control, wmEvent_t *event)
 
 uiSlider_t *uiSliderCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minVal, int maxVal, int val)
 {
-    struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL, NULL);
+    struct uiSlider *control = (struct uiSlider *)uiControlCreate(parent, sizeof(struct uiSlider), NULL, x, y, width, height, NULL);
     if(!control) return NULL;
     control->Control.CanHaveFocus = 1;
     control->Horizontal = horizontal;

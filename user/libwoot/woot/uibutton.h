@@ -8,7 +8,7 @@ extern "C" {
 
 typedef struct uiButton uiButton_t;
 
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate);
+uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text);
 void uiButtonDelete(uiButton_t *control);
 
 #ifdef __cplusplus

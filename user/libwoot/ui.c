@@ -199,7 +199,7 @@ static void defaultOnPaint(uiControl_t *sender)
     //pmInvalidateWhole(sender->PixMap);
 }
 
-uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text)
 {
     uiControl_t *control = (uiControl_t *)calloc(1, structSize ? structSize : sizeof(uiControl_t));
     if(!control) return NULL;
@@ -231,10 +231,7 @@ uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t 
     control->BorderStyle = UI_BORDER_NONE;
     control->MarginSize = 4;
     control->IconPosition = UI_OVER;
-    control->OnCreate = onCreate;
     control->OnPaint = defaultOnPaint;
-    if(control->OnCreate)
-        control->OnCreate(control);
     return control;
 }
 
@@ -423,6 +420,18 @@ uiVisibility_t uiControlGetVisibility(uiControl_t *control)
 {
     if(!control) return -EINVAL;
     return control->Visibility;
+}
+
+void uiControlSetCanHaveFocus(uiControl_t *control, uiBool_t value)
+{
+    if(!control) return;
+    control->CanHaveFocus = value;
+}
+
+uiBool_t uiControlGetCanHaveFocus(uiControl_t *control)
+{
+    if(!control) return -EINVAL;
+    return control->CanHaveFocus;
 }
 
 uiBool_t uiControlHasFocus(uiControl_t *control)

@@ -77,9 +77,9 @@ int main(int argc, char *argv[])
     uiControl_t *rootControl = wmGetRootControl(window);
     //uiControlSetBackColor(rootControl, pmColorTransparent);
     //uiControlSetBackColor(rootControl, pmColorRed);
-    uiControl_t *lbl = (uiControl_t *)uiLabelCreate(rootControl, 20, 1, pm->Contents.Width - 41, 24, "Date and time", NULL);
-    uiControl_t *btn = (uiControl_t *)uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Do something", NULL);
-    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo", NULL);
+    uiControl_t *lbl = (uiControl_t *)uiLabelCreate(rootControl, 20, 1, pm->Contents.Width - 41, 24, "Date and time");
+    uiControl_t *btn = (uiControl_t *)uiButtonCreate(rootControl, (pm->Contents.Width - 100) / 2, 30, 100, 80, "Do something");
+    uiLineEdit_t *edit = uiLineEditCreate(rootControl, (pm->Contents.Width - 120) / 2, 120, 120, 30, "Trolololo");
     uiSlider_t *sld = uiSliderCreate(rootControl, (pm->Contents.Width - 120) / 2, 150, 120, 24, 1, 0, 100, 25);
     uiSlider_t *sld2 = uiSliderCreate(rootControl, 1, 40, 24, 130, 0, 0, 100, 25);
     uiScrollbar_t *scroll = uiScrollbarCreate(rootControl, 283, 1, 16, 182, 0, 0, 99, 0, 5);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
     uiToolbar_t *bar = uiToolbarCreate(rootControl, 1, 199, pm->Contents.Width - 2, 30, UI_HORIZONTAL);
     for(int i = 0; i < 4; ++i)
-        uiButtonCreate((uiControl_t *)bar, 10, 0, 64, 24, "Abcd", NULL);
+        uiButtonCreate((uiControl_t *)bar, 10, 0, 64, 24, "Abcd");
     uiToolbarSetChildSpacing(bar, 4);
     uiControlRecalcRects((uiControl_t *)bar);
 

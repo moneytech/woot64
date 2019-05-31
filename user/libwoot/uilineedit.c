@@ -43,6 +43,7 @@ static char *stringInsert(char *str, int *pos, char chr)
 static void lineEditDrawBorder(uiControl_t *control)
 {
     rcRectangle_t rect = control->Rectangle;
+    pmColor_t frameColor = control->Parent ? control->Parent->BackColor : wmGetColor(WM_COLOR_BACKGROUND);
     switch(control->BorderStyle)
     {
     default:
@@ -51,10 +52,10 @@ static void lineEditDrawBorder(uiControl_t *control)
         pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;
     case UI_BORDER_RAISED:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0, control->BackColor);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0, frameColor);
         break;
     case UI_BORDER_SUNKEN:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1, control->BackColor);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1, frameColor);
         break;
     }
 }
@@ -222,9 +223,9 @@ static void lineEditPreKeyPress(uiControl_t *control, wmEvent_t *event)
         control->OnTextChanged(control);
 }
 
-uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text)
 {
-    uiLineEdit_t *control = (uiLineEdit_t *)uiControlCreate(parent, sizeof(uiLineEdit_t), NULL, x, y, width, height, text, onCreate);
+    uiLineEdit_t *control = (uiLineEdit_t *)uiControlCreate(parent, sizeof(uiLineEdit_t), NULL, x, y, width, height, text);
     if(!control) return NULL;
     control->Control.CanHaveFocus = 1;
     control->Control.TextHAlign = UI_HALIGN_LEFT;

@@ -154,7 +154,7 @@ wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
         free(wnd);
         return NULL;
     }
-    wnd->rootControl = uiControlCreate(NULL, 0, wnd->pixMap, 0, 0, w, h, NULL, NULL);
+    wnd->rootControl = uiControlCreate(NULL, 0, wnd->pixMap, 0, 0, w, h, NULL);
     if(!wnd->rootControl)
     {
         pmDelete(wnd->pixMap);

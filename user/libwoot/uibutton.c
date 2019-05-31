@@ -237,9 +237,9 @@ static void buttonPostMouseRelease(uiControl_t *control, wmEvent_t *event)
     }
 }
 
-uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text, uiEventHandler onCreate)
+uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int height, const char *text)
 {
-    uiButton_t *control = (uiButton_t *)uiControlCreate(parent, sizeof(uiButton_t), NULL, x, y, width, height, text, onCreate);
+    uiButton_t *control = (uiButton_t *)uiControlCreate(parent, sizeof(uiButton_t), NULL, x, y, width, height, text);
     if(!control) return NULL;
     control->Control.CanHaveFocus = 1;
     control->Control.BorderStyle = UI_BORDER_RAISED;
