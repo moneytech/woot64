@@ -469,9 +469,27 @@ Process::Process(const char *name, Thread *mainThread, uintptr_t addressSpace, b
         Paging::BuildAddressSpace(AddressSpace);
     }
 
+    // stdin, stdout and stderr default to debug stream for now
     Handles.Append(Handle(&Debug::DebugStream));
     Handles.Append(Handle(&Debug::DebugStream));
     Handles.Append(Handle(&Debug::DebugStream));
+
+    // clone stdin, stdout and stderr if possible
+    if(Parent)
+    {
+        Handle h[3] =
+        {
+            Parent->Handles.Get(0),
+            Parent->Handles.Get(1),
+            Parent->Handles.Get(2)
+        };
+
+        for(int i = 0; i < 3; ++i)
+        {
+            if(h[i].Type != Handle::HandleType::Free && h[i].Type != Handle::HandleType::Invalid)
+                Handles.Set(i, h[i]);
+        }
+    }
 
     DEntry *cdir = Parent ? Parent->GetCurrentDir() : nullptr;
     if(cdir) CurrentDirectory = FileSystem::GetDEntry(cdir);

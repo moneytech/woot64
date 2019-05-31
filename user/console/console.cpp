@@ -224,7 +224,6 @@ extern "C" int main(int argc, char *argv[])
 
     threadResume(listener);
 
-
     ipcMessage_t msg;
     unsigned conCmdIdx;
     bool shutdown = false;
@@ -243,7 +242,7 @@ extern "C" int main(int argc, char *argv[])
         }
         else
             wmSetWindowTitle(conWindow, "Console");
-        printf("%s>", conCWD[0] ? conCWD : "?");
+        printf("%s> ", conCWD[0] ? conCWD : "?");
 
         bool quit = false;
         for(;;)
@@ -384,7 +383,6 @@ extern "C" int main(int argc, char *argv[])
         else if(!strcmp(conCmdArgs[0], "ps"))
         {
             int ids[128];
-            char buf[128];
             int procCnt = processListIds(ids, sizeof(ids) / sizeof(*ids));
             for(int i = 0; i < procCnt; ++i)
             {
@@ -399,7 +397,6 @@ extern "C" int main(int argc, char *argv[])
             struct sysinfo si;
             if(!sysinfo(&si))
             {
-                char buf[64];
                 printf("uptime: %ld\n", si.uptime);
                 printf("loads: %lu %lu %lu\n", si.loads[0], si.loads[1], si.loads[2]);
                 printf("totalram: %lu\n", si.totalram * si.mem_unit);
