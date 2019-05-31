@@ -13,6 +13,7 @@ SUBDIRS = \
 	inputhandler \
 	usertest \
 	windowmanager \
+	yasm \
 	icons \
 	fonts
 
