@@ -27,7 +27,7 @@ static const int fontSizes[WM_FONT_ID_COUNT] =
     11,
     12,
     12,
-    11
+    10
 };
 
 struct wmWindow

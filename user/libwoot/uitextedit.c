@@ -21,7 +21,7 @@ static void textEditUpdate(uiTextEdit_t *edit)
     fntFont_t *font = edit->Control.Font;
     float lineHeight = fntGetPixelAscender(font);
     int viewHeight = edit->Control.Rectangle.Height - (edit->TextContainer->BorderStyle == UI_BORDER_NONE ? 0 : 2);
-    uiScrollbarSetMaxPosition(edit->VScroll, lineHeight * (lineCount + 1) - fntGetPixelDescender(font));
+    uiScrollbarSetMaxPosition(edit->VScroll, lineHeight * (lineCount + 1) - fntGetPixelDescender(font) + 1);
     uiScrollbarSetZoom(edit->VScroll, viewHeight);
 }
 
@@ -62,7 +62,7 @@ static void textContainerOnPaint(uiControl_t *sender)
         char *line = *(char **)vecGet(edit->Lines, i);
         if(!line) continue;
 
-        fntDrawString(font, pm, 2, i * lineHeight - vPos, line, textColor);
+        fntDrawString(font, pm, 2, 1 + i * lineHeight - vPos, line, textColor);
     }
 
     //drawText(sender);
