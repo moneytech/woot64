@@ -19,13 +19,15 @@ static const char *fontNames[WM_FONT_ID_COUNT] =
 {
     "/data/common/fonts/default.ttf",
     "/data/common/fonts/uisymbols.ttf",
-    "/data/common/fonts/title.ttf"
+    "/data/common/fonts/title.ttf",
+    "/data/common/fonts/mono.ttf"
 };
 static const int fontSizes[WM_FONT_ID_COUNT] =
 {
     11,
     12,
-    12
+    12,
+    11
 };
 
 struct wmWindow

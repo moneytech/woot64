@@ -65,7 +65,7 @@ static void loadDir(const char *dirname)
                 --i;
                 continue;
             }
-            uiButton_t *btn = uiButtonCreate(files, 4, 4 + i * 52, 256, 48, de->d_name);
+            uiButton_t *btn = uiButtonCreate(files, 4, 4 + i * 42, 256, 40, de->d_name);
             uiControlSetOnActivate((uiControl_t *)btn, fileActivate);
             uiControlSetTextHAlign((uiControl_t *)btn, UI_HALIGN_LEFT);
             uiControlSetIconPosition((uiControl_t *)btn, UI_LEFT);

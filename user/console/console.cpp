@@ -178,6 +178,14 @@ extern "C" int main(int argc, char *argv[])
         fprintf(stderr, "[console] Couldn't redirect stdout\n");
         return res;
     }
+
+    if((res = dup2(pipeFDs[1], 2)) < 0)
+    {
+        close(pipeFDs[0]);
+        close(pipeFDs[1]);
+        fprintf(stderr, "[console] Couldn't redirect stderr\n");
+        return res;
+    }
     close(pipeFDs[1]);
 
     int listener = threadCreate("stdout/stderr listener", (void *)stdListener, pipeFDs[0], nullptr);

@@ -16,6 +16,7 @@ OBJS = \
 	uilineedit.o \
 	uiscrollbar.o \
 	uislider.o \
+	uitextedit.o \
 	uitoolbar.o \
 	vector.o \
 	video.o \

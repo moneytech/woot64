@@ -262,6 +262,12 @@ void uiControlDelete(uiControl_t *control)
         free(control->Text);
 }
 
+uiControl_t *uiControlGetParent(uiControl_t *control)
+{
+    if(!control) return NULL;
+    return control->Parent;
+}
+
 int uiControlGetPosition(uiControl_t *control, int *x, int *y, int global)
 {
     if(!control) return -EINVAL;

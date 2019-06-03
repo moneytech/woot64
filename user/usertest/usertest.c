@@ -19,6 +19,7 @@
 #include <woot/uilineedit.h>
 #include <woot/uiscrollbar.h>
 #include <woot/uislider.h>
+#include <woot/uitextedit.h>
 #include <woot/uitoolbar.h>
 #include <woot/video.h>
 #include <woot/wm.h>
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
     }
     else printf("[usertest] Window manager server: '%s'\n", wmServer);
 
-    window = wmCreateWindow(100, 200, 300, 230, WM_CWF_DEFAULT);
+    window = wmCreateWindow(100, 200, 300, 350, WM_CWF_DEFAULT);
     if(!window) return -errno;
     wmSetWindowTitle(window, "Test window");
 
@@ -84,6 +85,7 @@ int main(int argc, char *argv[])
     uiSlider_t *sld2 = uiSliderCreate(rootControl, 1, 40, 24, 130, 0, 0, 100, 25);
     uiScrollbar_t *scroll = uiScrollbarCreate(rootControl, 283, 1, 16, 182, 0, 0, 99, 0, 5);
     uiScrollbar_t *scroll2 = uiScrollbarCreate(rootControl, 1, 183, 283, 16, 1, 0, 99, 88, 40);
+    uiTextEdit_t *edit2 = uiTextEditCreate(rootControl, 10, 240, pm->Contents.Width - 20, 100);
 
     uiToolbar_t *bar = uiToolbarCreate(rootControl, 1, 199, pm->Contents.Width - 2, 30, UI_HORIZONTAL);
     for(int i = 0; i < 4; ++i)
@@ -111,6 +113,14 @@ int main(int argc, char *argv[])
 
     uiLineEditSetOnAcceptInput(edit, editAccept);
 
+    uiControlSetFont((uiControl_t *)edit2, wmGetFont(WM_FONT_MONO));
+    for(int i = 0; i < 100; ++i)
+    {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "This is line number %d", i + 1);
+        uiTextEditAppendLine(edit2, buf);
+    }
+
     uiControlRedraw(rootControl, 1);
 
     srand(time(NULL));
@@ -122,7 +132,7 @@ int main(int argc, char *argv[])
         int msgTimeout = 400;
         while(ipcGetMessage(&msg, msgTimeout) >= 0)
         {
-            msgTimeout = 200;
+            msgTimeout = 400;
             ipcProcessMessage(&msg);
             if(msg.Number == MSG_QUIT)
             {
@@ -158,7 +168,6 @@ int main(int argc, char *argv[])
         time_t ct = time(NULL);
         strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
         uiControlSetText((uiControl_t *)lbl, buf);
-        uiControlRedraw(lbl, 1);
     }
 
     printf("[usertest] Closing usertest\n");

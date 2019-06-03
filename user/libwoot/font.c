@@ -173,6 +173,11 @@ float fntGetPixelAscender(fntFont_t *font)
     return font->face->size->metrics.ascender / 64.0f;
 }
 
+float fntGetPixelDescender(fntFont_t *font)
+{
+    return font->face->size->metrics.descender / 64.0f;
+}
+
 float fntGetPixelHeight(fntFont_t *font)
 {
     return font->face->size->metrics.height / 64.0f;

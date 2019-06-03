@@ -53,8 +53,6 @@ static void scrollbarUpdate(uiScrollbar_t *scrollbar, wmEvent_t *event)
             position = scrollbar->MaxPosition - scrollbar->Zoom;
         scrollbar->Position = position;
     }
-    if(scrollbar->OnChangePosition)
-        scrollbar->OnChangePosition(scrollbar);
     uiControlRedraw((uiControl_t *)scrollbar, 1);
 }
 
@@ -95,7 +93,10 @@ static void scrollbarPreMousePress(uiControl_t *control, wmEvent_t *event)
         return;
     uiScrollbar_t *scrollbar = (uiScrollbar_t *)control;
     scrollbar->Dragging = 1;
+    int pos = scrollbar->Position;
     scrollbarUpdate(scrollbar, event);
+    if(pos != scrollbar->Position && scrollbar->OnChangePosition)
+        scrollbar->OnChangePosition(scrollbar);
 }
 
 static void scrollbarPreMouseMove(uiControl_t *control, wmEvent_t *event)
@@ -105,7 +106,10 @@ static void scrollbarPreMouseMove(uiControl_t *control, wmEvent_t *event)
     if(!(event->Mouse.ButtonsHeld & 1))
         scrollbar->Dragging = 0;
     if(!scrollbar->Dragging) return;
+    int pos = scrollbar->Position;
     scrollbarUpdate(scrollbar, event);
+    if(pos != scrollbar->Position && scrollbar->OnChangePosition)
+        scrollbar->OnChangePosition(scrollbar);
 }
 
 static void scrollbarPostMouseRelease(uiControl_t *control, wmEvent_t *event)
@@ -221,8 +225,11 @@ void uiScrollbarSetPosition(uiScrollbar_t *control, int position)
     else if((position + scrollbar->Zoom) > scrollbar->MaxPosition)
         position = scrollbar->MaxPosition - scrollbar->Zoom;
 
+    int pos = scrollbar->Position;
     scrollbar->Position = position;
     scrollbarUpdate(control, NULL);
+    if(pos != scrollbar->Position && scrollbar->OnChangePosition)
+        scrollbar->OnChangePosition(scrollbar);
 }
 
 int uiScrollbarGetPosition(uiScrollbar_t *control)
@@ -297,4 +304,16 @@ int uiScrollbarGetMaxPosition(uiScrollbar_t *control)
 {
     if(!control) return 0;
     return control->MaxPosition;
+}
+
+void uiScrollbarSetOnChangePosition(uiScrollbar_t *scroll, uiScrollbarChangePositionHandler handler)
+{
+    if(!scroll) return;
+    scroll->OnChangePosition = handler;
+}
+
+uiScrollbarChangePositionHandler uiScrollbarGetOnChangePosition(uiScrollbar_t *scroll)
+{
+    if(!scroll) return NULL;
+    return scroll->OnChangePosition;
 }

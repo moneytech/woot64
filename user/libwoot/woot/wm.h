@@ -38,7 +38,8 @@ extern "C" {
 #define WM_FONT_DEFAULT     0
 #define WM_FONT_UI_SYMBOLS  1
 #define WM_FONT_TITLE_BAR   2
-#define WM_FONT_ID_COUNT    3
+#define WM_FONT_MONO        3
+#define WM_FONT_ID_COUNT    4
 
 // event types
 #define WM_EVT_INVALID      0
