@@ -86,7 +86,11 @@ int wmInitialize(int flags)
 
 int wmCleanup()
 {
-    if(fonts[WM_FONT_DEFAULT]) fntDelete(fonts[WM_FONT_DEFAULT]);
+    for(unsigned i = 0; i < WM_FONT_ID_COUNT; ++i)
+    {
+        if(fonts[i])
+            fntDelete(fonts[i]);
+    }
     memset(fonts, 0, sizeof(fonts));
     return 0;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <woot/pixmap.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -58,9 +60,6 @@ extern "C" {
 #define WM_DEFAULT_DPI      96
 
 typedef struct fntFont fntFont_t;
-typedef union pmColor pmColor_t;
-typedef struct pmPixMap pmPixMap_t;
-typedef struct pmPixelFormat pmPixelFormat_t;
 typedef struct rcRectangle rcRectangle_t;
 typedef struct uiControl uiControl_t;
 typedef struct wmWindow wmWindow_t;

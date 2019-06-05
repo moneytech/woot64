@@ -28,6 +28,7 @@ struct fntFont
 {
     FT_Face face;
     vecVector_t *glyphCache;
+    int hits, misses;
 };
 
 static FT_Library library;
@@ -36,23 +37,28 @@ static cacheGlyph_t getGlyph(fntFont_t *font, unsigned idx)
 {
     // do binary search
     vecVector_t *cache = font->glyphCache;
-    unsigned l = 0, r = vecSize(font->glyphCache) - 1;
+    int cacheSize = vecSize(font->glyphCache);
 
-    unsigned m = 0;
-    while(l <= r)
+    int m = 0;
+    cacheEntry_t *a = NULL;
+    if(cacheSize)
     {
-        m = (l + r) >> 1;
-        cacheEntry_t *a = vecGet(cache, m);
-        if(!a) break;
-        if(a->idx < idx) l = m + 1;
-        else if(a->idx > idx) r = m - 1;
-        else return a->glyph;
+        int l = 0, r = cacheSize - 1;
+        while(l <= r)
+        {
+            m = (l + r) >> 1;
+            a = vecGet(cache, m);
+            if(!a) break;
+            if(a->idx < idx) l = m + 1;
+            else if(a->idx > idx) r = m - 1;
+            else return a->glyph;
+        }
     }
 
     // not in cache so include
     FT_Error error = FT_Load_Glyph(font->face, idx, FT_LOAD_DEFAULT);
     if(error) return invalidGlyph;
-    error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_NORMAL);
+    error = FT_Render_Glyph(font->face->glyph, FT_RENDER_MODE_LCD);
     if(error) return invalidGlyph;
 
     FT_Bitmap *bmp = (FT_Bitmap *)calloc(1, sizeof(FT_Bitmap));
@@ -66,7 +72,7 @@ static cacheGlyph_t getGlyph(fntFont_t *font, unsigned idx)
         font->face->glyph->bitmap_top
     };
     cacheEntry_t entry = { idx, glyph };
-    int res = l == m + 1 ? vecInsertAfter(cache, m, &entry) : vecInsertBefore(cache, m, &entry);
+    int res = !cacheSize || !a || idx >= a->idx ? vecInsertAfter(cache, m, &entry) : vecInsertBefore(cache, m, &entry);
     if(res < 0)
     {
         // TODO: add lru algorithm
@@ -131,10 +137,33 @@ float fntDrawCharacter(fntFont_t *font, pmPixMap_t *pixMap, int x, int y, int ch
     {
         unsigned char *line = (unsigned char *)(glyph.bitmap->buffer + i * glyph.bitmap->pitch);
         int _y = y + i - glyph.bitmapTop;
-        for(int j = 0; j < glyph.bitmap->width; ++j)
+        if(glyph.bitmap->pixel_mode == FT_PIXEL_MODE_GRAY)
+        {   // regular alpha blending
+            for(int j = 0; j < glyph.bitmap->width; ++j)
+            {
+                int _x = x + j + glyph.bitmapLeft;
+                pmSetPixel(pixMap, _x, _y, pmBlendPixel(pmGetPixel(pixMap, _x, _y), pmColorFromARGB(line[j], color.R, color.G, color.B)));
+            }
+        }
+        else
         {
-            int _x = x + j + glyph.bitmapLeft;
-            pmSetPixel(pixMap, _x, _y, pmBlendPixel(pmGetPixel(pixMap, _x, _y), pmColorFromARGB(line[j], color.R, color.G, color.B)));
+            for(int j = 0; j < glyph.bitmap->width / 3; ++j)
+            {   // subpixel blending
+                int _x = x + j + glyph.bitmapLeft;
+
+                int px = 3 * j;
+                int r = line[px];
+                int g = line[px + 1];
+                int b = line[px + 2];
+
+                pmColor_t bcl = pmGetPixel(pixMap, _x, _y);
+
+                r = (r * color.R + (255 - r) * bcl.R) >> 8;
+                g = (g * color.G + (255 - g) * bcl.G) >> 8;
+                b = (b * color.B + (255 - b) * bcl.B) >> 8;
+
+                pmSetPixel(pixMap, _x, _y, pmColorFromRGB(r, g, b));
+            }
         }
     }
     return glyph.advance;

@@ -11,6 +11,7 @@ SUBDIRS = \
 	filemanager \
 	init \
 	inputhandler \
+	ted \
 	usertest \
 	windowmanager \
 	yasm \
