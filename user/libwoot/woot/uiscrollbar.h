@@ -20,6 +20,9 @@ void uiScrollbarSetMinPosition(uiScrollbar_t *control, int position);
 int uiScrollbarGetMinPosition(uiScrollbar_t *control);
 void uiScrollbarSetMaxPosition(uiScrollbar_t *control, int position);
 int uiScrollbarGetMaxPosition(uiScrollbar_t *control);
+void uiScrollbarSetStep(uiScrollbar_t *control, int step);
+int uiScrollbarGetStep(uiScrollbar_t *control);
+
 
 void uiScrollbarSetOnChangePosition(uiScrollbar_t *scroll, uiScrollbarChangePositionHandler handler);
 uiScrollbarChangePositionHandler uiScrollbarGetOnChangePosition(uiScrollbar_t *scroll);

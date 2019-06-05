@@ -193,6 +193,7 @@ int Process::processEntryPoint(const char *cmdline)
     cpuWriteMSR(0xC0000101, ct->GS);
 
     proc->lock.Release();
+    ct->Initialized->Signal(nullptr);
     cpuEnterUserMode(ct->UserArgument, stackPointer, (uintptr_t)elf->EntryPoint);
     return 0;
 }
@@ -205,6 +206,7 @@ int Process::userThreadEntryPoint(void *arg)
     uintptr_t *stack = (uintptr_t *)ct->AllocStack(&ct->UserStack, ct->UserStackSize);
     *(--stack) = (uintptr_t)userThreadReturn;
 
+    ct->Initialized->Signal(nullptr);
     cpuEnterUserMode(ct->UserArgument, (uintptr_t)stack, (uintptr_t)ct->UserEntryPoint);
     return 0;
 }

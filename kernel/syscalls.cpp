@@ -730,7 +730,14 @@ long SysCalls::sysThreadDelete(int fd)
 
 long SysCalls::sysThreadResume(int fd)
 {
-    return Process::GetCurrent()->ResumeThread(fd);
+    Process *cp = Process::GetCurrent();
+    Thread *t = (Thread *)cp->GetHandleData(fd, Process::Handle::HandleType::Thread);
+    int res = cp->ResumeThread(fd);
+    if(res < 0) return res;
+    res = t->Initialized->Wait(0, false, false);
+    if(res < 0) return res;
+    t->Initialized->Signal(nullptr);
+    return ESUCCESS;
 }
 
 long SysCalls::sysThreadSuspend(int fd)

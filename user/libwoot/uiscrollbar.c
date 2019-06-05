@@ -21,6 +21,7 @@ struct uiScrollbar
     uiScrollbarChangePositionHandler OnChangePosition;
 
     int Dragging;
+    int Step;
     uiButton_t *LeftUpButton;
     uiButton_t *RightDownButton;
 };
@@ -53,7 +54,8 @@ static void scrollbarUpdate(uiScrollbar_t *scrollbar, wmEvent_t *event)
             position = scrollbar->MaxPosition - scrollbar->Zoom;
         scrollbar->Position = position;
     }
-    uiControlRedraw((uiControl_t *)scrollbar, 1);
+    if(event)
+        uiControlRedraw((uiControl_t *)scrollbar, 1);
 }
 
 static void scrollbarPaint(uiControl_t *control)
@@ -128,16 +130,49 @@ static void scrollbarPreKeyPress(uiControl_t *control, wmEvent_t *event)
     if(scrollbar->Horizontal)
     {
         if(event->Keyboard.Key == VK_LEFT)
-            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Zoom / 2);
-        else if(event->Keyboard.Key == VK_UP)
-            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Zoom / 2);
+        {
+            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Step);
+            uiControlRedraw(control, 1);
+        }
+        else if(event->Keyboard.Key == VK_RIGHT)
+        {
+            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Step);
+            uiControlRedraw(control, 1);
+        }
     }
     else
     {
         if(event->Keyboard.Key == VK_UP)
-            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Zoom / 2);
+        {
+            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Step);
+            uiControlRedraw(control, 1);
+        }
         else if(event->Keyboard.Key == VK_DOWN)
-            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Zoom / 2);
+        {
+            uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Step);
+            uiControlRedraw(control, 1);
+        }
+    }
+
+    if(event->Keyboard.Key == VK_PRIOR)
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - (scrollbar->Zoom * 9) / 10);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_NEXT)
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + (scrollbar->Zoom * 9) / 10);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_HOME)
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetMinPosition(scrollbar));
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_END)
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetMaxPosition(scrollbar));
+        uiControlRedraw(control, 1);
     }
 }
 
@@ -147,8 +182,15 @@ static void onButtonActivate(uiControl_t *control)
     uiButton_t *button = (uiButton_t *)control;
     uiScrollbar_t *scrollbar = (uiScrollbar_t *)control->Context;
     if(button == scrollbar->LeftUpButton)
-        uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Zoom / 2);
-    else uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Zoom / 2);
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) - scrollbar->Step);
+        uiControlRedraw(control, 1);
+    }
+    else
+    {
+        uiScrollbarSetPosition(scrollbar, uiScrollbarGetPosition(scrollbar) + scrollbar->Step);
+        uiControlRedraw(control, 1);
+    }
 }
 
 uiScrollbar_t *uiScrollbarCreate(uiControl_t *parent, int x, int y, int width, int height, int horizontal, int minPos, int maxPos, int pos, int zoom)
@@ -200,6 +242,7 @@ uiScrollbar_t *uiScrollbarCreate(uiControl_t *parent, int x, int y, int width, i
     else if((pos + zoom) > maxPos) pos = maxPos - zoom;
     control->Position = pos;
     control->Zoom = zoom;
+    control->Step = 1;
 
     control->Control.OnPaint = scrollbarPaint;
     control->Control.PreKeyPress = scrollbarPreKeyPress;
@@ -304,6 +347,18 @@ int uiScrollbarGetMaxPosition(uiScrollbar_t *control)
 {
     if(!control) return 0;
     return control->MaxPosition;
+}
+
+void uiScrollbarSetStep(uiScrollbar_t *control, int step)
+{
+    if(!control) return;
+    control->Step = step;
+}
+
+int uiScrollbarGetStep(uiScrollbar_t *control)
+{
+    if(!control) return 0;
+    return control->Step;
 }
 
 void uiScrollbarSetOnChangePosition(uiScrollbar_t *scroll, uiScrollbarChangePositionHandler handler)

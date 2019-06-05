@@ -99,6 +99,8 @@ public:
     // pthread
     struct pthread *PThread;
     int *tidPtr;
+    Semaphore *Initialized; // signaled when thread initialized its
+                            // usermode stuff (like pthread structure)
 
     static void Initialize();
     static Thread *GetIdleThread();

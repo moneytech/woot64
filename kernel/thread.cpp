@@ -245,7 +245,8 @@ Thread::Thread(const char *name, class Process *process, void *entryPoint, uintp
     DeleteFinished(!finished),
     WaitingMutex(nullptr),
     WaitingSemaphore(nullptr),
-    WakeCount(0)
+    WakeCount(0),
+    Initialized(new Semaphore(0, "Thread::Initizlized"))
 {
     if(!Process) Process = Process::GetCurrent();
     else process->AddThread(this);
@@ -580,6 +581,7 @@ uintptr_t Thread::AllocStack(uint8_t **stackAddr, size_t size)
 
 Thread::~Thread()
 {
+    if(Initialized) delete Initialized;
     if(Name) delete[] Name;
     if(KernelStack) delete[] KernelStack;
     if(UserStack)
