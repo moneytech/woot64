@@ -194,6 +194,11 @@ static void buttonDrawBorder(uiButton_t *button)
 static void buttonOnPaint(uiControl_t *sender)
 {
     if(!sender) return;
+    rcRectangle_t rect = pmGetRectangle(sender->PixMap);
+    if(sender->BackColor.A == 255)
+        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+
     uiButton_t *button = (uiButton_t *)sender;
     buttonDrawFace(button);
     buttonDrawBorder(button);

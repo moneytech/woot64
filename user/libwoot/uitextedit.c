@@ -146,6 +146,11 @@ static void textContainerDrawBorder(uiControl_t *control)
 
 static void textContainerOnPaint(uiControl_t *sender)
 {
+    rcRectangle_t rect = pmGetRectangle(sender->PixMap);
+    if(sender->BackColor.A == 255)
+        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+
     uiTextEdit_t *edit = (uiTextEdit_t *)(sender->Parent);
     fntFont_t *font = edit->Control.Font;
     float lineHeight = fntGetPixelAscender(font);

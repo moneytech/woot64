@@ -194,6 +194,11 @@ static void drawDefaultBorder(uiControl_t *control)
 // default OnPaint handler
 static void defaultOnPaint(uiControl_t *sender)
 {
+    rcRectangle_t rect = pmGetRectangle(sender->PixMap);
+    if(sender->BackColor.A == 255)
+        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
+
     drawDefaultFace(sender);
     drawDefaultBorder(sender);
     //pmInvalidateWhole(sender->PixMap);
@@ -370,12 +375,6 @@ void uiControlRedraw(uiControl_t *control, int updateWindow)
 {
     if(control->Visibility == UI_HIDDEN)
         return;
-    if(control->BackColor.A != 0)
-    {
-        rcRectangle_t rect = pmGetRectangle(control->PixMap);
-        if(control->BackColor.A == 255) pmFillRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
-        else pmAlphaRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
-    }
     if(control->OnPaint)
         control->OnPaint(control);
     for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
