@@ -14,6 +14,8 @@
 #include <woot/rpc.h>
 #include <woot/thread.h>
 #include <woot/ui.h>
+#include <woot/uibutton.h>
+#include <woot/uitoolbar.h>
 #include <woot/video.h>
 #include <woot/wm.h>
 
@@ -68,6 +70,7 @@ static pmPixMap_t *bbPixMap = nullptr;
 static Window *activeWindow = nullptr;
 static Window *topWindow = nullptr;
 static Window *dragWindow = nullptr;
+static Window *taskWnd = nullptr;
 
 extern "C" int main(int argc, char *argv[])
 {
@@ -129,6 +132,7 @@ extern "C" int main(int argc, char *argv[])
 
     fbPixMap = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &fbFormat, pixels, 0);
     bbPixMap = pmFromPixMap(fbPixMap, &fbFormat); // create back buffer
+    rcRectangle_t deskRect = bbPixMap->Contents;
 
     int cursorHotX = 0;
     int cursorHotY = 0;
@@ -147,7 +151,7 @@ extern "C" int main(int argc, char *argv[])
     int mouseX = screenWidth / 2, mouseY = screenHeight / 2;
 
     // create desktop window
-    desktopWnd = new Window(currentPId, 0, 0, bbPixMap->Contents.Width, bbPixMap->Contents.Height, WM_CWF_NONE, bbPixMap, nullptr);
+    desktopWnd = new Window(currentPId, 0, 0, deskRect.Width, deskRect.Height, WM_CWF_NONE, bbPixMap, nullptr);
     windows.Prepend(desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
@@ -155,11 +159,21 @@ extern "C" int main(int argc, char *argv[])
         pmPixMap_t *pm = desktopWnd->GetPixMap();
         pmClear(pm, pmColorFromRGB(24, 64, 96));
         pmAlphaBlit(pm, logo, 0, 0,
-                    (bbPixMap->Contents.Width - logo->Contents.Width) / 2,
-                    (bbPixMap->Contents.Height - logo->Contents.Height) / 2,
+                    (deskRect.Width - logo->Contents.Width) / 2,
+                    (deskRect.Height - logo->Contents.Height) / 2,
                     logo->Contents.Width, logo->Contents.Height);
         pmDelete(logo);
     }
+
+    // create taskbar
+    taskWnd = new Window(currentPId, 0, deskRect.Height - 28, deskRect.Width, 28, WM_CWF_NONE, bbPixMap, nullptr);
+    windows.Append(taskWnd);
+    rcRectangle_t taskRect = taskWnd->GetRect();
+    uiControl_t *taskRoot = uiControlCreate(nullptr, 0, taskWnd->GetPixMap(), 0, 0, taskRect.Width, taskRect.Height, nullptr);
+    uiControlSetBorderStyle(taskRoot, UI_BORDER_RAISED);
+    uiToolbar_t *taskBar = uiToolbarCreate(taskRoot, 1, 1, taskRect.Width - 2, taskRect.Height - 2, UI_HORIZONTAL);
+    uiToolbarSetChildSpacing(taskBar, 1);
+    uiControlRedraw(taskRoot, 0);
 
     // create mouse cursor window
     pmPixMap_t *cursor = pmLoadCUR("/normal.cur", 0, &cursorHotX, &cursorHotY);
@@ -352,23 +366,26 @@ extern "C" int main(int argc, char *argv[])
                     Window *wnd = new Window(msg.Source, x, y, w, h, flags, bbPixMap, nullptr);
                     dirtyRect = rcAdd(dirtyRect, wnd->GetDecoratedRect());
 
-                    // add new window before mouse cursor window (if possible)
-                    int mouseWndIdx = windows.Size();
-                    for(int i = 0; i < mouseWndIdx; ++i)
-                    {
-                        if(windows.Get(i) == mouseWnd)
-                        {
-                            mouseWndIdx = i;
-                            break;
-                        }
-                    }
-                    windows.InsertBefore(mouseWndIdx, wnd);
+                    // add new window on top
+                    Window *frontWnd = findFrontWindow(&windows);
+                    int frontIdx = getWindowIdx(&windows, frontWnd);
+                    windows.InsertAfter(frontIdx, wnd);
 
                     wmCreateWindowResp response;
 
                     response.id = wnd->GetId();
                     response.pixelFormat = wnd->GetPixelFormat();
                     snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - offsetof(wmCreateWindowResp, shMemName), "%s", wnd->GetShMemName());
+
+                    // create taskbar button
+                    wnd->TaskButton = uiButtonCreate((uiControl_t *)taskBar, 0, 0, 192, 24, nullptr);
+                    if(wnd->TaskButton)
+                    {
+                        uiControlSetTextHAlign((uiControl_t *)wnd->TaskButton, UI_HALIGN_LEFT);
+                        uiControlRecalcRects((uiControl_t *)taskBar);
+                        uiControlRedraw((uiControl_t *)taskRoot, 0);
+                        dirtyRect = rcAddP(&dirtyRect, &taskRect);
+                    }
 
                     topWindow = wnd;
                     setActiveWindow(&windows, wnd);
@@ -388,9 +405,20 @@ extern "C" int main(int argc, char *argv[])
                             dragWindow = nullptr;
                         topWindow = findFrontWindow(&windows);
                         setActiveWindow(&windows, topWindow);
+
+                        // delete taskbar button
+                        if(wnd->TaskButton)
+                        {
+                            uiButtonDelete(wnd->TaskButton);
+                            uiControlRecalcRects((uiControl_t *)taskBar);
+                            uiControlRedraw((uiControl_t *)taskRoot, 0);
+                            dirtyRect = rcAddP(&dirtyRect, &taskRect);
+                        }
+
                         delete wnd;
                     }
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
+                    // create taskbar button
                 }
                 else if(!strcmp(req, "wmRedrawWindow"))
                 {
@@ -422,13 +450,21 @@ extern "C" int main(int argc, char *argv[])
                 else if(!strcmp(req, "wmSetWindowTitle"))
                 {
                     wmSetWindowTitleArgs *swta = (decltype(swta))(args);
+                    rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
+
                     Window *wnd = getWindowById(&windows, swta->windowId);
                     if(wnd)
                     {
                         wnd->SetTitle(swta->title);
                         dirtyRect = rcAdd(dirtyRect, wnd->GetDecoratedRect());
                     }
-                    rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
+
+                    // modify taskbar button
+                    if(wnd->TaskButton)
+                    {
+                        uiControlSetText((uiControl_t *)wnd->TaskButton, swta->title);
+                        dirtyRect = rcAddP(&dirtyRect, &taskRect);
+                    }
                 }
                 else printf("[windowmanager] Unknown RPC request '%s' from process %d\n", req, msg.Source);
             }
@@ -530,7 +566,7 @@ static Window *findFrontWindow(Windows *windows)
     for(int i = 0; i < wndCnt; ++i)
     {
         Window *wnd = windows->Get(i);
-        if(wnd == mouseWnd) break;
+        if(wnd == taskWnd || wnd == mouseWnd) break;
         prevWnd = wnd;
     }
     return prevWnd;
@@ -543,7 +579,7 @@ static Window *findBackWindow(Windows *windows)
     {
         Window *wnd = windows->Get(i);
         if(wnd == desktopWnd) continue;
-        if(wnd == mouseWnd) break;
+        if(wnd == taskWnd || wnd == mouseWnd) break;
         return wnd;
     }
     return nullptr;

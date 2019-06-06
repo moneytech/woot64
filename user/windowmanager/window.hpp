@@ -37,6 +37,8 @@ public:
 
     static Window *GetByID(int id);
 
+    uiButton_t *TaskButton;
+
     Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride);
     int GetId() const;
     int GetOwner() const;
