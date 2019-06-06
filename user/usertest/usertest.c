@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
     uiLineEditSetOnAcceptInput(edit, editAccept);
 
     uiControlSetFont((uiControl_t *)edit2, wmGetFont(WM_FONT_MONO));
+    uiTextEditSetEditable(edit2, UI_TRUE);
     for(int i = 0; i < 100; ++i)
     {
         char buf[64];

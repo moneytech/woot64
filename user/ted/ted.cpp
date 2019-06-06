@@ -73,9 +73,10 @@ extern "C" int main(int argc, char *argv[])
             if(lineBuf) free(lineBuf);
             fclose(f);
         }
-
     }
 
+    uiTextEditSetEditable(textEdit, UI_TRUE);
+    uiControlSetFocus((uiControl_t *)textEdit);
     uiControlRedraw(rootControl, 1);
 
     ipcMessage_t msg;

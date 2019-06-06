@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,9 @@ struct uiTextEdit
     uiControl_t *TextContainer;
     int CursorColumn, CursorRow;
     int MaxLineWidth;
+    uiBool_t Editable;
+    uiBool_t Shift;
+    uiBool_t Ctrl;
 };
 
 static char *stringInsert(char *str, int *pos, char chr)
@@ -78,11 +82,13 @@ static void textEditUpdate(uiTextEdit_t *edit)
     }
     else if(edit->CursorRow >= (endLine - 1))
     {
-        uiScrollbarSetPosition(edit->VScroll, lineHeight * (edit->CursorRow + 1) - viewHeight);
+        uiScrollbarSetPosition(edit->VScroll, lineHeight * (edit->CursorRow + 1) - viewHeight - lineDesc);
         redrawScroll = 1;
     }
 
     char *line = *(char **)vecGet(edit->Lines, edit->CursorRow);
+    size_t lineLen = strlen(line);
+    edit->CursorColumn = min(lineLen, edit->CursorColumn);
     int hPos = uiScrollbarGetPosition(edit->HScroll);
     int curX = fntMeasureString(font, line, edit->CursorColumn);
     if(curX < hPos)
@@ -101,7 +107,21 @@ static void textEditUpdate(uiTextEdit_t *edit)
         uiControlRedraw((uiControl_t *)edit->VScroll, 0);
         uiControlRedraw((uiControl_t *)edit->HScroll, 0);
     }
+}
 
+static void recalcMaxWidth(uiTextEdit_t *edit)
+{
+    fntFont_t *font = edit->Control.Font;
+    int lineCount = vecSize(edit->Lines);
+    int maxWidth = 0;
+    for(unsigned i = 0; i < lineCount; ++i)
+    {
+        char *line = *(char **)vecGet(edit->Lines, i);
+        int curWidth = fntMeasureString(font, line, -1);
+        if(curWidth > maxWidth)
+            maxWidth = curWidth;
+    }
+    edit->MaxLineWidth = maxWidth;
 }
 
 static void textContainerDrawBorder(uiControl_t *control)
@@ -157,11 +177,16 @@ static void textContainerOnPaint(uiControl_t *sender)
     textContainerDrawBorder(sender);
 }
 
-static void vScrollChangePosition(uiScrollbar_t *scroll)
+static void scrollChangePosition(uiScrollbar_t *scroll)
 {
-    //printf("%d\n", uiScrollbarGetPosition(scroll));
     uiTextEdit_t *edit = (uiTextEdit_t *)uiControlGetParent((uiControl_t *)scroll);
     uiControlRedraw(edit->TextContainer, 1);
+}
+
+static void editOnGotFocus(uiControl_t *sender)
+{   // redirect focus to the editor itself
+    uiTextEdit_t *edit = (uiTextEdit_t *)sender;
+    uiControlSetFocus(edit->TextContainer);
 }
 
 static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
@@ -169,7 +194,11 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
     if(!control || !event) return;
     uiTextEdit_t *edit = (uiTextEdit_t *)control->Parent;
     int chr = event->Keyboard.Character;
-    if(event->Keyboard.Key == VK_UP)
+    if(event->Keyboard.Key == VK_LSHIFT || event->Keyboard.Key == VK_RSHIFT)
+        edit->Shift = UI_TRUE;
+    else if(event->Keyboard.Key == VK_LCONTROL || event->Keyboard.Key == VK_RCONTROL)
+        edit->Ctrl = UI_TRUE;
+    else if(event->Keyboard.Key == VK_UP)
     {
         if(edit->CursorRow > 0)
             --edit->CursorRow;
@@ -179,7 +208,7 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
     else if(event->Keyboard.Key == VK_DOWN)
     {
         int lineCount = vecSize(edit->Lines);
-        if(edit->CursorRow < lineCount)
+        if(edit->CursorRow < (lineCount - 1))
             ++edit->CursorRow;
         textEditUpdate(edit);
         uiControlRedraw(control, 1);
@@ -188,6 +217,15 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
     {
         if(edit->CursorColumn > 0)
             --edit->CursorColumn;
+        else
+        {
+            if(edit->CursorRow > 0)
+            {
+                char *line = *(char **)vecGet(edit->Lines, edit->CursorRow - 1);
+                edit->CursorColumn = strlen(line);
+                    --edit->CursorRow;
+            }
+        }
         textEditUpdate(edit);
         uiControlRedraw(control, 1);
     }
@@ -199,6 +237,13 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
             size_t lineLen = strlen(line);
             if(edit->CursorColumn < lineLen)
                 ++edit->CursorColumn;
+            else
+            {
+                edit->CursorColumn = 0;
+                int lineCount = vecSize(edit->Lines);
+                if(edit->CursorRow < (lineCount - 1))
+                    ++edit->CursorRow;
+            }
             textEditUpdate(edit);
             uiControlRedraw(control, 1);
         }
@@ -213,12 +258,79 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
     else if(event->Keyboard.Key == VK_NEXT)
     {
         int viewLines = uiScrollbarGetZoom(edit->VScroll) / fntGetPixelAscender(edit->Control.Font);
-        edit->CursorRow = min(vecSize(edit->Lines), edit->CursorRow + viewLines);
+        edit->CursorRow = min(vecSize(edit->Lines) - 1, edit->CursorRow + viewLines);
         textEditUpdate(edit);
         uiControlRedraw(control, 1);
     }
+    else if(event->Keyboard.Key == VK_HOME)
+    {
+        edit->CursorColumn = 0;
+        if(edit->Ctrl)
+            edit->CursorRow = 0;
+        textEditUpdate(edit);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_END)
+    {
+        char *line = *(char **)vecGet(edit->Lines, edit->CursorRow);
+        edit->CursorColumn = line ? strlen(line) : 0;
+        if(edit->Ctrl)
+        {
+            int lineCount = vecSize(edit->Lines);
+            edit->CursorRow = lineCount - 1;
+        }
+        textEditUpdate(edit);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_RETURN && edit->Editable)
+    {
+        chr = 0;
+        char *line = *(char **)vecGet(edit->Lines, edit->CursorRow);
+        size_t lineLen = strlen(line);
+        int lineCut = min(lineLen, edit->CursorColumn);
+        uiTextEditInsertLineAfter(edit, line + lineCut, edit->CursorRow++);
+        line[lineCut] = 0;
+        edit->CursorColumn = 0;
+        textEditUpdate(edit);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_BACK && edit->Editable && edit->CursorColumn <= 0 && edit->CursorRow > 0)
+    {
+        chr = 0;
+        char *prevLine = *(char **)vecGet(edit->Lines, edit->CursorRow - 1);
+        char *thisLine = *(char **)vecGet(edit->Lines, edit->CursorRow);
+        size_t prevLen = strlen(prevLine);
+        size_t thisLen = strlen(thisLine);
+        size_t newLen = prevLen + thisLen;
+        char *newLine = (char *)malloc(newLen + 1);
+        snprintf(newLine, newLen + 1, "%s%s", prevLine, thisLine);
+        uiTextEditSetLine(edit, newLine, edit->CursorRow - 1);
+        uiTextEditRemoveLineAt(edit, edit->CursorRow);
+        --edit->CursorRow;
+        edit->CursorColumn = prevLen;
+        textEditUpdate(edit);
+        uiControlRedraw(control, 1);
+    }
+    else if(event->Keyboard.Key == VK_DELETE && edit->Editable)
+    {
+        size_t lineCount = vecSize(edit->Lines);
+        char *thisLine = *(char **)vecGet(edit->Lines, edit->CursorRow);
+        size_t thisLen = strlen(thisLine);
+        if(edit->CursorColumn >= thisLen && edit->CursorRow < (lineCount - 1))
+        {
+            chr = 0;
+            char *nextLine = *(char **)vecGet(edit->Lines, edit->CursorRow + 1);
+            size_t nextLen = strlen(nextLine);
+            size_t newLen = thisLen + nextLen;
+            char *newLine = (char *)malloc(newLen + 1);
+            snprintf(newLine, newLen + 1, "%s%s", thisLine, nextLine);
+            uiTextEditSetLine(edit, newLine, edit->CursorRow);
+            uiTextEditRemoveLineAt(edit, edit->CursorRow + 1);
+            uiControlRedraw(control, 1);
+        }
+    }
 
-    if(!chr) return;
+    if(!chr || !edit->Editable || edit->Ctrl) return;
 
     fntFont_t *font = edit->Control.Font;
     char *line = *(char **)vecGet(edit->Lines, edit->CursorRow);
@@ -226,21 +338,20 @@ static void textPreKeyPress(uiControl_t *control, wmEvent_t *event)
     if(line != newLine) vecSet(edit->Lines, edit->CursorRow, &newLine);
     int newWidth = fntMeasureString(font, newLine, -1);
     if(newWidth < edit->MaxLineWidth)
-    {   // we have to completely recalculate max text width
-        int lineCount = vecSize(edit->Lines);
-        int maxWidth = 0;
-        for(unsigned i = 0; i < lineCount; ++i)
-        {
-            char *line = *(char **)vecGet(edit->Lines, i);
-            int curWidth = fntMeasureString(font, line, -1);
-            if(curWidth > maxWidth)
-                maxWidth = curWidth;
-        }
-        edit->MaxLineWidth = maxWidth;
-    }
+        recalcMaxWidth(edit);
     else edit->MaxLineWidth = newWidth;
     textEditUpdate(edit);
     uiControlRedraw(control, 1);
+}
+
+static void textPreKeyRelease(uiControl_t *control, wmEvent_t *event)
+{
+    if(!control || !event) return;
+    uiTextEdit_t *edit = (uiTextEdit_t *)control->Parent;
+    if(event->Keyboard.Key == VK_LSHIFT || event->Keyboard.Key == VK_RSHIFT)
+        edit->Shift = UI_FALSE;
+    else if(event->Keyboard.Key == VK_LCONTROL || event->Keyboard.Key == VK_RCONTROL)
+        edit->Ctrl = UI_FALSE;
 }
 
 uiTextEdit_t *uiTextEditCreate(uiControl_t *parent, int x, int y, int width, int height)
@@ -253,20 +364,24 @@ uiTextEdit_t *uiTextEditCreate(uiControl_t *parent, int x, int y, int width, int
         uiTextEditDelete(edit);
         return NULL;
     }
+    edit->Control.OnGotFocus = editOnGotFocus;
+    edit->Control.CanHaveFocus = UI_TRUE;
+
     edit->TextContainer = uiControlCreate(&edit->Control, 0, NULL, 0, 0, edit->Control.Rectangle.Width - 16, edit->Control.Rectangle.Height - 16, NULL);
     edit->TextContainer->OnPaint = textContainerOnPaint;
     edit->TextContainer->BackColor = pmColorWhite;
     edit->TextContainer->BorderStyle = UI_BORDER_SUNKEN;
     edit->TextContainer->CanHaveFocus = UI_TRUE;
     edit->TextContainer->PreKeyPress = textPreKeyPress;
+    edit->TextContainer->PreKeyRelease = textPreKeyRelease;
 
     int viewWidth = edit->Control.Rectangle.Width - (edit->TextContainer->BorderStyle == UI_BORDER_NONE ? 0 : 2);
     int viewHeight = edit->Control.Rectangle.Height - (edit->TextContainer->BorderStyle == UI_BORDER_NONE ? 0 : 2);
     edit->HScroll = uiScrollbarCreate(&edit->Control, 0, edit->Control.Rectangle.Height - 16, edit->Control.Rectangle.Width - 16, 16, 1, 0, viewWidth, 0, viewWidth);
     edit->VScroll = uiScrollbarCreate(&edit->Control, edit->Control.Rectangle.Width - 16, 0, 16, edit->Control.Rectangle.Height - 16, 0, 0, viewHeight, 0, viewHeight);
 
-    uiScrollbarSetOnChangePosition(edit->HScroll, vScrollChangePosition);
-    uiScrollbarSetOnChangePosition(edit->VScroll, vScrollChangePosition);
+    uiScrollbarSetOnChangePosition(edit->HScroll, scrollChangePosition);
+    uiScrollbarSetOnChangePosition(edit->VScroll, scrollChangePosition);
 
     return edit;
 }
@@ -288,8 +403,21 @@ void uiTextEditDelete(uiTextEdit_t *edit)
     uiControlDelete((uiControl_t *)edit);
 }
 
-void uiTextEditClear(uiTextEdit_t *edit)
+void uiTextEditSetEditable(uiTextEdit_t *edit, uiBool_t value)
 {
+    if(!edit) return;
+    edit->Editable = value;
+}
+
+uiBool_t uiTextEditGetEditable(uiTextEdit_t *edit)
+{
+    if(!edit) return UI_FALSE;
+    return edit->Editable;
+}
+
+int uiTextEditClear(uiTextEdit_t *edit)
+{
+    if(!edit) return -EINVAL;
     unsigned lineCount = vecSize(edit->Lines);
     for(unsigned i = 0; i < lineCount; ++i)
     {
@@ -298,13 +426,108 @@ void uiTextEditClear(uiTextEdit_t *edit)
         free(line);
     }
     vecClear(edit->Lines);
+    edit->MaxLineWidth = 0;
+    textEditUpdate(edit);
+    return 0;
 }
 
-void uiTextEditAppendLine(uiTextEdit_t *edit, const char *line)
+int uiTextEditAppendLine(uiTextEdit_t *edit, const char *line)
 {
+    if(!edit) return -EINVAL;
     char *l = strdup(line);
-    vecAppend(edit->Lines, &l);
+    if(!l) return -errno;
+    int res = vecAppend(edit->Lines, &l);
+    if(res < 0)
+    {
+        free(l);
+        return res;
+    }
     int lineWidth = fntMeasureString(edit->Control.Font, l, -1);
     edit->MaxLineWidth = max(lineWidth, edit->MaxLineWidth);
     textEditUpdate(edit);
+    return 0;
+}
+
+int uiTextEditInsertLineAfter(uiTextEdit_t *edit, const char *line, int idx)
+{
+    if(!edit) return -EINVAL;
+    char *l = strdup(line);
+    if(!l) return -errno;
+    int res = vecInsertAfter(edit->Lines, idx, &l);
+    if(res < 0)
+    {
+        free(l);
+        return res;
+    }
+    int lineWidth = fntMeasureString(edit->Control.Font, l, -1);
+    edit->MaxLineWidth = max(lineWidth, edit->MaxLineWidth);
+    textEditUpdate(edit);
+    return 0;
+}
+
+int uiTextEditInsertLineBefore(uiTextEdit_t *edit, const char *line, int idx)
+{
+    if(!edit) return -EINVAL;
+    char *l = strdup(line);
+    if(!l) return -errno;
+    int res = vecInsertBefore(edit->Lines, idx, &l);
+    if(res < 0)
+    {
+        free(l);
+        return res;
+    }
+    int lineWidth = fntMeasureString(edit->Control.Font, l, -1);
+    edit->MaxLineWidth = max(lineWidth, edit->MaxLineWidth);
+    textEditUpdate(edit);
+    return 0;
+}
+
+int uiTextEditRemoveLineAt(uiTextEdit_t *edit, int idx)
+{
+    if(!edit) return -EINVAL;
+    char *line = *(char **)vecGet(edit->Lines, idx);
+    if(!line) return -ENOENT;
+    int res = vecRemoveAt(edit->Lines, idx);
+    if(res < 0) return res;
+    free(line);
+    recalcMaxWidth(edit);
+    textEditUpdate(edit);
+    return 0;
+}
+
+int uiTextEditSetLine(uiTextEdit_t *edit, const char *line, int idx)
+{
+    if(!edit || !line) return -EINVAL;
+    char *l = *(char **)vecGet(edit->Lines, idx);
+    if(!l) return -ENOENT;
+    char *newLine = strdup(line);
+    if(!newLine) return -errno;
+    vecSet(edit->Lines, idx, &newLine);
+    free(l);
+    int lineWidth = fntMeasureString(edit->Control.Font, l, -1);
+    edit->MaxLineWidth = max(lineWidth, edit->MaxLineWidth);
+    textEditUpdate(edit);
+    return 0;
+}
+
+char *uiTextEditGetLine(uiTextEdit_t *edit, int idx)
+{
+    if(!edit)
+    {
+        errno = EINVAL;
+        return NULL;
+    }
+    char **line = (char **)vecGet(edit->Lines, idx);
+    if(!line)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+    return *line;
+}
+
+int uiTextEditGetLineCount(uiTextEdit_t *edit)
+{
+    if(!edit) return -EINVAL;
+    return vecSize(edit->Lines);
 }
