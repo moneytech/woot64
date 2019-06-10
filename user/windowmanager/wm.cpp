@@ -359,8 +359,8 @@ extern "C" int main(int argc, char *argv[])
                     unsigned h = *(unsigned *)(args + 12);
                     unsigned flags = *(unsigned *)(args + 16);
 
-                    if(x == WM_CW_USEDEFAULT) x = (bbPixMap->Contents.Width - w) / 2;
-                    if(y == WM_CW_USEDEFAULT) y = (bbPixMap->Contents.Height - h) / 2;
+                    if(x == WM_CW_USEDEFAULT) x = (deskRect.Width - w) / 2;
+                    if(y == WM_CW_USEDEFAULT) y = (deskRect.Height - h) / 2;
 
                     //printf("[windowmanager] wmCreateWindow(%d, %d, %d, %d, %#.8x)\n", x, y, w, h, flags);
                     Window *wnd = new Window(msg.Source, x, y, w, h, flags, bbPixMap, nullptr);
@@ -418,7 +418,6 @@ extern "C" int main(int argc, char *argv[])
                         delete wnd;
                     }
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
-                    // create taskbar button
                 }
                 else if(!strcmp(req, "wmRedrawWindow"))
                 {

@@ -167,7 +167,7 @@ extern "C" int main(int argc, char *argv[])
     int pipeFDs[2];
     if((res = pipe(pipeFDs)) < 0)
     {
-        fprintf(stderr, "[console] Couldn't create stdout/stderr listener thread\n");
+        fprintf(stderr, "[console] Couldn't create pipe\n");
         return res;
     }
 
