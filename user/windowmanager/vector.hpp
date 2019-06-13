@@ -8,10 +8,10 @@ class Vector
     class iterator
     {
         Vector *vec;
-        uint idx;
+        unsigned idx;
     public:
         iterator(Vector *vec) : iterator(vec, 0) {}
-        iterator(Vector *vec, uint idx) : vec(vec), idx(idx) {}
+        iterator(Vector *vec, unsigned idx) : vec(vec), idx(idx) {}
         bool operator !=(iterator b) { return idx != b.idx || vec != b.vec; }
         bool operator ==(iterator b) { return vec == b.vec && idx == b.idx; }
         iterator operator ++() { idx++; return *this; }
@@ -61,12 +61,12 @@ public:
         return allocatedSize;
     }
 
-    T Get(uint idx) const
+    T Get(unsigned idx) const
     {
         return idx >= currentSize ? T() : data[idx];
     }
 
-    bool Set(uint idx, T value)
+    bool Set(unsigned idx, T value)
     {
         if(idx >= currentSize) return false;
         data[idx] = value;
@@ -89,7 +89,7 @@ public:
         return true;
     }
 
-    bool InsertBefore(uint idx, T value)
+    bool InsertBefore(unsigned idx, T value)
     {
         if(idx > currentSize) idx = currentSize;
         if(!upSize()) return false;
@@ -99,7 +99,7 @@ public:
         return true;
     }
 
-    bool InsertAfter(uint idx, T value)
+    bool InsertAfter(unsigned idx, T value)
     {
         if(idx >= currentSize) idx = currentSize - 1;
         if(!upSize()) return false;
@@ -111,7 +111,7 @@ public:
 
     bool RemoveOne(T value)
     {
-        for(uint i = 0; i < currentSize; ++i)
+        for(unsigned i = 0; i < currentSize; ++i)
         {
             if(value == data[i])
                 return RemoveAt(i);
@@ -122,7 +122,7 @@ public:
     size_t RemoveAll(T value)
     {
         size_t res = 0;
-        for(uint i = 0; i < currentSize; ++i)
+        for(unsigned i = 0; i < currentSize; ++i)
         {
             if(value == data[i])
                 res += RemoveAt(i--) ? 1 : 0;
@@ -130,7 +130,7 @@ public:
         return res;
     }
 
-    bool RemoveAt(uint idx)
+    bool RemoveAt(unsigned idx)
     {
         if(idx >= currentSize) return false;
         memmove(data + idx, data + idx + 1, (currentSize - idx - 1) * sizeof(T));
@@ -147,7 +147,7 @@ public:
         }
     }
 
-    bool Swap(uint idx1, uint idx2)
+    bool Swap(unsigned idx1, unsigned idx2)
     {
         if(idx1 >= currentSize || idx2 >= currentSize)
             return false;

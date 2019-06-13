@@ -32,8 +32,8 @@ void Window::titleBarButtonActivate(uiControl_t *sender)
     }
 }
 
-Window::Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
-    id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
+Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
+    WM(wm), id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
     pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr), active(true),
     dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr)
 {

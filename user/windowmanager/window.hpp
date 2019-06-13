@@ -1,5 +1,7 @@
 #pragma once
 
+#include <woot/rectangle.h>
+
 typedef struct fntFont fntFont_t;
 typedef struct pmPixelFormat pmPixelFormat_t;
 typedef struct pmPixMap pmPixMap_t;
@@ -7,6 +9,8 @@ typedef struct rcRectangle rcRectangle_t;
 typedef struct uiButton uiButton_t;
 typedef struct uiControl uiControl_t;
 typedef struct uiLabel uiLabel_t;
+
+class WindowManager;
 
 class Window
 {
@@ -38,8 +42,9 @@ public:
     static Window *GetByID(int id);
 
     uiButton_t *TaskButton;
+    WindowManager *WM;
 
-    Window(int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride);
+    Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride);
     int GetId() const;
     int GetOwner() const;
     pmPixelFormat_t GetPixelFormat() const;
