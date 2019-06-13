@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -24,8 +23,7 @@ extern "C" int main(int argc, char *argv[])
 
     setbuf(stdout, NULL);
 
-    int currentPId = getpid();
-    printf("[windowmanager] Started window manager (pid: %d)\n", currentPId);
+    printf("[windowmanager] Started window manager (pid: %d)\n", getpid());
 
     int defaultDisplayId = vidGetDefaultDisplayId();
     if(defaultDisplayId < 0)
@@ -105,15 +103,17 @@ extern "C" int main(int argc, char *argv[])
     ipcSendMessage(0, MSG_RELEASE_MOUSE, MSG_FLAG_NONE, NULL, 0);
 
     if(wm) delete wm;
-
     if(bbPixMap) pmDelete(bbPixMap);
     if(fbPixMap) pmDelete(fbPixMap);
+    vidCloseDisplay(display);
 
     return 0;
 }
 
 void WindowManager::taskButtonActivate(uiControl_t *control)
 {
+    uiControlClearFocus(control);
+
     Window *wnd = (Window *)control->Context;
     if(!wnd) return;
 
@@ -213,6 +213,11 @@ void WindowManager::setActiveWindow(Window *window)
         {
             rcRectangle_t rc = activeWindow->SetActive(false);
             activeWindow->UpdateWindowGraphics(&rc);
+            if(activeWindow->TaskButton)
+            {
+                uiButtonSetSelected(activeWindow->TaskButton, UI_FALSE);
+                UpdateRect(&taskRect);
+            }
             UpdateRect(&rc);
         }
         activeWindow = window;
@@ -220,6 +225,11 @@ void WindowManager::setActiveWindow(Window *window)
         {
             rcRectangle_t rc = activeWindow->SetActive(true);
             activeWindow->UpdateWindowGraphics(&rc);
+            if(activeWindow->TaskButton)
+            {
+                uiButtonSetSelected(activeWindow->TaskButton, UI_TRUE);
+                UpdateRect(&taskRect);
+            }
             UpdateRect(&rc);
         }
     }
@@ -349,8 +359,8 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         inpMouseEvent_t *mouseEv = (inpMouseEvent_t *)msg->Data;
 
         // mouse acceleration
-        float mouseSpeed = sqrt(mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1]);
-        if(mouseSpeed > 4)
+        float mouseSpeed = mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1];
+        if(mouseSpeed > 16)
         {
             mouseEv->Delta[0] *= 1.5;
             mouseEv->Delta[1] *= 1.5;

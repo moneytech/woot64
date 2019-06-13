@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <woot/uibutton.h>
 #include <woot/wm.h>
@@ -8,7 +9,8 @@
 struct uiButton
 {
     uiControl_t Control;
-    int Pressed;
+    uiBool_t Pressed;
+    uiBool_t Selected;
 };
 
 static void calculateFaceSize(uiButton_t *button, int *w, int *h)
@@ -175,18 +177,19 @@ static void buttonDrawBorder(uiButton_t *button)
 {
     rcRectangle_t rect = button->Control.Rectangle;
     rect.X = rect.Y = 0;
+    int pressed = (button->Pressed != 0) != (button->Selected != 0);
     switch(button->Control.BorderStyle)
     {
     default:
         break;
     case UI_BORDER_SIMPLE:
-        pmRectangleRect(button->Control.PixMap, &rect, button->Pressed ? pmColorInvert(button->Control.BorderColor) : button->Control.BorderColor);
+        pmRectangleRect(button->Control.PixMap, &rect, pressed ? pmColorInvert(button->Control.BorderColor) : button->Control.BorderColor);
         break;
     case UI_BORDER_RAISED:
-        pmDrawFrameRect(button->Control.PixMap, &rect, button->Pressed ? 1 : 0, button->Control.BackColor);
+        pmDrawFrameRect(button->Control.PixMap, &rect, pressed != 0 ? 1 : 0, button->Control.BackColor);
         break;
     case UI_BORDER_SUNKEN:
-        pmDrawFrameRect(button->Control.PixMap, &rect, button->Pressed ? 0 : 1, button->Control.BackColor);
+        pmDrawFrameRect(button->Control.PixMap, &rect, pressed != 0 ? 0 : 1, button->Control.BackColor);
         break;
     }
 }
@@ -195,11 +198,14 @@ static void buttonOnPaint(uiControl_t *sender)
 {
     if(!sender) return;
     rcRectangle_t rect = pmGetRectangle(sender->PixMap);
-    if(sender->BackColor.A == 255)
-        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
-    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
-
     uiButton_t *button = (uiButton_t *)sender;
+
+    // draw background
+    pmColor_t backColor = button->Selected ? pmColorBrighten(sender->BackColor, 0.1f) : sender->BackColor;
+    if(sender->BackColor.A == 255)
+        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, backColor);
+    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, backColor);
+
     buttonDrawFace(button);
     buttonDrawBorder(button);
 }
@@ -258,4 +264,17 @@ uiButton_t *uiButtonCreate(uiControl_t *parent, int x, int y, int width, int hei
 void uiButtonDelete(uiButton_t *control)
 {
     uiControlDelete((uiControl_t *)control);
+}
+
+void uiButtonSetSelected(uiButton_t *button, uiBool_t value)
+{
+    if(!button) return;
+    button->Selected = value;
+    uiControlRedraw(&button->Control, 1);
+}
+
+uiBool_t uiButtonGetSelected(uiButton_t *button)
+{
+    if(!button) return -EINVAL;
+    return button->Selected;
 }
