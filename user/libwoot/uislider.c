@@ -49,6 +49,12 @@ static void sliderPaint(uiControl_t *control)
     rcRectangle_t rect = slider->Control.Rectangle;
     pmPixMap_t *pm = control->PixMap;
     rect.X = rect.Y = 0;
+
+    // draw background
+    if(control->BackColor.A == 255)
+        pmFillRectangle(pm, 0, 0, rect.Width, rect.Height, control->BackColor);
+    else pmAlphaRectangle(pm, 0, 0, rect.Width, rect.Height, control->BackColor);
+
     if(slider->Horizontal)
     {
         int cy = rect.Height / 2;
