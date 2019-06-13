@@ -203,6 +203,15 @@ extern "C" int main(int argc, char *argv[])
                 quit = true;
                 break;
             }
+            else if(msg.Number == MSG_WM_EVENT)
+            {
+                wmEvent_t *event = (wmEvent_t *)msg.Data;
+                if(event->WindowId == taskWnd->GetId())
+                {
+                    uiControlProcessEvent((uiControl_t *)taskBar, event);
+                    dirtyRect = rcAddP(&dirtyRect, &taskRect);
+                }
+            }
             else if(msg.Number == MSG_KEYBOARD_EVENT)
             {
                 static bool altTabPhase = true;
