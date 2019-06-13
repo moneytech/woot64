@@ -52,17 +52,19 @@ struct wmRedrawRectArgs
 };
 
 typedef Vector<Window *> Windows;
-static Window *getWindowById(Windows *windows, int id);
+static Window *getWindowById(int id);
 static void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
-static void updateRect(Windows *windows, rcRectangle_t *rect);
-static int getWindowIdx(Windows *windows, Window *wnd);
-static void bringToFront(Windows *windows, Window *wnd);
-static void sendToBack(Windows *windows, Window *wnd);
-static Window *findFrontWindow(Windows *windows);
-static Window *findBackWindow(Windows *windows);
-static void setActiveWindow(Windows *windows, Window *window);
+static void updateRect(rcRectangle_t *rect);
+static int getWindowIdx(Window *wnd);
+static void bringToFront(Window *wnd);
+static void sendToBack(Window *wnd);
+static Window *findFrontWindow();
+static Window *findBackWindow();
+static void setActiveWindow(Window *window);
 static void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
+static void taskButtonActivate(uiControl_t *control);
 
+static Windows *windows = nullptr;
 static Window *desktopWnd = nullptr;
 static Window *mouseWnd = nullptr;
 static pmPixMap_t *fbPixMap = nullptr;
@@ -140,11 +142,11 @@ extern "C" int main(int argc, char *argv[])
     ipcSendMessage(0, MSG_ACQUIRE_KEYBOARD, MSG_FLAG_NONE, NULL, 0);
     ipcSendMessage(0, MSG_ACQUIRE_MOUSE, MSG_FLAG_NONE, NULL, 0);
 
-    Windows windows;
     int dragDeltaX = 0;
     int dragDeltaY = 0;
 
     threadDaemonize();
+    windows = new Windows;
     wmInitialize(WM_INITIALIZE_WM);
 
     ipcMessage_t msg;
@@ -152,7 +154,7 @@ extern "C" int main(int argc, char *argv[])
 
     // create desktop window
     desktopWnd = new Window(currentPId, 0, 0, deskRect.Width, deskRect.Height, WM_CWF_NONE, bbPixMap, nullptr);
-    windows.Prepend(desktopWnd);
+    windows->Prepend(desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
     {
@@ -167,7 +169,7 @@ extern "C" int main(int argc, char *argv[])
 
     // create taskbar
     taskWnd = new Window(currentPId, 0, deskRect.Height - 28, deskRect.Width, 28, WM_CWF_NONE, bbPixMap, nullptr);
-    windows.Append(taskWnd);
+    windows->Append(taskWnd);
     rcRectangle_t taskRect = taskWnd->GetRect();
     uiControl_t *taskRoot = uiControlCreate(nullptr, 0, taskWnd->GetPixMap(), 0, 0, taskRect.Width, taskRect.Height, nullptr);
     uiControlSetBorderStyle(taskRoot, UI_BORDER_RAISED);
@@ -184,10 +186,10 @@ extern "C" int main(int argc, char *argv[])
                               WM_CWF_USEALPHA, bbPixMap, &cursor->Format);
         pmBlit(mouseWnd->GetPixMap(), cursor, 0, 0, 0, 0, -1, -1);
         pmDelete(cursor);
-        windows.Append(mouseWnd);
+        windows->Append(mouseWnd);
     }
 
-    updateRect(&windows, &bbPixMap->Contents);
+    updateRect(&bbPixMap->Contents);
     int modifiers = INP_MOD_NONE;
     for(int i = 0;; ++i)
     {
@@ -224,16 +226,16 @@ extern "C" int main(int argc, char *argv[])
                 {   // alt+tab switch
                     if((modifiers & INP_MOD_SHIFT) != altTabPhase)
                     {
-                        Window *backWnd = findBackWindow(&windows);
-                        if(backWnd) bringToFront(&windows, backWnd);
+                        Window *backWnd = findBackWindow();
+                        if(backWnd) bringToFront(backWnd);
                     }
                     else
                     {
-                        Window *frontWnd = findFrontWindow(&windows);
-                        if(frontWnd) sendToBack(&windows, frontWnd);
+                        Window *frontWnd = findFrontWindow();
+                        if(frontWnd) sendToBack(frontWnd);
                     }
-                    topWindow = findFrontWindow(&windows);
-                    setActiveWindow(&windows, topWindow);
+                    topWindow = findFrontWindow();
+                    setActiveWindow(topWindow);
                     changeAltTabPhase = true;
                 }
                 else if(changeAltTabPhase && (kbdEv->Key == VK_LMENU || kbdEv->Key == VK_RMENU) && kbdEv->Flags & INP_KBD_EVENT_FLAG_RELEASE)
@@ -277,9 +279,9 @@ extern "C" int main(int argc, char *argv[])
                 if(mouseWnd)
                     moveWindow(&dirtyRect, mouseWnd, mouseX - cursorHotX, mouseY - cursorHotY);
 
-                for(int i = windows.Size() - 1; i >= 0; --i)
+                for(int i = windows->Size() - 1; i >= 0; --i)
                 {
-                    Window *wnd = windows.Get(i);
+                    Window *wnd = windows->Get(i);
 
                     if(wnd == mouseWnd || wnd == desktopWnd)
                         continue;
@@ -298,10 +300,10 @@ extern "C" int main(int argc, char *argv[])
                         {
                             if(topWindow != wnd) // bring window to the top
                             {
-                                bringToFront(&windows, wnd);
+                                bringToFront(wnd);
                                 topWindow = wnd;
                             }
-                            setActiveWindow(&windows, wnd);
+                            setActiveWindow(wnd);
                         }
                     }
 
@@ -376,9 +378,9 @@ extern "C" int main(int argc, char *argv[])
                     dirtyRect = rcAdd(dirtyRect, wnd->GetDecoratedRect());
 
                     // add new window on top
-                    Window *frontWnd = findFrontWindow(&windows);
-                    int frontIdx = getWindowIdx(&windows, frontWnd);
-                    windows.InsertAfter(frontIdx, wnd);
+                    Window *frontWnd = findFrontWindow();
+                    int frontIdx = getWindowIdx(frontWnd);
+                    windows->InsertAfter(frontIdx, wnd);
 
                     wmCreateWindowResp response;
 
@@ -390,6 +392,8 @@ extern "C" int main(int argc, char *argv[])
                     wnd->TaskButton = uiButtonCreate((uiControl_t *)taskBar, 0, 0, 192, 24, nullptr);
                     if(wnd->TaskButton)
                     {
+                        uiControlSetOnActivate((uiControl_t *)wnd->TaskButton, taskButtonActivate);
+                        uiControlSetContext((uiControl_t *)wnd->TaskButton, wnd);
                         uiControlSetTextHAlign((uiControl_t *)wnd->TaskButton, UI_HALIGN_LEFT);
                         uiControlRecalcRects((uiControl_t *)taskBar);
                         uiControlRedraw((uiControl_t *)taskRoot, 0);
@@ -397,23 +401,23 @@ extern "C" int main(int argc, char *argv[])
                     }
 
                     topWindow = wnd;
-                    setActiveWindow(&windows, wnd);
+                    setActiveWindow(wnd);
 
                     rpcIPCReturn(msg.Source, msg.ID, &response, sizeof(response));
                 }
                 else if(!strcmp(req, "wmDeleteWindow"))
                 {
                     int id = *(int *)args;
-                    Window *wnd = getWindowById(&windows, id);
+                    Window *wnd = getWindowById(id);
                     if(wnd)
                     {
                         rcRectangle_t rect = wnd->GetDecoratedRect();
                         dirtyRect = rcAddP(&dirtyRect, &rect);
-                        windows.RemoveOne(wnd);
+                        windows->RemoveOne(wnd);
                         if(dragWindow == wnd)
                             dragWindow = nullptr;
-                        topWindow = findFrontWindow(&windows);
-                        setActiveWindow(&windows, topWindow);
+                        topWindow = findFrontWindow();
+                        setActiveWindow(topWindow);
 
                         // delete taskbar button
                         if(wnd->TaskButton)
@@ -431,7 +435,7 @@ extern "C" int main(int argc, char *argv[])
                 else if(!strcmp(req, "wmRedrawWindow"))
                 {
                     int window = *(int *)(args);
-                    Window *wnd = getWindowById(&windows, window);
+                    Window *wnd = getWindowById(window);
                     rcRectangle rect = wnd ? wnd->GetDecoratedRect() : rcRectangleEmpty;
                     dirtyRect = rcAddP(&dirtyRect, &rect);
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
@@ -440,7 +444,7 @@ extern "C" int main(int argc, char *argv[])
                 {
                     wmRedrawRectArgs *rra = (decltype(rra))args;
                     //printf("rra %d %d %d %d\n", rra->rect.X, rra->rect.Y, rra->rect.Width, rra->rect.Height);
-                    Window *wnd = getWindowById(&windows, rra->windowId);
+                    Window *wnd = getWindowById(rra->windowId);
                     rcRectangle_t wndRect = wnd->GetRect();
                     rra->rect.X += wndRect.X;
                     rra->rect.Y += wndRect.Y;
@@ -451,7 +455,7 @@ extern "C" int main(int argc, char *argv[])
                 else if(!strcmp(req, "wmSetWindowPos"))
                 {
                     wmSetWindowPosArgs *swpa = (decltype(swpa))(args);
-                    Window *wnd = getWindowById(&windows, swpa->windowId);
+                    Window *wnd = getWindowById(swpa->windowId);
                     if(wnd) moveWindow(&dirtyRect, wnd, swpa->x, swpa->y);
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
                 }
@@ -460,7 +464,7 @@ extern "C" int main(int argc, char *argv[])
                     wmSetWindowTitleArgs *swta = (decltype(swta))(args);
                     rpcIPCReturn(msg.Source, msg.ID, NULL, 0);
 
-                    Window *wnd = getWindowById(&windows, swta->windowId);
+                    Window *wnd = getWindowById(swta->windowId);
                     if(wnd)
                     {
                         wnd->SetTitle(swta->title);
@@ -482,7 +486,7 @@ extern "C" int main(int argc, char *argv[])
         if(quit) break;
 
         if(!rcIsEmptyP(&dirtyRect))
-            updateRect(&windows, &dirtyRect);
+            updateRect(&dirtyRect);
     }
 
     printf("[windowmanager] Closing window manager\n");
@@ -491,12 +495,12 @@ extern "C" int main(int argc, char *argv[])
 
     if(mouseWnd)
     {
-        windows.RemoveOne(mouseWnd);
+        windows->RemoveOne(mouseWnd);
         delete mouseWnd;
     }
     if(desktopWnd)
     {
-        windows.RemoveOne(desktopWnd);
+        windows->RemoveOne(desktopWnd);
         delete desktopWnd;
     }
     if(bbPixMap) pmDelete(bbPixMap);
@@ -505,7 +509,7 @@ extern "C" int main(int argc, char *argv[])
     return 0;
 }
 
-Window *getWindowById(Windows *windows, int id)
+Window *getWindowById(int id)
 {
     for(Window *wnd : *windows)
     {
@@ -522,7 +526,7 @@ void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y)
     *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
 }
 
-void updateRect(Windows *windows, rcRectangle_t *rect)
+void updateRect(rcRectangle_t *rect)
 {
     for(Window *wnd : *windows)
         wnd->UpdateWindowGraphics(rect);
@@ -530,7 +534,7 @@ void updateRect(Windows *windows, rcRectangle_t *rect)
     //pmRectangleRect(fbPixMap, rect, pmColorFromRGB(rand(), rand(), rand()));
 }
 
-int getWindowIdx(Windows *windows, Window *wnd)
+int getWindowIdx(Window *wnd)
 {
     size_t wndCnt = windows->Size();
     for(decltype(wndCnt) i = 0; i < wndCnt; ++i)
@@ -541,33 +545,33 @@ int getWindowIdx(Windows *windows, Window *wnd)
     return -1;
 }
 
-void bringToFront(Windows *windows, Window *wnd)
+void bringToFront(Window *wnd)
 {
-    int wndIdx = getWindowIdx(windows, wnd);
-    int topWndIdx = getWindowIdx(windows, findFrontWindow(windows));
+    int wndIdx = getWindowIdx(wnd);
+    int topWndIdx = getWindowIdx(findFrontWindow());
     if(wndIdx >= 0 && topWndIdx >= 0 && topWndIdx > wndIdx)
     {
         windows->RemoveAt(wndIdx);
         windows->InsertBefore(topWndIdx, wnd);
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
-        updateRect(windows, &wndRect);
+        updateRect(&wndRect);
     }
 }
 
-void sendToBack(Windows *windows, Window *wnd)
+void sendToBack(Window *wnd)
 {
-    int wndIdx = getWindowIdx(windows, wnd);
-    int backWndIdx = getWindowIdx(windows, findBackWindow(windows));
+    int wndIdx = getWindowIdx(wnd);
+    int backWndIdx = getWindowIdx(findBackWindow());
     if(wndIdx >= 0 && backWndIdx >= 0 && backWndIdx < wndIdx)
     {
         windows->RemoveAt(wndIdx);
         windows->InsertBefore(backWndIdx, wnd);
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
-        updateRect(windows, &wndRect);
+        updateRect(&wndRect);
     }
 }
 
-static Window *findFrontWindow(Windows *windows)
+static Window *findFrontWindow()
 {
     Window *prevWnd = nullptr;
     int wndCnt = windows->Size();
@@ -580,7 +584,7 @@ static Window *findFrontWindow(Windows *windows)
     return prevWnd;
 }
 
-static Window *findBackWindow(Windows *windows)
+static Window *findBackWindow()
 {
     int wndCnt = windows->Size();
     for(int i = 0; i < wndCnt; ++i)
@@ -593,7 +597,7 @@ static Window *findBackWindow(Windows *windows)
     return nullptr;
 }
 
-static void setActiveWindow(Windows *windows, Window *window)
+static void setActiveWindow(Window *window)
 {
     if(activeWindow != window)
     {
@@ -601,14 +605,14 @@ static void setActiveWindow(Windows *windows, Window *window)
         {
             rcRectangle_t rc = activeWindow->SetActive(false);
             activeWindow->UpdateWindowGraphics(&rc);
-            updateRect(windows, &rc);
+            updateRect(&rc);
         }
         activeWindow = window;
         if(activeWindow)
         {
             rcRectangle_t rc = activeWindow->SetActive(true);
             activeWindow->UpdateWindowGraphics(&rc);
-            updateRect(windows, &rc);
+            updateRect(&rc);
         }
     }
 }
@@ -625,4 +629,16 @@ static void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY,
     event->Mouse.ButtonsPressed = mouseEv->ButtonsPressed;
     event->Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
     event->Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
+}
+
+static void taskButtonActivate(uiControl_t *control)
+{
+    //uiButton_t *btn = (uiButton_t *)control;
+    Window *wnd = (Window *)control->Context;
+    if(wnd)
+    {
+        bringToFront(wnd);
+        topWindow = wnd;
+        setActiveWindow(wnd);
+    }
 }
