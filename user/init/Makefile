@@ -12,7 +12,10 @@ LIBS = \
 	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
 	-Wl,--start-group,-lc,-lwoot,-lsyscalls,--end-group
 
-export WOOT_TOP_DIR
+CFLAGS = -ggdb
+CXXFLAGS = -ggdb
+
+export WOOT_TOP_DIR CFLAGS CXXFLAGS
 
 all: $(OUTFILE)
 

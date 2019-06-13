@@ -115,8 +115,8 @@ void Ints::CommonHandler(Ints::State *state)
         if(!ct || ct->ExcCount <= 1)
             DumpState(state);
 
-        if(state->InterruptNumber == 8 || (state->InterruptNumber == 14 && cpuGetCR2() < 0x0000800000000000))
-            cpuSystemHalt(0x2222FA17);
+        //if(state->InterruptNumber == 8) || (state->InterruptNumber == 14 && cpuGetCR2() < 0x0000800000000000))
+        //    cpuSystemHalt(0x2222FA17);
 
         if(ct && ct->ExcCount > 1)
         {

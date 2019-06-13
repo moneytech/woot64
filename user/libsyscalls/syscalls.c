@@ -271,19 +271,19 @@ long sysProcessCreate(const char *cmdline)
     return __syscall1(SYS_PROCESS_CREATE, (long)cmdline);
 }
 
-long sysProcessDelete(int fd)
+long sysProcessDelete(int pid)
 {
-    return __syscall1(SYS_PROCESS_DELETE, fd);
+    return __syscall1(SYS_PROCESS_DELETE, pid);
 }
 
-long sysProcessWait(int fd, int timeout)
+long sysProcessWait(int pid, int timeout)
 {
-    return __syscall2(SYS_PROCESS_WAIT, fd, timeout);
+    return __syscall2(SYS_PROCESS_WAIT, pid, timeout);
 }
 
-long sysProcessAbort(int fd, int result)
+long sysProcessAbort(int pid, int result)
 {
-    return __syscall2(SYS_PROCESS_ABORT, fd, result);
+    return __syscall2(SYS_PROCESS_ABORT, pid, result);
 }
 
 long sysProcessListIds(int *buf, unsigned size)

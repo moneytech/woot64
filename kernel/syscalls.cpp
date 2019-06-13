@@ -784,22 +784,32 @@ long SysCalls::sysThreadGetId(int fd)
 long SysCalls::sysProcessCreate(const char *cmdline)
 {
     BUFFER_CHECK(cmdline, String::Size(cmdline));
-    return Process::GetCurrent()->NewProcess(cmdline);
+    Process *p = Process::Create(cmdline, nullptr, false, nullptr);
+    if(!p) return -EAGAIN;
+    p->Start();
+    return p->Id;
 }
 
-long SysCalls::sysProcessDelete(int fd)
+long SysCalls::sysProcessDelete(int id)
 {
-    return Process::GetCurrent()->DeleteProcess(fd);
+    Process *p = Process::GetByID(id);
+    if(!p) return -ESRCH;
+    delete p;
+    return ESUCCESS;
 }
 
-long SysCalls::sysProcessWait(int fd, int timeout)
+long SysCalls::sysProcessWait(int id, int timeout)
 {
-    return Process::GetCurrent()->WaitProcess(fd, timeout);
+    Process *p = Process::GetByID(id);
+    if(!p) return -ESRCH;
+    int timeleft = p->Finished->Wait(timeout < 0 ? 0 : timeout, timeout == 0, false);
+    return timeleft >= 0 ? timeleft : -EBUSY;
 }
 
-long SysCalls::sysProcessAbort(int fd, int result)
+long SysCalls::sysProcessAbort(int id, int result)
 {
-    return Process::GetCurrent()->AbortProcess(fd, result);
+    Process::Finalize(id, result);
+    return ESUCCESS;
 }
 
 long SysCalls::sysProcessListIds(int *buf, size_t bufSize)

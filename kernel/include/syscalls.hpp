@@ -145,9 +145,9 @@ class SysCalls
     static long sysThreadGetId(int fd);
 
     static long sysProcessCreate(const char *cmdline);
-    static long sysProcessDelete(int fd);
-    static long sysProcessWait(int fd, int timeout);
-    static long sysProcessAbort(int fd, int result);
+    static long sysProcessDelete(int id);
+    static long sysProcessWait(int id, int timeout);
+    static long sysProcessAbort(int id, int result);
     static long sysProcessListIds(int *buf, size_t bufSize);
     static long sysProcessGetName(int pid, char *buf, size_t bufSize);
 

@@ -709,11 +709,6 @@ int Process::Close(int handle)
         UnLock();
         return ESUCCESS;
     }
-    else if(h.Type == Handle::HandleType::Process)
-    {
-        UnLock();
-        return ESUCCESS;
-    }
     else if(h.Type == Handle::HandleType::NamedObject)
     {
         int res = h.NamedObject->Put();
@@ -974,54 +969,6 @@ int Process::AbortThread(int handle, int retVal)
     return ESUCCESS;
 }
 
-int Process::NewProcess(const char *cmdline)
-{
-    if(!Lock()) return -EBUSY;
-    Process *p = Process::Create(cmdline, nullptr, false, nullptr);
-    int res = allocHandleSlot(Handle(p));
-    if(res < 0)
-    {
-        Process::Finalize(p->Id, -127);
-        delete p;
-        return res;
-    }
-    p->Start();
-    UnLock();
-    return res;
-}
-
-int Process::DeleteProcess(int handle)
-{
-    Process *p = Process::GetProcess(handle);
-    if(!p) return -EINVAL;
-    int res = Close(handle);
-    if(res) return res;
-    Process::Finalize(p->Id, -127);
-    delete p;
-    return ESUCCESS;
-}
-
-Process *Process::GetProcess(int handle)
-{
-    return (Process *)GetHandleData(handle, Handle::HandleType::Process);
-}
-
-int Process::WaitProcess(int handle, int timeout)
-{
-    Process *p = Process::GetProcess(handle);
-    if(!p || !p->Finished) return -EINVAL;
-    int timeleft = p->Finished->Wait(timeout < 0 ? 0 : timeout, timeout == 0, false);
-    return timeleft >= 0 ? timeleft : -EBUSY;
-}
-
-int Process::AbortProcess(int handle, int result)
-{
-    Process *p = Process::GetProcess(handle);
-    if(!p) return -EINVAL;
-    Process::Finalize(p->Id, result);
-    return ESUCCESS;
-}
-
 int Process::CreateNamedObjectHandle(NamedObject *no)
 {
     if(!Lock()) return -EBUSY;
@@ -1188,12 +1135,6 @@ Process::Handle::Handle(::File *file) :
 Process::Handle::Handle(::Thread *thread) :
     Type(HandleType::Thread),
     Thread(thread)
-{
-}
-
-Process::Handle::Handle(::Process *process) :
-    Type(HandleType::Process),
-    Process(process)
 {
 }
 

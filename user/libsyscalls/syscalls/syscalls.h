@@ -197,9 +197,9 @@ long sysThreadDaemonize();
 long sysThreadGetId(int fd);
 
 long sysProcessCreate(const char *cmdline);
-long sysProcessDelete(int fd);
-long sysProcessWait(int fd, int timeout);
-long sysProcessAbort(int fd, int result);
+long sysProcessDelete(int pid);
+long sysProcessWait(int pid, int timeout);
+long sysProcessAbort(int pid, int result);
 long sysProcessListIds(int *buf, unsigned size);
 long sysProcessGetName(int pid, char *buf, unsigned size);
 
