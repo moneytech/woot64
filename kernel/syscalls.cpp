@@ -723,16 +723,20 @@ long SysCalls::sysThreadCreate(const char *name, void *entry, uintptr_t arg, int
     return Process::GetCurrent()->NewThread(name, entry, arg, retVal);
 }
 
-long SysCalls::sysThreadDelete(int fd)
+long SysCalls::sysThreadDelete(int tid)
 {
-    return Process::GetCurrent()->DeleteThread(fd);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    Thread::Finalize(t, -127);
+    delete t;
+    return ESUCCESS;
 }
 
-long SysCalls::sysThreadResume(int fd)
+long SysCalls::sysThreadResume(int tid)
 {
-    Process *cp = Process::GetCurrent();
-    Thread *t = (Thread *)cp->GetHandleData(fd, Process::Handle::HandleType::Thread);
-    int res = cp->ResumeThread(fd);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    int res = t->Resume(false) ? ESUCCESS : -EINVAL;
     if(res < 0) return res;
     res = t->Initialized->Wait(0, false, false);
     if(res < 0) return res;
@@ -740,45 +744,41 @@ long SysCalls::sysThreadResume(int fd)
     return ESUCCESS;
 }
 
-long SysCalls::sysThreadSuspend(int fd)
+long SysCalls::sysThreadSuspend(int tid)
 {
-    if(fd < 0)
-    {
-        Thread::GetCurrent()->Suspend();
-        return ESUCCESS;
-    }
-    return Process::GetCurrent()->SuspendThread(fd);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    t->Suspend();
+    return ESUCCESS;
 }
 
-long SysCalls::sysThreadSleep(int fd, int ms)
+long SysCalls::sysThreadSleep(int tid, int ms)
 {
-    if(fd < 0) return Time::Sleep(ms, false);
-    return Process::GetCurrent()->SleepThread(fd, ms);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    return t->Sleep(ms, false);
 }
 
-long SysCalls::sysThreadWait(int fd, int timeout)
+long SysCalls::sysThreadWait(int tid, int timeout)
 {
-    return Process::GetCurrent()->WaitThread(fd, timeout);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    int timeleft = t->Finished->Wait(timeout < 0 ? 0 : timeout, timeout == 0, false);
+    return timeleft >= 0 ? timeleft : -EBUSY;
 }
 
-long SysCalls::sysThreadAbort(int fd, int retVal)
+long SysCalls::sysThreadAbort(int tid, int retVal)
 {
-    if(fd < 0) Thread::Finalize(Thread::GetCurrent(), retVal);
-    return Process::GetCurrent()->AbortThread(fd, retVal);
+    Thread *t = Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    t->Finalize(t, retVal);
+    return ESUCCESS;
 }
 
 long SysCalls::sysThreadDaemonize()
 {
     Thread::GetCurrent()->Finished->Signal(nullptr);
     return ESUCCESS;
-}
-
-long SysCalls::sysThreadGetId(int fd)
-{
-    if(fd < 0) return Thread::GetCurrent()->Id;
-    Thread *t = Process::GetCurrent()->GetThread(fd);
-    if(!t) return -EINVAL;
-    return t->Id;
 }
 
 long SysCalls::sysProcessCreate(const char *cmdline)
@@ -790,25 +790,25 @@ long SysCalls::sysProcessCreate(const char *cmdline)
     return p->Id;
 }
 
-long SysCalls::sysProcessDelete(int id)
+long SysCalls::sysProcessDelete(int pid)
 {
-    Process *p = Process::GetByID(id);
+    Process *p = Process::GetByID(pid);
     if(!p) return -ESRCH;
     delete p;
     return ESUCCESS;
 }
 
-long SysCalls::sysProcessWait(int id, int timeout)
+long SysCalls::sysProcessWait(int pid, int timeout)
 {
-    Process *p = Process::GetByID(id);
+    Process *p = Process::GetByID(pid);
     if(!p) return -ESRCH;
     int timeleft = p->Finished->Wait(timeout < 0 ? 0 : timeout, timeout == 0, false);
     return timeleft >= 0 ? timeleft : -EBUSY;
 }
 
-long SysCalls::sysProcessAbort(int id, int result)
+long SysCalls::sysProcessAbort(int pid, int result)
 {
-    Process::Finalize(id, result);
+    Process::Finalize(pid, result);
     return ESUCCESS;
 }
 
@@ -822,6 +822,24 @@ long SysCalls::sysProcessGetName(int pid, char *buf, size_t bufSize)
 {
     BUFFER_CHECK(buf, bufSize * sizeof(*buf));
     return Process::GetName(pid, buf, bufSize);
+}
+
+long SysCalls::sysProcessGetThreadCount(int pid)
+{
+    Process *p = Process::GetByID(pid);
+    if(!p) return -ESRCH;
+    if(!p->Lock())
+        return -EBUSY;
+    int res = p->Threads.Count();
+    p->UnLock();
+    return res;
+}
+
+long SysCalls::sysProcessGetUsedMemory(int pid)
+{
+    Process *p = Process::GetByID(pid);
+    if(!p) return -ESRCH;
+    return Paging::CountPresentPages(p->AddressSpace, 0, USER_END) << PAGE_SHIFT;
 }
 
 long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
@@ -975,7 +993,6 @@ void SysCalls::Initialize()
     Handlers[SYS_THREAD_WAIT] = (SysCallHandler)sysThreadWait;
     Handlers[SYS_THREAD_ABORT] = (SysCallHandler)sysThreadAbort;
     Handlers[SYS_THREAD_DAEMONIZE] = (SysCallHandler)sysThreadDaemonize;
-    Handlers[SYS_THREAD_GET_ID] = (SysCallHandler)sysThreadGetId;
 
     Handlers[SYS_PROCESS_CREATE] = (SysCallHandler)sysProcessCreate;
     Handlers[SYS_PROCESS_DELETE] = (SysCallHandler)sysProcessDelete;
@@ -983,6 +1000,8 @@ void SysCalls::Initialize()
     Handlers[SYS_PROCESS_ABORT] = (SysCallHandler)sysProcessAbort;
     Handlers[SYS_PROCESS_LIST_IDS] = (SysCallHandler)sysProcessListIds;
     Handlers[SYS_PROCESS_GET_NAME] = (SysCallHandler)sysProcessGetName;
+    Handlers[SYS_PROCESS_GET_THREAD_COUNT] = (SysCallHandler)sysProcessGetThreadCount;
+    Handlers[SYS_PROCESS_GET_USED_MEMORY] = (SysCallHandler)sysProcessGetUsedMemory;
 
     Handlers[SYS_IPC_SEND_MESSAGE] = (SysCallHandler)sysIPCSendMessage;
     Handlers[SYS_IPC_GET_MESSAGE] = (SysCallHandler)sysIPCGetMessage;

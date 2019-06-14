@@ -10,6 +10,8 @@ int processWait(int handle, int timeout);
 int processAbort(int handle, int result);
 int processListIds(int *buf, unsigned bufSize);
 int processGetName(int pid, char *buf, unsigned bufSize);
+int processGetThreadCount(int pid);
+unsigned long processGetUsedMemory(int pid);
 
 #ifdef __cplusplus
 }

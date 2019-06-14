@@ -9,14 +9,13 @@ extern "C" {
 #define THREAD_SELF (-1)
 
 int threadCreate(const char *name, void *entry, uintptr_t arg, int *retVal);
-int threadDelete(int handle);
-int threadResume(int fd);
-int threadSuspend(int handle);
-int threadSleep(int handle, int ms);
-int threadWait(int handle, int timeout);
-int threadAbort(int handle, int retVal);
+int threadDelete(int tid);
+int threadResume(int tid);
+int threadSuspend(int tid);
+int threadSleep(int tid, int ms);
+int threadWait(int tid, int timeout);
+int threadAbort(int tid, int retVal);
 int threadDaemonize();
-int threadGetId(int handle);
 
 #ifdef __cplusplus
 }

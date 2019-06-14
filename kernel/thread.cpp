@@ -298,7 +298,7 @@ Thread *Thread::GetByID(pid_t id)
 {
     bool ints = cpuDisableInterrupts();
     Thread *res = nullptr;
-    if(currentThread->Id == id)
+    if(currentThread->Id == id || id == -1)
     {
         res = currentThread;
         cpuRestoreInterrupts(ints);

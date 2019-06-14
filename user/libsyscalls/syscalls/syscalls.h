@@ -1,80 +1,81 @@
 #pragma once
 
 // KERNEL_MATCH: syscalls.hpp
-#define SYS_read                0
-#define SYS_write               1
-#define SYS_open                2
-#define SYS_close               3
-#define SYS_stat                4
-#define SYS_fstat               5
-#define SYS_lseek               8
-#define SYS_mmap                9
-#define SYS_munmap              11
-#define SYS_brk                 12
-#define SYS_readv               19
-#define SYS_writev              20
-#define SYS_pipe                22
-#define SYS_dup                 32
-#define SYS_dup2                33
-#define SYS_getpid              39
-#define SYS_exit                60
-#define SYS_getdents            78
-#define SYS_getcwd              79
-#define SYS_chdir               80
-#define SYS_sysinfo             99
-#define SYS_arch_prctl          158
-#define SYS_getdents64          217
-#define SYS_set_tid_address     218
-#define SYS_clock_get_time      228
-#define SYS_exit_group          231
+#define SYS_read                        0
+#define SYS_write                       1
+#define SYS_open                        2
+#define SYS_close                       3
+#define SYS_stat                        4
+#define SYS_fstat                       5
+#define SYS_lseek                       8
+#define SYS_mmap                        9
+#define SYS_munmap                      11
+#define SYS_brk                         12
+#define SYS_readv                       19
+#define SYS_writev                      20
+#define SYS_pipe                        22
+#define SYS_dup                         32
+#define SYS_dup2                        33
+#define SYS_getpid                      39
+#define SYS_exit                        60
+#define SYS_getdents                    78
+#define SYS_getcwd                      79
+#define SYS_chdir                       80
+#define SYS_sysinfo                     99
+#define SYS_arch_prctl                  158
+#define SYS_getdents64                  217
+#define SYS_set_tid_address             218
+#define SYS_clock_get_time              228
+#define SYS_exit_group                  231
 
-#define SYS_FB_GET_COUNT        0x300
-#define SYS_FB_GET_DEFAULT      0x301
-#define SYS_FB_LIST_IDS         0x302
-#define SYS_FB_GET_NAME         0x303
-#define SYS_FB_OPEN             0x304
-#define SYS_FB_CLOSE            0x305
-#define SYS_FB_GET_MODE_COUNT   0x306
-#define SYS_FB_GET_MODE_INFO    0x307
-#define SYS_FB_SET_MODE         0x308
-#define SYS_FB_MAP_PIXELS       0x309
-#define SYS_FB_GET_CURRENT_MODE 0x30A
+#define SYS_FB_GET_COUNT                0x300
+#define SYS_FB_GET_DEFAULT              0x301
+#define SYS_FB_LIST_IDS                 0x302
+#define SYS_FB_GET_NAME                 0x303
+#define SYS_FB_OPEN                     0x304
+#define SYS_FB_CLOSE                    0x305
+#define SYS_FB_GET_MODE_COUNT           0x306
+#define SYS_FB_GET_MODE_INFO            0x307
+#define SYS_FB_SET_MODE                 0x308
+#define SYS_FB_MAP_PIXELS               0x309
+#define SYS_FB_GET_CURRENT_MODE         0x30A
 
-#define SYS_INDEV_GET_COUNT     0x310
-#define SYS_INDEV_LIST_IDS      0x311
-#define SYS_INDEV_GET_TYPE      0x312
-#define SYS_INDEV_GET_NAME      0x313
-#define SYS_INDEV_OPEN          0x314
-#define SYS_INDEV_CLOSE         0x315
-#define SYS_INDEV_GET_EVENT     0x316
+#define SYS_INDEV_GET_COUNT             0x310
+#define SYS_INDEV_LIST_IDS              0x311
+#define SYS_INDEV_GET_TYPE              0x312
+#define SYS_INDEV_GET_NAME              0x313
+#define SYS_INDEV_OPEN                  0x314
+#define SYS_INDEV_CLOSE                 0x315
+#define SYS_INDEV_GET_EVENT             0x316
 
-#define SYS_THREAD_CREATE       0x320
-#define SYS_THREAD_DELETE       0x321
-#define SYS_THREAD_RESUME       0x322
-#define SYS_THREAD_SUSPEND      0x323
-#define SYS_THREAD_SLEEP        0x324
-#define SYS_THREAD_WAIT         0x325
-#define SYS_THREAD_ABORT        0x326
-#define SYS_THREAD_DAEMONIZE    0x327
-#define SYS_THREAD_GET_ID       0x328
+#define SYS_THREAD_CREATE               0x320
+#define SYS_THREAD_DELETE               0x321
+#define SYS_THREAD_RESUME               0x322
+#define SYS_THREAD_SUSPEND              0x323
+#define SYS_THREAD_SLEEP                0x324
+#define SYS_THREAD_WAIT                 0x325
+#define SYS_THREAD_ABORT                0x326
+#define SYS_THREAD_DAEMONIZE            0x327
 
-#define SYS_PROCESS_CREATE      0x330
-#define SYS_PROCESS_DELETE      0x331
-#define SYS_PROCESS_WAIT        0x332
-#define SYS_PROCESS_ABORT       0x333
-#define SYS_PROCESS_LIST_IDS    0x334
-#define SYS_PROCESS_GET_NAME    0x335
+#define SYS_PROCESS_CREATE              0x330
+#define SYS_PROCESS_DELETE              0x331
+#define SYS_PROCESS_WAIT                0x332
+#define SYS_PROCESS_ABORT               0x333
+#define SYS_PROCESS_LIST_IDS            0x334
+#define SYS_PROCESS_GET_NAME            0x335
+#define SYS_PROCESS_GET_THREAD_COUNT    0x336
+#define SYS_PROCESS_GET_USED_MEMORY     0x337
 
-#define SYS_IPC_SEND_MESSAGE    0x340
-#define SYS_IPC_GET_MESSAGE     0x341
-#define SYS_IPC_CREATE_SHMEM    0x342
-#define SYS_IPC_OPEN_SHMEM      0x343
-#define SYS_IPC_CLOSE_SHMEM     0x344
-#define SYS_IPC_GET_SHMEM_SIZE  0x345
-#define SYS_IPC_MAP_SHMEM       0x346
-#define SYS_IPC_UNMAP_SHMEM     0x347
-#define SYS_IPC_PEEK_MESSAGE    0x348
-#define SYS_IPC_WAIT_MESSAGE    0x349
+#define SYS_IPC_SEND_MESSAGE            0x340
+#define SYS_IPC_GET_MESSAGE             0x341
+#define SYS_IPC_CREATE_SHMEM            0x342
+#define SYS_IPC_OPEN_SHMEM              0x343
+#define SYS_IPC_CLOSE_SHMEM             0x344
+#define SYS_IPC_GET_SHMEM_SIZE          0x345
+#define SYS_IPC_MAP_SHMEM               0x346
+#define SYS_IPC_UNMAP_SHMEM             0x347
+#define SYS_IPC_PEEK_MESSAGE            0x348
+#define SYS_IPC_WAIT_MESSAGE            0x349
 
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
@@ -187,14 +188,13 @@ long sysInDevClose(int fd);
 long sysInDevGetEvent(int fd, int timeout, void *buf);
 
 long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal);
-long sysThreadDelete(int fd);
-long sysThreadResume(int fd);
-long sysThreadSuspend(int fd);
-long sysThreadSleep(int fd, int ms);
-long sysThreadWait(int fd, int timeout);
-long sysThreadAbort(int fd, int retVal);
+long sysThreadDelete(int tid);
+long sysThreadResume(int tid);
+long sysThreadSuspend(int tid);
+long sysThreadSleep(int tid, int ms);
+long sysThreadWait(int tid, int timeout);
+long sysThreadAbort(int tid, int retVal);
 long sysThreadDaemonize();
-long sysThreadGetId(int fd);
 
 long sysProcessCreate(const char *cmdline);
 long sysProcessDelete(int pid);
@@ -202,6 +202,8 @@ long sysProcessWait(int pid, int timeout);
 long sysProcessAbort(int pid, int result);
 long sysProcessListIds(int *buf, unsigned size);
 long sysProcessGetName(int pid, char *buf, unsigned size);
+long sysProcessGetThreadCount(int pid);
+long sysProcessGetUsedMemory(int pid);
 
 long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
 long sysIPCGetMessage(void *msg, int timeout);

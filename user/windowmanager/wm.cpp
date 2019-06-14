@@ -488,16 +488,19 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             response.pixelFormat = wnd->GetPixelFormat();
             snprintf(response.shMemName, MSG_RPC_RESP_PAYLOAD_SIZE - ((uintptr_t)(response.Data) - (uintptr_t)&response), "%s", wnd->GetShMemName());
 
-            // create taskbar button
-            wnd->TaskButton = uiButtonCreate((uiControl_t *)taskBar, 0, 0, 192, 24, nullptr);
-            if(wnd->TaskButton)
+            // create taskbar button if needed
+            if(flags & WM_CWF_APPWINDOW)
             {
-                uiControlSetOnActivate((uiControl_t *)wnd->TaskButton, taskButtonActivate);
-                uiControlSetContext((uiControl_t *)wnd->TaskButton, wnd);
-                uiControlSetTextHAlign((uiControl_t *)wnd->TaskButton, UI_HALIGN_LEFT);
-                uiControlRecalcRects((uiControl_t *)taskBar);
-                uiControlRedraw((uiControl_t *)taskRoot, 0);
-                *dirtyRect = rcAddP(dirtyRect, &taskRect);
+                wnd->TaskButton = uiButtonCreate((uiControl_t *)taskBar, 0, 0, 192, 24, nullptr);
+                if(wnd->TaskButton)
+                {
+                    uiControlSetOnActivate((uiControl_t *)wnd->TaskButton, taskButtonActivate);
+                    uiControlSetContext((uiControl_t *)wnd->TaskButton, wnd);
+                    uiControlSetTextHAlign((uiControl_t *)wnd->TaskButton, UI_HALIGN_LEFT);
+                    uiControlRecalcRects((uiControl_t *)taskBar);
+                    uiControlRedraw((uiControl_t *)taskRoot, 0);
+                    *dirtyRect = rcAddP(dirtyRect, &taskRect);
+                }
             }
 
             topWindow = wnd;

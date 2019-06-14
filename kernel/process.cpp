@@ -699,16 +699,6 @@ int Process::Close(int handle)
         UnLock();
         return ESUCCESS;
     }
-    else if(h.Type == Handle::HandleType::Thread)
-    {
-        if(h.Thread)
-        {
-            Thread::Finalize(h.Thread, 0);
-            delete h.Thread;
-        }
-        UnLock();
-        return ESUCCESS;
-    }
     else if(h.Type == Handle::HandleType::NamedObject)
     {
         int res = h.NamedObject->Put();
@@ -897,12 +887,6 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
     Thread *t = new Thread(name, this, (void *)userThreadEntryPoint, 0, DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, nullptr);
     t->UserEntryPoint = entry;
     t->UserArgument = arg;
-    int res = allocHandleSlot(Handle(t));
-    if(res < 0)
-    {
-        delete t;
-        return res;
-    }
 
     t->PThread = (struct pthread *)SBrk(PAGE_SIZE, true);
     t->PThread->self = t->PThread;
@@ -916,57 +900,10 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
     cpuWriteMSR(0xC0000100, t->FS);
     cpuWriteMSR(0xC0000101, t->GS);
 
+    pid_t res = t->Id;
     t->Enable();
     UnLock();
     return res;
-}
-
-int Process::DeleteThread(int handle)
-{
-    return Close(handle);
-}
-
-Thread *Process::GetThread(int handle)
-{
-    return (Thread *)GetHandleData(handle, Handle::HandleType::Thread);
-}
-
-int Process::ResumeThread(int handle)
-{
-    Thread *t = GetThread(handle);
-    if(!t) return -EINVAL;
-    return t->Resume(false) ? 0 : -EINVAL;
-}
-
-int Process::SuspendThread(int handle)
-{
-    Thread *t = GetThread(handle);
-    if(!t) return -EINVAL;
-    t->Suspend();
-    return ESUCCESS;
-}
-
-int Process::SleepThread(int handle, int ms)
-{
-    Thread *t = GetThread(handle);
-    if(!t) return -EINVAL;
-    return t->Sleep(ms, false);
-}
-
-int Process::WaitThread(int handle, int timeout)
-{
-    Thread *t = GetThread(handle);
-    if(!t) return -EINVAL;
-    int timeleft = t->Finished->Wait(timeout < 0 ? 0 : timeout, timeout == 0, false);
-    return timeleft >= 0 ? timeleft : -EBUSY;
-}
-
-int Process::AbortThread(int handle, int retVal)
-{
-    Thread *t = GetThread(handle);
-    if(!t) return -EINVAL;
-    t->Finalize(t, retVal);
-    return ESUCCESS;
 }
 
 int Process::CreateNamedObjectHandle(NamedObject *no)
@@ -1129,12 +1066,6 @@ Process::Handle::Handle(::Stream *stream) :
 Process::Handle::Handle(::File *file) :
     Type(HandleType::File),
     File(file)
-{
-}
-
-Process::Handle::Handle(::Thread *thread) :
-    Type(HandleType::Thread),
-    Thread(thread)
 {
 }
 

@@ -6,42 +6,37 @@ int threadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
     return sysThreadCreate(name, entry, arg, retVal);
 }
 
-int threadDelete(int handle)
+int threadDelete(int tid)
 {
-    return sysThreadDelete(handle);
+    return sysThreadDelete(tid);
 }
 
-int threadResume(int handle)
+int threadResume(int tid)
 {
-    return sysThreadResume(handle);
+    return sysThreadResume(tid);
 }
 
-int threadSuspend(int handle)
+int threadSuspend(int tid)
 {
-    return sysThreadSuspend(handle);
+    return sysThreadSuspend(tid);
 }
 
-int threadSleep(int handle, int ms)
+int threadSleep(int tid, int ms)
 {
-    return sysThreadSleep(handle, ms);
+    return sysThreadSleep(tid, ms);
 }
 
-int threadWait(int handle, int timeout)
+int threadWait(int tid, int timeout)
 {
-    return sysThreadWait(handle, timeout);
+    return sysThreadWait(tid, timeout);
 }
 
-int threadAbort(int handle, int retVal)
+int threadAbort(int tid, int retVal)
 {
-    return sysThreadAbort(handle, retVal);
+    return sysThreadAbort(tid, retVal);
 }
 
 int threadDaemonize()
 {
     return sysThreadDaemonize();
-}
-
-int threadGetId(int handle)
-{
-    return sysThreadGetId(handle);
 }

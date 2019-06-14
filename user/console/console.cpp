@@ -159,6 +159,11 @@ int stdListener(uintptr_t arg)
     return 0;
 }
 
+static bool isError(long value)
+{
+    return value < 0 && value > -4096;
+}
+
 extern "C" int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
@@ -392,12 +397,17 @@ extern "C" int main(int argc, char *argv[])
         {
             int ids[128];
             int procCnt = processListIds(ids, sizeof(ids) / sizeof(*ids));
+            printf("%-4s %-32s %-4s %-10s\n", "pid", "name", "thr", "mem(kiB)");
             for(int i = 0; i < procCnt; ++i)
             {
                 int pid = ids[i];
                 char name[64];
+                int threads = -ENOSYS;
                 if(processGetName(pid, name, sizeof(name)) < 0) continue;
-                printf("%d. %s\n", ids[i], name);
+                if((threads = processGetThreadCount(pid)) < 0) continue;
+                size_t mem = processGetUsedMemory(pid);
+                if(isError(mem)) continue;
+                printf("%-4d %-32.32s %-4d %-10zu\n", ids[i], name, threads, mem >> 10);
             }
         }
         else if(!strcmp(conCmdArgs[0], "sysinfo"))

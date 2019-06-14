@@ -226,44 +226,39 @@ long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
     return __syscall4(SYS_THREAD_CREATE, (long)name, (long)entry, arg, (long)retVal);
 }
 
-long sysThreadDelete(int fd)
+long sysThreadDelete(int tid)
 {
-    return __syscall1(SYS_THREAD_DELETE, fd);
+    return __syscall1(SYS_THREAD_DELETE, tid);
 }
 
-long sysThreadResume(int fd)
+long sysThreadResume(int tid)
 {
-    return __syscall1(SYS_THREAD_RESUME, fd);
+    return __syscall1(SYS_THREAD_RESUME, tid);
 }
 
-long sysThreadSuspend(int fd)
+long sysThreadSuspend(int tid)
 {
-    return __syscall1(SYS_THREAD_SUSPEND, fd);
+    return __syscall1(SYS_THREAD_SUSPEND, tid);
 }
 
-long sysThreadSleep(int fd, int ms)
+long sysThreadSleep(int tid, int ms)
 {
-    return __syscall2(SYS_THREAD_SLEEP, fd, ms);
+    return __syscall2(SYS_THREAD_SLEEP, tid, ms);
 }
 
-long sysThreadWait(int fd, int timeout)
+long sysThreadWait(int tid, int timeout)
 {
-    return __syscall2(SYS_THREAD_WAIT, fd, timeout);
+    return __syscall2(SYS_THREAD_WAIT, tid, timeout);
 }
 
-long sysThreadAbort(int fd, int retVal)
+long sysThreadAbort(int tid, int retVal)
 {
-    return __syscall2(SYS_THREAD_ABORT, fd, retVal);
+    return __syscall2(SYS_THREAD_ABORT, tid, retVal);
 }
 
 long sysThreadDaemonize()
 {
     return __syscall0(SYS_THREAD_DAEMONIZE);
-}
-
-long sysThreadGetId(int fd)
-{
-    return __syscall1(SYS_THREAD_GET_ID, fd);
 }
 
 long sysProcessCreate(const char *cmdline)
@@ -294,6 +289,16 @@ long sysProcessListIds(int *buf, unsigned size)
 long sysProcessGetName(int pid, char *buf, unsigned size)
 {
     return __syscall3(SYS_PROCESS_GET_NAME, pid, (long)buf, size);
+}
+
+long sysProcessGetThreadCount(int pid)
+{
+    return __syscall1(SYS_PROCESS_GET_THREAD_COUNT, pid);
+}
+
+long sysProcessGetUsedMemory(int pid)
+{
+    return __syscall1(SYS_PROCESS_GET_USED_MEMORY, pid);
 }
 
 long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)

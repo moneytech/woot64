@@ -30,3 +30,13 @@ int processGetName(int pid, char *buf, unsigned bufSize)
 {
     return sysProcessGetName(pid, buf, bufSize);
 }
+
+int processGetThreadCount(int pid)
+{
+    return sysProcessGetThreadCount(pid);
+}
+
+unsigned long processGetUsedMemory(int pid)
+{
+    return sysProcessGetUsedMemory(pid);
+}

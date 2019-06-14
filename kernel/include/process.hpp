@@ -89,7 +89,6 @@ public:
             Unknown,
             Stream,
             File,
-            Thread,
             NamedObject,
             Mutex,
             Semaphore,
@@ -102,7 +101,6 @@ public:
             void *Unknown;
             ::Stream *Stream;
             ::File *File;
-            ::Thread *Thread;
             ::NamedObject *NamedObject;
             ::Mutex *Mutex;
             ::Semaphore *Semaphore;
@@ -116,7 +114,6 @@ public:
         Handle(void *obj);
         Handle(::Stream *stream);
         Handle(::File *file);
-        Handle(::Thread *thread);
         Handle(::NamedObject *namedObject);
         Handle(::FrameBuffer *frameBuffer);
         Handle(::InputDevice *inputDevice);
@@ -216,13 +213,6 @@ public:
 
     // thread syscall support routines
     int NewThread(const char *name, void *entry, uintptr_t arg, int *retVal);
-    int DeleteThread(int handle);
-    Thread *GetThread(int handle);
-    int ResumeThread(int handle);
-    int SuspendThread(int handle);
-    int SleepThread(int handle, int ms);
-    int WaitThread(int handle, int timeout);
-    int AbortThread(int handle, int retVal);
 
     // named object support routines
     int CreateNamedObjectHandle(NamedObject *no);

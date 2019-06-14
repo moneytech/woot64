@@ -674,6 +674,51 @@ size_t Paging::GetUsedBytes()
     return PAGE_SIZE * GetUsedFrames();
 }
 
+size_t Paging::CountPresentPages(AddressSpace as, uintptr_t startVA, size_t rangeSize)
+{
+    AddressSpace curAS = GetCurrentAddressSpace();
+    if(as == PG_CURRENT_ADDR_SPC)
+        as = curAS;
+
+    size_t res = 0;
+    uintptr_t endVA = startVA + rangeSize;
+    uintptr_t scanStartVA = ((startVA >> 39) & 511) << 39;
+    uintptr_t scanEndVA = align(endVA, (1ull << 39));
+    uintptr_t *pml4 = (uintptr_t *)(as + KERNEL_BASE);
+    for(uintptr_t scanVA = scanStartVA; scanVA < scanEndVA; scanVA += (1ull << 39))
+    {
+        uintptr_t pml4idx = (scanVA >> 39) & 511;
+        if(!(pml4[pml4idx] & 1))
+            continue;
+
+        uintptr_t *pml3 = (uintptr_t *)((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+        for(uintptr_t pml3idx = 0; pml3idx < 511; ++pml3idx)
+        {
+            if(!(pml3[pml3idx] & 1))
+                continue;
+
+            uintptr_t *pml2 = (uintptr_t *)((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
+            for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
+            {
+                if(!(pml2[pml2idx] & 1))
+                    continue;
+
+                uintptr_t *pml1 = (uintptr_t *)((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
+                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                {
+                    uintptr_t va = pml4idx << 39 | pml3idx << 30 | pml2idx << 21 | pml1idx << 12;
+                    if(va < startVA || va >= endVA)
+                        continue;
+                    if(!(pml1[pml1idx] & 1))
+                        continue;
+                    ++res;
+                }
+            }
+        }
+    }
+    return res;
+}
+
 #include <debug.hpp>
 
 void Paging::DumpAddressSpace(AddressSpace as)

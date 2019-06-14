@@ -65,5 +65,6 @@ public:
     static size_t GetTotalBytes();
     static size_t GetFreeBytes();
     static size_t GetUsedBytes();
+    static size_t CountPresentPages(AddressSpace as, uintptr_t startVA, size_t rangeSize);
     static void DumpAddressSpace(AddressSpace as);
 };
