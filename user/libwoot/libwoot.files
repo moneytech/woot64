@@ -3,6 +3,7 @@ ui.c
 uibutton.c
 uilabel.c
 uilineedit.c
+uimenu.c
 uiscrollbar.c
 uislider.c
 uitextedit.c
@@ -14,6 +15,7 @@ woot/ui.h
 woot/uibutton.h
 woot/uilabel.h
 woot/uilineedit.h
+woot/uimenu.h
 woot/uiscrollbar.h
 woot/uislider.h
 woot/uitextedit.h

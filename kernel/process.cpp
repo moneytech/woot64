@@ -175,7 +175,7 @@ int Process::processEntryPoint(const char *cmdline)
     const char *envVars[] =
     {
         "LC_ALL=C",
-        "PATH=WOOT_OS~/bin:WOOT_OS~/system",
+        "PATH=WOOT_OS~/bin",
         "LD_LIBRARY_PATH=WOOT_OS~/lib",
         "TEST=value"
     };

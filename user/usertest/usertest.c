@@ -17,6 +17,7 @@
 #include <woot/uibutton.h>
 #include <woot/uilabel.h>
 #include <woot/uilineedit.h>
+#include <woot/uimenu.h>
 #include <woot/uiscrollbar.h>
 #include <woot/uislider.h>
 #include <woot/uitextedit.h>
@@ -24,16 +25,17 @@
 #include <woot/video.h>
 #include <woot/wm.h>
 
-pmPixMap_t *pm = NULL;
-wmWindow_t *window = NULL;
+static pmPixMap_t *pm = NULL;
+static wmWindow_t *window = NULL;
+static uiMenu_t *menu = NULL;
+static int menushown = 0;
 
-void btnClick(uiControl_t *sender, wmEvent_t *event)
+void btnActivate(uiControl_t *sender)
 {
-    uiControl_t *rootControl = wmGetRootControl(window);
-    pmColor_t color = pmColorFromRGB(rand(), rand(), rand());
-    uiControlSetBackColor(rootControl, color);
-    uiControlRedraw(rootControl, 1);
-    wmRedrawWindow(window);
+    int mx, my;
+    wmGetMousePos(&mx, &my);
+    if(++menushown & 1) uiMenuShow(menu, mx, my);
+    else uiMenuHide(menu);
 }
 
 void sldChange(uiSlider_t *sender)
@@ -74,6 +76,7 @@ int main(int argc, char *argv[])
 
     pmPixMap_t *fileIcon = pmLoadPNG("/data/common/icons/file.png");
     pmPixMap_t *clockIcon = pmLoadPNG("/clock_small.png");
+    pmPixMap_t *placeholder24 = pmLoadPNG("/data/common/icons/placeholder_24x24.png");
 
     uiControl_t *rootControl = wmGetRootControl(window);
     //uiControlSetBackColor(rootControl, pmColorTransparent);
@@ -86,6 +89,11 @@ int main(int argc, char *argv[])
     uiScrollbar_t *scroll = uiScrollbarCreate(rootControl, 283, 1, 16, 182, 0, 0, 99, 0, 5);
     uiScrollbar_t *scroll2 = uiScrollbarCreate(rootControl, 1, 183, 283, 16, 1, 0, 99, 88, 40);
     uiTextEdit_t *edit2 = uiTextEditCreate(rootControl, 10, 240, pm->Contents.Width - 20, 100);
+
+    menu = uiMenuCreate();
+    uiMenuAddItem(menu, "Abca", placeholder24, NULL);
+    uiMenuAddItem(menu, "Meheha", NULL, NULL);
+    uiMenuAddItem(menu, "Trolololo", NULL, NULL);
 
     uiToolbar_t *bar = uiToolbarCreate(rootControl, 1, 199, pm->Contents.Width - 2, 30, UI_HORIZONTAL);
     for(int i = 0; i < 4; ++i)
@@ -106,7 +114,7 @@ int main(int argc, char *argv[])
     uiControlSetIcon(btn, fileIcon);
     uiControlSetIconPosition(btn, UI_OVER);
     uiControlSetTextIconSeparation(btn, 2);
-    uiControlSetOnMousePress(btn, btnClick);
+    uiControlSetOnActivate(btn, btnActivate);
 
     uiSliderSetOnValueChange(sld, sldChange);
     uiControlSetContext((uiControl_t *)sld, edit);

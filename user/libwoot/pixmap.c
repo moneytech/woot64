@@ -732,6 +732,7 @@ pmPixMap_t *pmFromPixMap(pmPixMap_t *src, pmPixelFormat_t *format)
 
 pmPixMap_t *pmSubPixMap(pmPixMap_t *src, int x, int y, int w, int h)
 {
+    if(!src) return NULL;
     rcRectangle_t srcRect = { 0, 0, src->Contents.Width, src->Contents.Height };
     rcRectangle_t newRect = { x, y, w, h };
     newRect = rcIntersectP(&srcRect, &newRect);

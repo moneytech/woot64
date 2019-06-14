@@ -67,6 +67,11 @@ struct wmRedrawRectArgs
     rcRectangle_t rect;
 };
 
+struct wmGetMousePosResp
+{
+    int X, Y;
+};
+
 int wmInitialize(int flags)
 {
     int res = flags & WM_INITIALIZE_WM ? 0 :
@@ -98,6 +103,16 @@ int wmCleanup()
 const char *wmGetServer()
 {
     return wmServer[0] ? wmServer : NULL;
+}
+
+int wmGetMousePos(int *x, int *y)
+{
+    struct wmGetMousePosResp resp;
+    int res = rpcCall(wmServer, "wmGetMousePos", NULL, 0, &resp, sizeof(struct wmGetMousePosResp), DEFAULT_RPC_TIMEOUT);
+    if(res < 0) return res;
+    if(x) *x = resp.X;
+    if(y) *y = resp.Y;
+    return 0;
 }
 
 pmColor_t wmGetColor(int colorId)

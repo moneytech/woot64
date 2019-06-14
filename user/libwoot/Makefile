@@ -14,6 +14,7 @@ OBJS = \
 	uibutton.o \
 	uilabel.o \
 	uilineedit.o \
+	uimenu.o \
 	uiscrollbar.o \
 	uislider.o \
 	uitextedit.o \

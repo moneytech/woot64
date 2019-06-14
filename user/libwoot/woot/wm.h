@@ -20,6 +20,7 @@ extern "C" {
 #define WM_CWF_HELPBUTTON       0x00000040
 #define WM_CWF_SHOWICON         0x00000080
 #define WM_CWF_USEALPHA         0x00000100
+#define WM_CWF_POPUP            0x00000200
 
 // default window flags for wmCreateWindow
 #define WM_CWF_DEFAULT          (WM_CWF_APPWINDOW | WM_CWF_BORDER | WM_CWF_TITLEBAR | WM_CWF_CLOSEBUTTON | WM_CWF_MINIMIZEBUTTON | WM_CWF_MAXIMIZEBUTTON | WM_CWF_SHOWICON)
@@ -97,6 +98,7 @@ typedef struct wmEvent
 int wmInitialize(int flags);
 int wmCleanup();
 const char *wmGetServer();
+int wmGetMousePos(int *x, int *y);
 pmColor_t wmGetColor(int colorId);
 fntFont_t *wmGetFont(int fontId);
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);

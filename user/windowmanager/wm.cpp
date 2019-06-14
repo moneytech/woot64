@@ -581,6 +581,13 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                 *dirtyRect = rcAddP(dirtyRect, &taskRect);
             }
         }
+        else if(!strcmp(req, "wmGetMousePos"))
+        {
+            wmGetMousePosResp resp;
+            resp.X = mouseX;
+            resp.Y = mouseY;
+            rpcIPCReturn(msg->Source, msg->ID, &resp, sizeof(resp));
+        }
         else printf("[windowmanager] Unknown RPC request '%s' from process %d\n", req, msg->Source);
     }
     else if(msg->Number == MSG_RPC_FIND_SERVER && !strcmp("windowmanager", (const char *)msg->Data))

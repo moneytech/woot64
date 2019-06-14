@@ -46,6 +46,11 @@ class WindowManager
         rcRectangle_t rect;
     };
 
+    struct wmGetMousePosResp
+    {
+        int X, Y;
+    };
+
     static void taskButtonActivate(uiControl_t *control);
 
     Windows *windows = nullptr;
