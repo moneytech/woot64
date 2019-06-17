@@ -14,6 +14,7 @@ struct uiMenuItem
     char *Text;
     pmPixMap_t *Icon;
     uiMenu_t *SubMenu;
+    uiEventHandler Handler;
 };
 
 struct uiMenu
@@ -109,6 +110,7 @@ int uiMenuShow(uiMenu_t *menu, int x, int y)
         uiControlSetIconPosition(ic, UI_LEFT);
         uiControlSetTextHAlign(ic, UI_HALIGN_LEFT);
         uiControlSetTextIconSeparation(ic, 4);
+        uiControlSetOnActivate(ic, item->Handler);
         if(item->Icon) uiControlSetIcon(ic, item->Icon);
     }
 
@@ -126,13 +128,14 @@ int uiMenuHide(uiMenu_t *menu)
     return 0;
 }
 
-int uiMenuAddItem(uiMenu_t *menu, const char *text, pmPixMap_t *icon, uiMenu_t *subMenu)
+int uiMenuAddItem(uiMenu_t *menu, const char *text, pmPixMap_t *icon, uiMenu_t *subMenu, uiEventHandler handler)
 {
     if(!menu || !menu->Items) return -EINVAL;
     uiMenuItem_t item;
     item.Text = strdup(text ? text : "");
     item.Icon = icon;
     item.SubMenu = subMenu;
+    item.Handler = handler;
     vecAppend(menu->Items, &item);
     return 0;
 }

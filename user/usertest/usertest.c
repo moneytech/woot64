@@ -29,14 +29,14 @@ static pmPixMap_t *pm = NULL;
 static wmWindow_t *window = NULL;
 static uiMenu_t *menu = NULL;
 
-void btnActivate(uiControl_t *sender)
+static void btnActivate(uiControl_t *sender)
 {
     int mx, my;
     wmGetMousePos(&mx, &my);
-    uiMenuShow(menu, mx, my);
+    uiMenuShow(menu, mx - 4, my - 4);
 }
 
-void sldChange(uiSlider_t *sender)
+static void sldChange(uiSlider_t *sender)
 {
     uiLineEdit_t *edit = uiControlGetContext((uiControl_t *)sender);
     char text[32];
@@ -44,9 +44,14 @@ void sldChange(uiSlider_t *sender)
     uiControlSetText((uiControl_t *)edit, text);
 }
 
-void editAccept(uiLineEdit_t *sender)
+static void editAccept(uiLineEdit_t *sender)
 {
     wmSetWindowTitle(window, uiControlGetText((uiControl_t *)sender));
+}
+
+static void menuItemActivate(uiControl_t *sender)
+{
+    wmSetWindowTitle(window, uiControlGetText(sender));
 }
 
 int main(int argc, char *argv[])
@@ -89,9 +94,9 @@ int main(int argc, char *argv[])
     uiTextEdit_t *edit2 = uiTextEditCreate(rootControl, 10, 240, pm->Contents.Width - 20, 100);
 
     menu = uiMenuCreate();
-    uiMenuAddItem(menu, "Abca", placeholder24, NULL);
-    uiMenuAddItem(menu, "Meheha", NULL, NULL);
-    uiMenuAddItem(menu, "Trolololo", NULL, NULL);
+    uiMenuAddItem(menu, "Abca", placeholder24, NULL, menuItemActivate);
+    uiMenuAddItem(menu, "Meheha", NULL, NULL, menuItemActivate);
+    uiMenuAddItem(menu, "Trolololo", NULL, NULL, menuItemActivate);
 
     uiToolbar_t *bar = uiToolbarCreate(rootControl, 1, 199, pm->Contents.Width - 2, 30, UI_HORIZONTAL);
     for(int i = 0; i < 4; ++i)

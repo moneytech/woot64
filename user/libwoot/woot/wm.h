@@ -26,33 +26,40 @@ extern "C" {
 // default window flags for wmCreateWindow
 #define WM_CWF_DEFAULT          (WM_CWF_APPWINDOW | WM_CWF_BORDER | WM_CWF_TITLEBAR | WM_CWF_CLOSEBUTTON | WM_CWF_MINIMIZEBUTTON | WM_CWF_MAXIMIZEBUTTON | WM_CWF_SHOWICON)
 
-// window messages
-
 // color ids
-#define WM_COLOR_BACKGROUND             0
-#define WM_COLOR_TEXT                   1
-#define WM_COLOR_TITLE_BAR              2
-#define WM_COLOR_INACTIVE_TITLE_BAR     3
-#define WM_COLOR_TITLE_TEXT             4
-#define WM_COLOR_INACTIVE_TITLE_TEXT    5
-#define WM_COLOR_FOCUS_HIGHLIGHT        6
-#define WM_COLOR_ID_COUNT               7
+typedef enum
+{
+    WM_COLOR_BACKGROUND = 0,
+    WM_COLOR_TEXT,
+    WM_COLOR_TITLE_BAR,
+    WM_COLOR_INACTIVE_TITLE_BAR,
+    WM_COLOR_TITLE_TEXT,
+    WM_COLOR_INACTIVE_TITLE_TEXT,
+    WM_COLOR_FOCUS_HIGHLIGHT,
+    WM_COLOR_ID_COUNT // ALWAYS keep this entry last
+} wmColorId_t;
 
 // font ids
-#define WM_FONT_DEFAULT     0
-#define WM_FONT_UI_SYMBOLS  1
-#define WM_FONT_TITLE_BAR   2
-#define WM_FONT_MONO        3
-#define WM_FONT_ID_COUNT    4
+typedef enum
+{
+    WM_FONT_DEFAULT = 0,
+    WM_FONT_UI_SYMBOLS,
+    WM_FONT_TITLE_BAR,
+    WM_FONT_MONO,
+    WM_FONT_ID_COUNT // ALWAYS keep this entry last
+} wmFontId_t;
 
 // event types
-#define WM_EVT_INVALID      0
-#define WM_EVT_OTHER        1
-#define WM_EVT_CLOSE        2
-#define WM_EVT_KEYBOARD     3
-#define WM_EVT_MOUSE        4
-#define WM_EVT_MOUSE_ENTER  5
-#define WM_EVT_MOUSE_LEAVE  6
+typedef enum
+{
+    WM_EVT_INVALID = 0,
+    WM_EVT_OTHER,
+    WM_EVT_CLOSE,
+    WM_EVT_KEYBOARD,
+    WM_EVT_MOUSE,
+    WM_EVT_MOUSE_ENTER,
+    WM_EVT_MOUSE_LEAVE
+} wmEventType_t;
 
 // keyboard event definitions
 #define WM_EVT_KB_RELEASED  1
@@ -70,7 +77,11 @@ typedef struct wmWindow wmWindow_t;
 
 typedef struct wmEvent
 {
-    int Type;
+    union
+    {
+        wmEventType_t Type;
+        int TypeInt; // to make sure sizeof(Type) == sizeof(int)
+    };
     int WindowId;
     int Handled;
     union
@@ -105,8 +116,8 @@ int wmInitialize(int flags);
 int wmCleanup();
 const char *wmGetServer();
 int wmGetMousePos(int *x, int *y);
-pmColor_t wmGetColor(int colorId);
-fntFont_t *wmGetFont(int fontId);
+pmColor_t wmGetColor(wmColorId_t colorId);
+fntFont_t *wmGetFont(wmFontId_t fontId);
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);
 int wmDeleteWindow(wmWindow_t *window);
 int wmGetWindowId(wmWindow_t *window);

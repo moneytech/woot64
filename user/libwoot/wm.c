@@ -117,14 +117,14 @@ int wmGetMousePos(int *x, int *y)
     return 0;
 }
 
-pmColor_t wmGetColor(int colorId)
+pmColor_t wmGetColor(wmColorId_t colorId)
 {
     if(colorId < 0 || colorId >= WM_COLOR_ID_COUNT)
         return pmColorBlack;
     return colors[colorId];
 }
 
-fntFont_t *wmGetFont(int fontId)
+fntFont_t *wmGetFont(wmFontId_t fontId)
 {
     if(fontId < 0 || fontId >= WM_FONT_ID_COUNT)
         return NULL;
