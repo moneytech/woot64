@@ -28,14 +28,12 @@
 static pmPixMap_t *pm = NULL;
 static wmWindow_t *window = NULL;
 static uiMenu_t *menu = NULL;
-static int menushown = 0;
 
 void btnActivate(uiControl_t *sender)
 {
     int mx, my;
     wmGetMousePos(&mx, &my);
-    if(++menushown & 1) uiMenuShow(menu, mx, my);
-    else uiMenuHide(menu);
+    uiMenuShow(menu, mx, my);
 }
 
 void sldChange(uiSlider_t *sender)
@@ -151,14 +149,14 @@ int main(int argc, char *argv[])
             else if(msg.Number == MSG_WM_EVENT)
             {
                 wmEvent_t *event = (wmEvent_t *)msg.Data;
-                if(event->WindowId == wmGetWindowId(window))
-                    wmProcessEvent(window, event);
+                wmProcessEvent(window, event);
+                uiMenuProcessEvent(menu, event);
                 if(event->Type == WM_EVT_CLOSE)
                 {
                     quit = 1;
                     break;
                 }
-                else if(event->Type == WM_EVT_KEYBOARD)
+                else if(event->WindowId == wmGetWindowId(window) && event->Type == WM_EVT_KEYBOARD)
                 {
                     if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
                     {
@@ -181,6 +179,7 @@ int main(int argc, char *argv[])
 
     printf("[usertest] Closing usertest\n");
 
+    uiMenuDelete(menu);
     wmDeleteWindow(window);
 
     return 0;

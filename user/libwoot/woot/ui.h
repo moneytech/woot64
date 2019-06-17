@@ -172,6 +172,8 @@ void uiControlSetBorderStyle(uiControl_t *control, uiBorderStyle_t style);
 void uiControlSetMarginSize(uiControl_t *control, int size);
 void uiControlSetIconPosition(uiControl_t *control, uiRelPosition_t position);
 void uiControlSetTextIconSeparation(uiControl_t *control, int separation);
+void uiControlSetOnKeyPress(uiControl_t *control, uiWMEventHandler handler);
+void uiControlSetOnKeyRelease(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnPaint(uiControl_t *control, uiEventHandler handler);
 void uiControlSetOnMousePress(uiControl_t *control, uiWMEventHandler handler);
 void uiControlSetOnMouseRelease(uiControl_t *control, uiWMEventHandler handler);

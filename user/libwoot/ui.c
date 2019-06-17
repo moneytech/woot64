@@ -572,10 +572,14 @@ static int processMouseEvent(uiControl_t *control, wmEvent_t *event)
 
 int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
 {
-    if(!control) return -EINVAL;
+    if(!control || !event) return -EINVAL;
+    if(event->Handled) return 0;
+    wmWindow_t *wnd = uiControlGetWindow(uiControlGetRoot(control));
+    if(wnd && event->WindowId != wmGetWindowId(wnd)) return 0;
     if(event->Type == WM_EVT_KEYBOARD)
     {
         uiControl_t *focus = uiControlFindFocus(control);
+        if(!focus) focus = control;
         if(focus)
         {
             if(event->Keyboard.Flags & WM_EVT_KB_RELEASED)
@@ -658,6 +662,18 @@ void uiControlSetTextIconSeparation(uiControl_t *control, int separation)
 {
     if(!control) return;
     control->TextIconSeparation = separation;
+}
+
+void uiControlSetOnKeyPress(uiControl_t *control, uiWMEventHandler handler)
+{
+    if(!control) return;
+    control->OnKeyPress = handler;
+}
+
+void uiControlSetOnKeyRelease(uiControl_t *control, uiWMEventHandler handler)
+{
+    if(!control) return;
+    control->OnKeyRelease = handler;
 }
 
 void uiControlSetOnPaint(uiControl_t *control, uiEventHandler handler)

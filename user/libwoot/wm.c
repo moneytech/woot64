@@ -36,6 +36,8 @@ struct wmWindow
     int shMemHandle;
     pmPixMap_t *pixMap;
     uiControl_t *rootControl;
+    wmEventHandler onMouseEnter;
+    wmEventHandler onMouseLeave;
 };
 
 union wmCreateWindowResp
@@ -268,9 +270,65 @@ uiControl_t *wmGetRootControl(wmWindow_t *window)
 
 int wmProcessEvent(wmWindow_t *window, wmEvent_t *event)
 {
-    if(window->id != event->WindowId)
+    if(!window || !event)
         return -EINVAL;
+    if(window->id != event->WindowId || event->Handled)
+        return 0;
     if(!window->rootControl)
         return -EINVAL;
+
+    switch(event->Type)
+    {
+    case WM_EVT_MOUSE_ENTER:
+        if(window->onMouseEnter)
+            window->onMouseEnter(window, event);
+        return 0;
+    case WM_EVT_MOUSE_LEAVE:
+        if(window->onMouseLeave)
+            window->onMouseLeave(window, event);
+        return 0;
+    default:
+        break;
+    }
+
     return uiControlProcessEvent(window->rootControl, event);
+}
+
+int wmShowWindow(wmWindow_t *window)
+{
+    return rpcCall(wmServer, "wmShowWindow", &window->id, sizeof(window->id), NULL, 0, 0);
+}
+
+int wmHideWindow(wmWindow_t *window)
+{
+    return rpcCall(wmServer, "wmHideWindow", &window->id, sizeof(window->id), NULL, 0, 0);
+}
+
+int wmActivateWindow(wmWindow_t *window)
+{
+    return rpcCall(wmServer, "wmActivateWindow", &window->id, sizeof(window->id), NULL, 0, 0);
+}
+
+int wmSetOnMouseEnter(wmWindow_t *window, wmEventHandler handler)
+{
+    if(!window) return -EINVAL;
+    window->onMouseEnter = handler;
+    return 0;
+}
+
+wmEventHandler wmGetOnMouseEnter(wmWindow_t *window)
+{
+    return window ? window->onMouseEnter : NULL;
+}
+
+int wmSetOnMouseLeave(wmWindow_t *window, wmEventHandler handler)
+{
+    if(!window) return -EINVAL;
+    window->onMouseLeave = handler;
+    return 0;
+}
+
+wmEventHandler wmGetOnMouseLeave(wmWindow_t *window)
+{
+    return window ? window->onMouseLeave : NULL;
 }

@@ -123,6 +123,9 @@ void WindowManager::taskButtonActivate(uiControl_t *control)
     wm->bringToFront(wnd);
     wm->topWindow = wnd;
     wm->setActiveWindow(wnd);
+
+    if(!wnd->Visible)
+        wm->RestoreWindow(wnd);
 }
 
 Window *WindowManager::getWindowById(int id)
@@ -137,9 +140,14 @@ Window *WindowManager::getWindowById(int id)
 
 void WindowManager::moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y)
 {
-    *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
+    if(window->Visible)
+        *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
     window->SetPosition(x, y);
-    *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
+    if(window->Visible)
+    {
+        *dirtyRect = rcAdd(*dirtyRect, window->GetDecoratedRect());
+        handleMouseEnterLeave();
+    }
 }
 
 int WindowManager::getWindowIdx(Window *wnd)
@@ -164,6 +172,7 @@ void WindowManager::bringToFront(Window *wnd)
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         UpdateRect(&wndRect);
     }
+    handleMouseEnterLeave();
 }
 
 void WindowManager::sendToBack(Window *wnd)
@@ -177,6 +186,7 @@ void WindowManager::sendToBack(Window *wnd)
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         UpdateRect(&wndRect);
     }
+    handleMouseEnterLeave();
 }
 
 Window *WindowManager::findFrontWindow()
@@ -186,6 +196,7 @@ Window *WindowManager::findFrontWindow()
     for(int i = 0; i < wndCnt; ++i)
     {
         Window *wnd = windows->Get(i);
+        if(!wnd->Visible) continue;
         if(wnd == taskWnd || wnd == mouseWnd) break;
         prevWnd = wnd;
     }
@@ -198,11 +209,64 @@ Window *WindowManager::findBackWindow()
     for(int i = 0; i < wndCnt; ++i)
     {
         Window *wnd = windows->Get(i);
-        if(wnd == desktopWnd) continue;
+        if(wnd == desktopWnd || !wnd->Visible) continue;
         if(wnd == taskWnd || wnd == mouseWnd) break;
         return wnd;
     }
     return nullptr;
+}
+
+Window *WindowManager::findByCoords(int x, int y)
+{
+    Window *prevWnd = nullptr;
+    int wndCnt = windows->Size();
+    for(int i = 0; i < wndCnt; ++i)
+    {
+        Window *wnd = windows->Get(i);
+        rcRectangle_t rect = wnd->GetDecoratedRect();
+        if(!wnd->Visible || !rcContainsPointP(&rect, x, y))
+            continue;
+        if(wnd == taskWnd || wnd == mouseWnd) break;
+        prevWnd = wnd;
+    }
+    return prevWnd;
+}
+
+void WindowManager::handleMouseEnterLeave()
+{
+    wmEvent_t event;
+    Window *wnd = findByCoords(mouseX, mouseY);
+    if(!wnd) return;
+    int wndId = wnd->GetId();
+    if(oldMouseWndId != wndId)
+    {   // send mouse enter/leave messages
+        memset(&event, 0, sizeof(event));
+        event.Type = WM_EVT_MOUSE_LEAVE;
+        event.WindowId = oldMouseWndId;
+        Window *oldWnd = getWindowById(oldMouseWndId);
+        if(oldWnd) ipcSendMessage(oldWnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+        event.Type = WM_EVT_MOUSE_ENTER;
+        event.WindowId = wndId;
+        ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+    }
+    oldMouseWndId = wndId;
+}
+
+void WindowManager::hideWindow(Window *wnd)
+{
+    wnd->Visible = false;
+    if(wnd == activeWindow)
+    {   // deactivate window if needed
+        Window *front = findFrontWindow();
+        setActiveWindow(front);
+    }
+    handleMouseEnterLeave();
+}
+
+void WindowManager::showWindow(Window *wnd)
+{
+    wnd->Visible = true;
+    handleMouseEnterLeave();
 }
 
 void WindowManager::setActiveWindow(Window *window)
@@ -240,6 +304,7 @@ void WindowManager::wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int
     memset(event, 0, sizeof(*event));
     event->Type = WM_EVT_MOUSE;
     event->WindowId = wndId;
+    event->Handled = 0;
     event->Mouse.Coords[0] = mouseX - rect->X;
     event->Mouse.Coords[1] = mouseY - rect->Y;
     for(int i = 0; i < WM_EVT_MOUSE_AXES && i < INP_MAX_MOUSE_AXES; ++i)
@@ -348,6 +413,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             wmEvent_t event;
             event.Type = WM_EVT_KEYBOARD;
             event.WindowId = activeWindow->GetId();
+            event.Handled = 0;
             event.Keyboard.Key = kbdEv->Key;
             event.Keyboard.Flags = kbdEv->Flags;
             event.Keyboard.Character = chr;
@@ -362,8 +428,8 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         float mouseSpeed = mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1];
         if(mouseSpeed > 16)
         {
-            mouseEv->Delta[0] *= 1.5;
-            mouseEv->Delta[1] *= 1.5;
+            mouseEv->Delta[0] += mouseEv->Delta[0] >> 1;
+            mouseEv->Delta[1] += mouseEv->Delta[1] >> 1;
         }
 
         mouseX += mouseEv->Delta[0];
@@ -382,6 +448,8 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         for(int i = windows->Size() - 1; i >= 0; --i)
         {
             Window *wnd = windows->Get(i);
+            if(!wnd->Visible) continue;
+            int wndId = wnd->GetId();
 
             if(wnd == mouseWnd || wnd == desktopWnd)
                 continue;
@@ -417,7 +485,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                 {
                     doBreak = true;
                     wmEvent_t event;
-                    wmEventMouse(&rect, wnd->GetId(), mouseX, mouseY, &event, mouseEv);
+                    wmEventMouse(&rect, wndId, mouseX, mouseY, &event, mouseEv);
                     uiControlProcessEvent(titleBar, &event);
                     pmPixMap_t *pm = uiControlGetPixMap(titleBar);
                     rcRectangle_t dr = pmGetAndClearDirtyRectangle(pm);
@@ -449,8 +517,9 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             if(rcContainsPointP(&rect, mouseX, mouseY))
             {
                 doBreak = true;
+                handleMouseEnterLeave();
                 wmEvent_t event;
-                wmEventMouse(&rect, wnd->GetId(), mouseX, mouseY, &event, mouseEv);
+                wmEventMouse(&rect, wndId, mouseX, mouseY, &event, mouseEv);
                 ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
             }
 
@@ -505,6 +574,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
 
             topWindow = wnd;
             setActiveWindow(wnd);
+            handleMouseEnterLeave();
 
             rpcIPCReturn(msg->Source, msg->ID, &response, sizeof(response));
         }
@@ -521,6 +591,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                     dragWindow = nullptr;
                 topWindow = findFrontWindow();
                 setActiveWindow(topWindow);
+                handleMouseEnterLeave();
 
                 // delete taskbar button
                 if(wnd->TaskButton)
@@ -588,6 +659,36 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             resp.Y = mouseY;
             rpcIPCReturn(msg->Source, msg->ID, &resp, sizeof(resp));
         }
+        else if(!strcmp(req, "wmShowWindow"))
+        {
+            int id = *(int *)args;
+            Window *wnd = getWindowById(id);
+            if(wnd)
+            {
+                showWindow(wnd);
+                *dirtyRect = rcAdd(*dirtyRect, wnd->GetDecoratedRect());
+            }
+            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+        }
+        else if(!strcmp(req, "wmHideWindow"))
+        {
+            int id = *(int *)args;
+            Window *wnd = getWindowById(id);
+            if(wnd && wnd->Visible)
+            {
+                hideWindow(wnd);
+                *dirtyRect = rcAdd(*dirtyRect, wnd->GetDecoratedRect());
+            }
+            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+        }
+        else if(!strcmp(req, "wmActivateWindow"))
+        {
+            int id = *(int *)args;
+            Window *wnd = getWindowById(id);
+            if(wnd && wnd->Visible)
+                setActiveWindow(wnd);
+            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+        }
         else printf("[windowmanager] Unknown RPC request '%s' from process %d\n", req, msg->Source);
     }
     else if(msg->Number == MSG_RPC_FIND_SERVER && !strcmp("windowmanager", (const char *)msg->Data))
@@ -597,9 +698,32 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
 
 void WindowManager::UpdateRect(rcRectangle_t *rect)
 {
-    for(Window *wnd : *windows) wnd->UpdateWindowGraphics(rect);
+    for(Window *wnd : *windows)
+    {
+        if(!wnd->Visible)
+            continue;
+        wnd->UpdateWindowGraphics(rect);
+    }
     pmBlit(fbPixMap, bbPixMap, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
     //pmRectangleRect(fbPixMap, rect, pmColorFromRGB(rand(), rand(), rand()));
+}
+
+void WindowManager::MinimizeWindow(Window *window)
+{
+    if(!window->Visible)
+        return;
+    window->WM->hideWindow(window);
+    rcRectangle_t rect = window->GetDecoratedRect();
+    window->WM->UpdateRect(&rect);
+}
+
+void WindowManager::RestoreWindow(Window *window)
+{
+    if(window->Visible)
+        return;
+    window->WM->showWindow(window);
+    rcRectangle_t rect = window->GetDecoratedRect();
+    window->WM->UpdateRect(&rect);
 }
 
 WindowManager::~WindowManager()

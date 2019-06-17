@@ -12,6 +12,7 @@
 #include <woot/wm.h>
 
 #include "window.hpp"
+#include "wm.hpp"
 
 #undef min
 #define min(x, y) ((x) < (y) ? (x) : (y))
@@ -30,12 +31,15 @@ void Window::titleBarButtonActivate(uiControl_t *sender)
         event.Type = WM_EVT_CLOSE;
         ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
     }
+    else if(btn == wnd->minButton)
+        WindowManager::MinimizeWindow(wnd);
 }
 
 Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
-    WM(wm), id(++ids), owner(owner), rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
-    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr), active(true),
-    dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr)
+    WM(wm), Visible(!(flags & WM_CWF_HIDDEN)), id(++ids), owner(owner),
+    rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
+    pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr),
+    active(true), dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr)
 {
     char nameBuf[64];
     snprintf(nameBuf, sizeof(nameBuf), "window_%d_pixels", id);
@@ -88,6 +92,8 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
             maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#");
             uiControlSetBackColor((uiControl_t *)maxButton, defBg);
             uiControlSetFont((uiControl_t *)maxButton, symFont);
+            uiControlSetContext((uiControl_t *)maxButton, this);
+            uiControlSetOnActivate((uiControl_t *)maxButton, titleBarButtonActivate);
             uiControlSetCanHaveFocus((uiControl_t *)maxButton, UI_FALSE);
         } else maxX = closeX - 1;
 
@@ -97,6 +103,8 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
             minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_");
             uiControlSetBackColor((uiControl_t *)minButton, defBg);
             uiControlSetFont((uiControl_t *)minButton, symFont);
+            uiControlSetContext((uiControl_t *)minButton, this);
+            uiControlSetOnActivate((uiControl_t *)minButton, titleBarButtonActivate);
             uiControlSetCanHaveFocus((uiControl_t *)minButton, UI_FALSE);
         } else minX = maxX;
 

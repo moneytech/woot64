@@ -71,6 +71,7 @@ class WindowManager
     int cursorHotX = 0, cursorHotY = 0;
     int dragDeltaX = 0, dragDeltaY = 0;
     int mouseX = 0, mouseY = 0;
+    int oldMouseWndId = 0;
 
     Window *getWindowById(int id);
     void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);
@@ -79,6 +80,10 @@ class WindowManager
     void sendToBack(Window *wnd);
     Window *findFrontWindow();
     Window *findBackWindow();
+    Window *findByCoords(int x, int y);
+    void handleMouseEnterLeave();
+    void hideWindow(Window *wnd);
+    void showWindow(Window *wnd);
     void setActiveWindow(Window *window);
     void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
 
@@ -86,5 +91,7 @@ public:
     WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap);
     int ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect);
     void UpdateRect(rcRectangle_t *rect);
+    static void MinimizeWindow(Window *window);
+    static void RestoreWindow(Window *window);
     ~WindowManager();
 };

@@ -13,6 +13,7 @@ int uiMenuDelete(uiMenu_t *menu);
 int uiMenuShow(uiMenu_t *menu, int x, int y);
 int uiMenuHide(uiMenu_t *menu);
 int uiMenuAddItem(uiMenu_t *menu, const char *text, pmPixMap_t *icon, uiMenu_t *subMenu);
+int uiMenuProcessEvent(uiMenu_t *menu, wmEvent_t *event);
 
 #ifdef __cplusplus
 }

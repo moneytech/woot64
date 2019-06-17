@@ -43,6 +43,7 @@ public:
 
     uiButton_t *TaskButton;
     WindowManager *WM;
+    bool Visible;
 
     Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride);
     int GetId() const;

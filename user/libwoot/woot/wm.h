@@ -21,6 +21,7 @@ extern "C" {
 #define WM_CWF_SHOWICON         0x00000080
 #define WM_CWF_USEALPHA         0x00000100
 #define WM_CWF_POPUP            0x00000200
+#define WM_CWF_HIDDEN           0x00000400
 
 // default window flags for wmCreateWindow
 #define WM_CWF_DEFAULT          (WM_CWF_APPWINDOW | WM_CWF_BORDER | WM_CWF_TITLEBAR | WM_CWF_CLOSEBUTTON | WM_CWF_MINIMIZEBUTTON | WM_CWF_MAXIMIZEBUTTON | WM_CWF_SHOWICON)
@@ -50,6 +51,8 @@ extern "C" {
 #define WM_EVT_CLOSE        2
 #define WM_EVT_KEYBOARD     3
 #define WM_EVT_MOUSE        4
+#define WM_EVT_MOUSE_ENTER  5
+#define WM_EVT_MOUSE_LEAVE  6
 
 // keyboard event definitions
 #define WM_EVT_KB_RELEASED  1
@@ -69,11 +72,12 @@ typedef struct wmEvent
 {
     int Type;
     int WindowId;
+    int Handled;
     union
     {
         struct
         {
-            int Data[14];
+            int Data[13];
         } Other;
         struct
         {
@@ -91,6 +95,8 @@ typedef struct wmEvent
         } Mouse;
     };
 } wmEvent_t;
+
+typedef void (*wmEventHandler)(wmWindow_t *sender, wmEvent_t *event);
 
 #define WM_INITIALIZE_NONE  0
 #define WM_INITIALIZE_WM    (1 << 0)
@@ -112,6 +118,14 @@ void wmSetWindowPos(wmWindow_t *window, int x, int y);
 void wmSetWindowTitle(wmWindow_t *window, const char *title);
 uiControl_t *wmGetRootControl(wmWindow_t *window);
 int wmProcessEvent(wmWindow_t *window, wmEvent_t *event);
+int wmShowWindow(wmWindow_t *window);
+int wmHideWindow(wmWindow_t *window);
+int wmActivateWindow(wmWindow_t *window);
+
+int wmSetOnMouseEnter(wmWindow_t *window, wmEventHandler handler);
+wmEventHandler wmGetOnMouseEnter(wmWindow_t *window);
+int wmSetOnMouseLeave(wmWindow_t *window, wmEventHandler handler);
+wmEventHandler wmGetOnMouseLeave(wmWindow_t *window);
 
 #ifdef __cplusplus
 }
