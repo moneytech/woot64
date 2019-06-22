@@ -12,6 +12,7 @@ OBJS = \
 	thread.o \
 	ui.o \
 	uibutton.o \
+	uidirview.o \
 	uilabel.o \
 	uilineedit.o \
 	uimenu.o \

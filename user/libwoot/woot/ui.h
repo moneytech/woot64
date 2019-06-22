@@ -133,6 +133,10 @@ struct uiControl
     uiRecalcRectsHandler OnRecalcRects;
 };
 
+void uiDrawDefaultBorder(uiControl_t *control);
+void uiDrawChildren(uiControl_t *control);
+void uiDrawDefaultBackground(uiControl_t *control);
+
 uiControl_t *uiControlCreate(uiControl_t *parent, size_t structSize, pmPixMap_t *parentPixMap, int x, int y, int width, int height, const char *text);
 void uiControlDelete(uiControl_t *control);
 uiControl_t *uiControlGetParent(uiControl_t *control);

@@ -9,6 +9,7 @@
 #include <woot/process.h>
 #include <woot/ui.h>
 #include <woot/uibutton.h>
+#include <woot/uidirview.h>
 #include <woot/uilineedit.h>
 #include <woot/uitoolbar.h>
 #include <woot/wm.h>
@@ -16,10 +17,10 @@
 static wmWindow_t *window;
 static uiControl_t *rootControl;
 static rcRectangle_t rootSize;
-static uiControl_t *files;
 static pmPixMap_t *file;
 static pmPixMap_t *directory;
 static uiLineEdit_t *leAddress;
+static uiDirView_t *view;
 
 void *operator new(unsigned long size)
 {
@@ -41,49 +42,33 @@ void operator delete[](void *ptr)
     free(ptr);
 }
 
-static void fileActivate(uiControl_t *sender);
-
-static void loadDir(const char *dirname)
+static void processPath(const char *path, struct stat *st = nullptr)
 {
-    if(chdir(dirname) < 0)
-        return;
-
-    char cwd[64];
-    getcwd(cwd, sizeof(cwd));
-    wmSetWindowTitle(window, cwd);
-    uiControlSetText((uiControl_t *)leAddress, cwd);
-
-    DIR *dir = opendir(".");
-    if(dir)
+    bool freest = false;
+    if(!st)
     {
-        struct stat st;
-        dirent *de;
-        for(int i = 0; (de = readdir(dir)); ++i)
-        {
-            if(!strcmp(de->d_name, "."))
-            {
-                --i;
-                continue;
-            }
-            uiButton_t *btn = uiButtonCreate(files, 4, 4 + i * 42, 256, 40, de->d_name);
-            uiControlSetOnActivate((uiControl_t *)btn, fileActivate);
-            uiControlSetTextHAlign((uiControl_t *)btn, UI_HALIGN_LEFT);
-            uiControlSetIconPosition((uiControl_t *)btn, UI_LEFT);
-            uiControlSetTextIconSeparation((uiControl_t *)btn, 8);
-            if(!stat(de->d_name, &st))
-                uiControlSetIcon((uiControl_t *)btn, S_ISDIR(st.st_mode) ? directory : file);
-        }
-        closedir(dir);
+        freest = true;
+        st = new struct stat;
+        stat(path, st);
     }
+    int cwdSize = 4096;
+    char *cwd = new char[cwdSize];
+    if(cwd && chdir(path) >= 0)
+    {
+        getcwd(cwd, cwdSize);
+        wmSetWindowTitle(window, cwd);
+        uiControlSetText((uiControl_t *)leAddress, cwd);
+        wmSetWindowTitle(window, cwd);
+        uiDirViewSetPath(view, cwd);
+        uiDirViewRefresh(view);
+    }
+    if(cwd) delete[] cwd;
+    if(freest) delete st;
 }
 
-static int processPath(const char *path);
-
-static void fileActivate(uiControl_t *sender)
+static void fileActivate(uiDirView_t *view, uiDirViewFileInfo_t *info)
 {
-    char *text = strdup(uiControlGetText(sender));
-    processPath(text);
-    free(text);
+    processPath(info->Name, &info->Stat);
 }
 
 static void upActivate(uiControl_t *sender)
@@ -94,24 +79,6 @@ static void upActivate(uiControl_t *sender)
 static void addressAccept(uiLineEdit_t *edit)
 {
     processPath(uiControlGetText((uiControl_t *)edit));
-}
-
-static int processPath(const char *path)
-{
-    struct stat st;
-    if(!stat(path, &st))
-    {
-        if(S_ISDIR(st.st_mode))
-        {
-            if(files) uiControlDelete(files);
-            files = uiControlCreate(rootControl, 0, nullptr, 1, 34, rootSize.Width - 2, rootSize.Height - 35, nullptr);
-            loadDir(path);
-            uiControlRedraw(rootControl, 1);
-        }
-        else if(st.st_mode & 0111)
-            processCreate(path);
-    }
-    return 0;
 }
 
 extern "C" int main(int argc, char *argv[])
@@ -162,9 +129,8 @@ extern "C" int main(int argc, char *argv[])
 
     uiControlRecalcRects((uiControl_t *)toolbar);
 
-    files = uiControlCreate(rootControl, 0, nullptr, 1, 34, rootSize.Width - 2, rootSize.Height - 35, nullptr);
-
-    loadDir(cwd);
+    view = uiDirViewCreate(rootControl, 2, 34, rootSize.Width - 4, rootSize.Height - 36, cwd);
+    uiDirViewSetOnFileActivate(view, fileActivate);
 
     uiControlRedraw(rootControl, 1);
     wmRedrawWindow(window);

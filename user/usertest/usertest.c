@@ -104,7 +104,6 @@ int main(int argc, char *argv[])
     uiToolbarSetChildSpacing(bar, 4);
     uiControlRecalcRects((uiControl_t *)bar);
 
-
     uiControlSetBorderColor(rootControl, pmColorWhite);
     uiControlSetBorderStyle(rootControl, UI_BORDER_RAISED);
 

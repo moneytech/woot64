@@ -46,7 +46,7 @@ vecVector_t *vecCreate(unsigned elementSize, unsigned preAlloc, unsigned allocIn
     if(!vec) return NULL;
 
     vec->elementSize = elementSize;
-    vec->maxSize = maxSize;
+    vec->maxSize = maxSize ? maxSize : __INT_MAX__;
     vec->allocIncr = allocIncr;
     vec->data = (unsigned char *)malloc(preAlloc * elementSize);
     if(preAlloc && !vec->data)

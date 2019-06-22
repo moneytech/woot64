@@ -172,9 +172,10 @@ static void drawDefaultFace(uiControl_t *control)
         pmRectanglePattern(control->PixMap, faceRect.X - 1, faceRect.Y - 1, faceRect.Width + 2, faceRect.Height + 2, 0x55555555, wmGetColor(WM_COLOR_FOCUS_HIGHLIGHT));
 }
 
-static void drawDefaultBorder(uiControl_t *control)
+void uiDrawDefaultBorder(uiControl_t *control)
 {
     rcRectangle_t rect = control->Rectangle;
+    pmColor_t borderColor = control->Parent ? control->Parent->BackColor : control->BackColor;
     switch(control->BorderStyle)
     {
     default:
@@ -183,24 +184,36 @@ static void drawDefaultBorder(uiControl_t *control)
         pmRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BorderColor);
         break;
     case UI_BORDER_RAISED:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0, control->BackColor);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 0, borderColor);
         break;
     case UI_BORDER_SUNKEN:
-        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1, control->BackColor);
+        pmDrawFrame(control->PixMap, 0, 0, rect.Width, rect.Height, 1, borderColor);
         break;
     }
+}
+
+void uiDrawChildren(uiControl_t *control)
+{
+    if(!control) return;
+    for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
+        uiControlRedraw(ctrl, 0);
+}
+
+void uiDrawDefaultBackground(uiControl_t *control)
+{
+    rcRectangle_t rect = pmGetRectangle(control->PixMap);
+    if(control->BackColor.A == 255)
+        pmFillRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
+    else pmAlphaRectangle(control->PixMap, 0, 0, rect.Width, rect.Height, control->BackColor);
 }
 
 // default OnPaint handler
 static void defaultOnPaint(uiControl_t *sender)
 {
-    rcRectangle_t rect = pmGetRectangle(sender->PixMap);
-    if(sender->BackColor.A == 255)
-        pmFillRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
-    else pmAlphaRectangle(sender->PixMap, 0, 0, rect.Width, rect.Height, sender->BackColor);
-
+    uiDrawDefaultBackground(sender);
     drawDefaultFace(sender);
-    drawDefaultBorder(sender);
+    uiDrawChildren(sender);
+    uiDrawDefaultBorder(sender);
     //pmInvalidateWhole(sender->PixMap);
 }
 
@@ -377,8 +390,6 @@ void uiControlRedraw(uiControl_t *control, int updateWindow)
         return;
     if(control->OnPaint)
         control->OnPaint(control);
-    for(uiControl_t *ctrl = control->Children; ctrl; ctrl = ctrl->Next)
-        uiControlRedraw(ctrl, 0);
     pmPixMap_t *pm = uiControlGetPixMap(control);
     if(pm) pmInvalidateWhole(pm);
     if(updateWindow && control->Window)

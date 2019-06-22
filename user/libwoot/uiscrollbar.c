@@ -86,6 +86,7 @@ static void scrollbarPaint(uiControl_t *control)
         pmFillRectangle(pm, 0, btnSize + thumbStart, rect.Width, thumbSize, thumbColor);
         pmDrawFrame(pm, 0, btnSize + thumbStart, rect.Width, thumbSize, 0, control->BackColor);
     }
+    uiDrawChildren(control);
 }
 
 static void scrollbarPreMousePress(uiControl_t *control, wmEvent_t *event)
