@@ -8,6 +8,7 @@
 #include <woot/uidirview.h>
 #include <woot/uiscrollbar.h>
 #include <woot/vector.h>
+#include <woot/wm.h>
 
 typedef uiButton_t fileTile_t;
 
@@ -85,6 +86,10 @@ static void updateTiles(uiDirView_t *view)
         uiControlSetVisibility((uiControl_t *)ti, UI_VISIBLE);
         uiControlSetText((uiControl_t *)ti, fi->Name);
         uiControlSetContext((uiControl_t *)ti, fi);
+        uiControlSetTextHAlign((uiControl_t *)ti, UI_HALIGN_LEFT);
+        uiControlSetIconPosition((uiControl_t *)ti, UI_LEFT);
+        uiControlSetTextIconSeparation((uiControl_t *)ti, 4);
+        uiControlSetIcon((uiControl_t *)ti, wmGetIcon(S_ISDIR(fi->Stat.st_mode) ? WM_ICON_DIRECTORY : WM_ICON_FILE));
     }
 
     for(; j < tiCount; ++j)
@@ -142,7 +147,7 @@ uiDirView_t *uiDirViewCreate(uiControl_t *parent, int x, int y, int w, int h, co
     }
 
     view->TileWidth = w - 24;
-    view->TileHeight = 32;
+    view->TileHeight = 36;
     int tilesVisible = (h + view->TileHeight - 1) / view->TileHeight;
     for(int i = 0; i < tilesVisible; ++i)
     {

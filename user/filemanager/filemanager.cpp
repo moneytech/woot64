@@ -17,8 +17,6 @@
 static wmWindow_t *window;
 static uiControl_t *rootControl;
 static rcRectangle_t rootSize;
-static pmPixMap_t *file;
-static pmPixMap_t *directory;
 static uiLineEdit_t *leAddress;
 static uiDirView_t *view;
 
@@ -88,12 +86,9 @@ extern "C" int main(int argc, char *argv[])
     if(argc > 1)
         chdir(argv[1]);
 
-    file = pmLoadPNG("/data/common/icons/file.png");
-    directory = pmLoadPNG("/data/common/icons/directory.png");
-
     wmInitialize(WM_INITIALIZE_NONE);
 
-    window = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 500, 600, WM_CWF_DEFAULT);
+    window = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 500, 450, WM_CWF_DEFAULT);
     if(!window)
     {
         fprintf(stderr, "[filemanager] Couldn't create main window\n");

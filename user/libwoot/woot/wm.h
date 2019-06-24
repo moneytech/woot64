@@ -6,8 +6,9 @@
 extern "C" {
 #endif // __cplusplus
 
-// wmCreateWindow default position
-#define WM_CW_USEDEFAULT 0x80000000
+// wmCreateWindow special positions
+#define WM_CW_USEDEFAULT    0x80000000
+#define WM_CW_CENTER        0x80000001
 
 // wmCreateWindow flags
 #define WM_CWF_NONE             0x00000000
@@ -48,6 +49,14 @@ typedef enum
     WM_FONT_MONO,
     WM_FONT_ID_COUNT // ALWAYS keep this entry last
 } wmFontId_t;
+
+// icon ids
+typedef enum
+{
+    WM_ICON_FILE,
+    WM_ICON_DIRECTORY,
+    WM_ICON_ID_COUNT // ALWAYS keep this entry last
+} wmIconId_t;
 
 // event types
 typedef enum
@@ -118,6 +127,7 @@ const char *wmGetServer();
 int wmGetMousePos(int *x, int *y);
 pmColor_t wmGetColor(wmColorId_t colorId);
 fntFont_t *wmGetFont(wmFontId_t fontId);
+pmPixMap_t *wmGetIcon(wmIconId_t iconId);
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);
 int wmDeleteWindow(wmWindow_t *window);
 int wmGetWindowId(wmWindow_t *window);

@@ -72,6 +72,7 @@ class WindowManager
     int dragDeltaX = 0, dragDeltaY = 0;
     int mouseX = 0, mouseY = 0;
     int oldMouseWndId = 0;
+    int defX = 32, defY = 32;
 
     Window *getWindowById(int id);
     void moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, int y);

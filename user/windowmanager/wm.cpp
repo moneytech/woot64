@@ -539,8 +539,22 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             unsigned h = *(unsigned *)(args + 12);
             unsigned flags = *(unsigned *)(args + 16);
 
-            if(x == WM_CW_USEDEFAULT) x = (deskRect.Width - w) / 2;
-            if(y == WM_CW_USEDEFAULT) y = (deskRect.Height - h) / 2;
+            if(x == WM_CW_CENTER) x = (deskRect.Width - w) / 2;
+            else if(x == WM_CW_USEDEFAULT)
+            {
+                if((defX + w) > deskRect.Width)
+                    defX = 32;
+                x = defX;
+                defX += 32;
+            }
+            if(y == WM_CW_CENTER) y = (deskRect.Height - h) / 2;
+            else if(y == WM_CW_USEDEFAULT)
+            {
+                if((defY + h) > deskRect.Height)
+                    defY = 32;
+                y = defY;
+                defY += 32;
+            }
 
             //printf("[windowmanager] wmCreateWindow(%d, %d, %d, %d, %#.8x)\n", x, y, w, h, flags);
             Window *wnd = new Window(this, msg->Source, x, y, w, h, flags, bbPixMap, nullptr);

@@ -101,6 +101,8 @@ extern "C" int main(int argc, char *argv[])
                 case WM_EVT_CLOSE:
                     quit = true;
                     break;
+                default:
+                    break;
                 }
                 if(quit) break;
             }

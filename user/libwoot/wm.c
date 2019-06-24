@@ -29,6 +29,12 @@ static const int fontSizes[WM_FONT_ID_COUNT] =
     12,
     10
 };
+static const char *iconNames[WM_ICON_ID_COUNT] =
+{
+    "/data/common/icons/file.png",
+    "/data/common/icons/directory.png"
+};
+static pmPixMap_t *icons[WM_ICON_ID_COUNT];
 
 struct wmWindow
 {
@@ -88,6 +94,7 @@ int wmInitialize(int flags)
     colors[WM_COLOR_INACTIVE_TITLE_TEXT] = pmColorSilver;
     colors[WM_COLOR_FOCUS_HIGHLIGHT] = pmColorBlack;
     memset(fonts, 0, sizeof(fonts));
+    memset(icons, 0, sizeof(icons));
     return res;
 }
 
@@ -139,6 +146,22 @@ fntFont_t *wmGetFont(wmFontId_t fontId)
     }
 
     return fonts[fontId];
+}
+
+pmPixMap_t *wmGetIcon(wmIconId_t iconId)
+{
+    if(iconId < 0 || iconId >= WM_ICON_ID_COUNT)
+        return NULL;
+
+    // load icons on demand
+    if(!icons[iconId])
+    {
+        pmPixMap_t *icon = pmLoadPNG(iconNames[iconId]);
+        if(!icon) return NULL;
+        icons[iconId] = icon;
+    }
+
+    return icons[iconId];
 }
 
 wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
