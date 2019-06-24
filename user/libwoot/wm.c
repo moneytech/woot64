@@ -107,6 +107,12 @@ int wmCleanup()
             fntDelete(fonts[i]);
     }
     memset(fonts, 0, sizeof(fonts));
+    for(unsigned i = 0; i < WM_ICON_ID_COUNT; ++i)
+    {
+        if(icons[i])
+            pmDelete(icons[i]);
+    }
+    memset(icons, 0, sizeof(icons));
     return 0;
 }
 
