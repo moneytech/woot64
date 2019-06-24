@@ -1,4 +1,6 @@
+editors.cfg
 font.c
+shell.c
 ui.c
 uibutton.c
 uidirview.c
@@ -12,6 +14,7 @@ uitoolbar.c
 vector.c
 wm.c
 woot/font.h
+woot/shell.h
 woot/ui.h
 woot/uibutton.h
 woot/uidirview.h

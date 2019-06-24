@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <woot/ipc.h>
 #include <woot/process.h>
+#include <woot/shell.h>
 #include <woot/ui.h>
 #include <woot/uibutton.h>
 #include <woot/uidirview.h>
@@ -49,18 +50,35 @@ static void processPath(const char *path, struct stat *st = nullptr)
         st = new struct stat;
         stat(path, st);
     }
-    int cwdSize = 4096;
-    char *cwd = new char[cwdSize];
-    if(cwd && chdir(path) >= 0)
+    if(S_ISDIR(st->st_mode))
     {
-        getcwd(cwd, cwdSize);
-        wmSetWindowTitle(window, cwd);
-        uiControlSetText((uiControl_t *)leAddress, cwd);
-        wmSetWindowTitle(window, cwd);
-        uiDirViewSetPath(view, cwd);
-        uiDirViewRefresh(view);
+        const int cwdSize = 4096;
+        if(chdir(path) >= 0)
+        {
+            char *cwd = new char[cwdSize];
+            getcwd(cwd, cwdSize);
+            wmSetWindowTitle(window, cwd);
+            uiControlSetText((uiControl_t *)leAddress, cwd);
+            wmSetWindowTitle(window, cwd);
+            uiDirViewSetPath(view, cwd);
+            uiDirViewRefresh(view);
+            delete[] cwd;
+        }
     }
-    if(cwd) delete[] cwd;
+    else if(st->st_mode & 0111)
+        processCreate(path);
+    else
+    {
+        const char *editor = shellGetEditor(path, 0);
+        if(editor)
+        {
+            const int cmdLineSize = 4096;
+            char *cmdLine = new char[cmdLineSize];
+            snprintf(cmdLine, cmdLineSize, "%s %s", editor, path);
+            processCreate(cmdLine);
+            delete[] cmdLine;
+        }
+    }
     if(freest) delete st;
 }
 
@@ -86,6 +104,7 @@ extern "C" int main(int argc, char *argv[])
     if(argc > 1)
         chdir(argv[1]);
 
+    shellInitialize();
     wmInitialize(WM_INITIALIZE_NONE);
 
     window = wmCreateWindow(WM_CW_USEDEFAULT, WM_CW_USEDEFAULT, 500, 450, WM_CWF_DEFAULT);
@@ -159,5 +178,6 @@ extern "C" int main(int argc, char *argv[])
 
     wmDeleteWindow(window);
     wmCleanup();
+    shellCleanup();
     return 0;
 }

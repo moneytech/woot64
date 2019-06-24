@@ -9,6 +9,7 @@ OBJS = \
 	process.o \
 	rectangle.o \
 	rpc.o \
+	shell.o \
 	thread.o \
 	ui.o \
 	uibutton.o \
@@ -26,6 +27,7 @@ OBJS = \
 
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
+CFG_DIR ?= $(WOOT_TOP_DIR)/root/etc/woot
 
 CC = $(WOOT_TOP_DIR)/user/cc
 
@@ -45,11 +47,15 @@ $(STATIC_LIB): $(OBJS)
 $(SHARED_LIB): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB) $(LIBS)
 
-install: $(LIB_DIR)/$(SHARED_LIB)
+install: $(LIB_DIR)/$(SHARED_LIB) $(CFG_DIR)/editors.cfg
 
 $(LIB_DIR)/$(SHARED_LIB): $(SHARED_LIB)
 	mkdir -p $(LIB_DIR)
 	cp $(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB)
+
+$(CFG_DIR)/editors.cfg: editors.cfg
+	mkdir -p $(CFG_DIR)
+	cp $< $@
 
 clean:
 	rm -f $(OBJS) $(STATIC_LIB) $(SHARED_LIB)
