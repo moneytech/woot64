@@ -55,6 +55,7 @@ typedef enum
 {
     WM_ICON_FILE,
     WM_ICON_DIRECTORY,
+    WM_ICON_PROGRAM,
     WM_ICON_ID_COUNT // ALWAYS keep this entry last
 } wmIconId_t;
 

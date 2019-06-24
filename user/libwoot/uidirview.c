@@ -22,6 +22,7 @@ struct uiDirView
     vecVector_t *Tiles;
     int TileWidth;
     int TileHeight;
+    int TilesVisible;
     uiDirViewFileActivateHandler OnFileActivate;
 };
 
@@ -60,7 +61,8 @@ static int readDir(uiDirView_t *view)
     vecClear(view->Infos);
     struct dirent *de;
     uiDirViewFileInfo_t fi;
-    for(int i = 0; (de = readdir(dir)); ++i)
+    int i;
+    for(i = 0; (de = readdir(dir)); ++i)
     {
         snprintf(fi.Name, sizeof(fi.Name), "%s", de->d_name);
         stat(de->d_name, &fi.Stat);
@@ -68,6 +70,13 @@ static int readDir(uiDirView_t *view)
         vecAppend(view->Infos, &fi);
     }
     closedir(dir);
+
+    uiScrollbarSetMinPosition(view->Scroll, 0);
+    uiScrollbarSetMaxPosition(view->Scroll, i);
+    uiScrollbarSetZoom(view->Scroll, view->TilesVisible);
+    uiScrollbarSetPosition(view->Scroll, 0);
+    uiControlRedraw((uiControl_t *)view->Scroll, UI_TRUE);
+
     return 0;
 }
 
@@ -89,7 +98,7 @@ static void updateTiles(uiDirView_t *view)
         uiControlSetTextHAlign((uiControl_t *)ti, UI_HALIGN_LEFT);
         uiControlSetIconPosition((uiControl_t *)ti, UI_LEFT);
         uiControlSetTextIconSeparation((uiControl_t *)ti, 4);
-        uiControlSetIcon((uiControl_t *)ti, wmGetIcon(S_ISDIR(fi->Stat.st_mode) ? WM_ICON_DIRECTORY : WM_ICON_FILE));
+        uiControlSetIcon((uiControl_t *)ti,wmGetIcon(S_ISDIR(fi->Stat.st_mode) ? WM_ICON_DIRECTORY : (fi->Stat.st_mode & 0111 ? WM_ICON_PROGRAM : WM_ICON_FILE)));
     }
 
     for(; j < tiCount; ++j)
@@ -148,8 +157,8 @@ uiDirView_t *uiDirViewCreate(uiControl_t *parent, int x, int y, int w, int h, co
 
     view->TileWidth = w - 24;
     view->TileHeight = 36;
-    int tilesVisible = (h + view->TileHeight - 1) / view->TileHeight;
-    for(int i = 0; i < tilesVisible; ++i)
+    view->TilesVisible = (h + view->TileHeight - 1) / view->TileHeight;
+    for(int i = 0; i < view->TilesVisible; ++i)
     {
         fileTile_t *tile = uiButtonCreate(view->FilesContainer, 4, i * view->TileHeight + 1, view->TileWidth, view->TileHeight - 2, NULL);
         //uiControlSetVisibility((uiControl_t *)tile, UI_HIDDEN);

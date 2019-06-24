@@ -32,7 +32,8 @@ static const int fontSizes[WM_FONT_ID_COUNT] =
 static const char *iconNames[WM_ICON_ID_COUNT] =
 {
     "/data/common/icons/file.png",
-    "/data/common/icons/directory.png"
+    "/data/common/icons/directory.png",
+    "/data/common/icons/program.png"
 };
 static pmPixMap_t *icons[WM_ICON_ID_COUNT];
 

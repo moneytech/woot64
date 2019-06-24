@@ -148,7 +148,7 @@ uiControl_t *uiControlGetRoot(uiControl_t *control);
 uiControl_t *uiControlFindFocus(uiControl_t *control);
 void uiControlSetFocus(uiControl_t *control);
 void uiControlClearFocus(uiControl_t *control);
-void uiControlRedraw(uiControl_t *control, int updateWindow);
+void uiControlRedraw(uiControl_t *control, uiBool_t updateWindow);
 void uiControlSetWindow(uiControl_t *control, wmWindow_t *window);
 wmWindow_t *uiControlGetWindow(uiControl_t *control);
 pmPixMap_t *uiControlGetPixMap(uiControl_t *control);

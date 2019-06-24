@@ -384,7 +384,7 @@ void uiControlClearFocus(uiControl_t *control)
     }
 }
 
-void uiControlRedraw(uiControl_t *control, int updateWindow)
+void uiControlRedraw(uiControl_t *control, uiBool_t updateWindow)
 {
     if(control->Visibility == UI_HIDDEN)
         return;
