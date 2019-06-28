@@ -13,6 +13,7 @@
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
 #include <woot/thread.h>
+#include <woot/timer.h>
 #include <woot/ui.h>
 #include <woot/uibutton.h>
 #include <woot/uilabel.h>
@@ -57,6 +58,8 @@ static void menuItemActivate(uiControl_t *sender)
 int main(int argc, char *argv[])
 {
     setbuf(stdout, NULL);
+
+    // initialize window manager
     int res = wmInitialize(WM_INITIALIZE_NONE);
     const char *wmServer = wmGetServer();
     if(res < 0)
@@ -65,6 +68,17 @@ int main(int argc, char *argv[])
         return -1;
     }
     else printf("[usertest] Window manager server: '%s'\n", wmServer);
+
+    // initialize timekeeper
+    res = timerInitialize();
+    const char *timerServer = timerGetServer();
+    if(res < 0)
+    {
+        wmCleanup();
+        printf("[usertest] timerInitialize() failed\n");
+        return -1;
+    }
+    else printf("[usertest] Time keeper server: '%s'\n", timerServer);
 
     window = wmCreateWindow(100, 200, 300, 350, WM_CWF_DEFAULT);
     if(!window) return -errno;
@@ -134,6 +148,8 @@ int main(int argc, char *argv[])
 
     uiControlRedraw(rootControl, 1);
 
+    int timer = timerCreate(1000, 0);
+
     srand(time(NULL));
     ipcMessage_t msg;
     for(int i = 0;; ++i)
@@ -183,8 +199,11 @@ int main(int argc, char *argv[])
 
     printf("[usertest] Closing usertest\n");
 
+    timerDelete(timer);
     uiMenuDelete(menu);
     wmDeleteWindow(window);
+    timerCleanup();
+    wmCleanup();
 
     return 0;
 }

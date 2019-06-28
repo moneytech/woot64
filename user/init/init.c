@@ -12,7 +12,15 @@ int main(int argc, char *argv[])
     int wmProc = processCreate("/bin/windowmanager 1024 768 32");
     processWait(wmProc, 2000); // wait for demonetization of window manager
     int timeProc = processCreate("/bin/timekeeper");
-    processWait(timeProc, 2000); // wait for demonetization of timekeeper
+    processWait(timeProc, 2000); // wait for timekeeper
+
+    if(inputProc < 0 || wmProc < 0 || timeProc < 0)
+    {
+        processDelete(timeProc);
+        processDelete(wmProc);
+        processDelete(inputProc);
+        return -1;
+    }
 
     int fmProc = processCreate("/bin/filemanager /bin");
     int conProc = processCreate("/bin/console");

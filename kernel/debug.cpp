@@ -163,6 +163,7 @@ int64_t debugRead(void *buffer, int64_t n)
 
 int64_t debugWrite(const void *buffer, int64_t n)
 {
+    DebugStreamLock.Acquire(5000, false);
     uint8_t *buf = (uint8_t *)buffer;
     for(uint i = 0; i < n; ++i)
     {
@@ -250,6 +251,7 @@ int64_t debugWrite(const void *buffer, int64_t n)
 #endif // USE_SERIAL
         _outb(0xE9, c);
     }
+    DebugStreamLock.Release();
     return n;
 }
 

@@ -2,6 +2,7 @@ editors.cfg
 font.c
 shell.c
 sync.c
+timer.c
 ui.c
 uibutton.c
 uidirview.c
@@ -17,6 +18,7 @@ wm.c
 woot/font.h
 woot/shell.h
 woot/sync.h
+woot/timer.h
 woot/ui.h
 woot/uibutton.h
 woot/uidirview.h

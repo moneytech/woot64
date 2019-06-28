@@ -12,6 +12,7 @@ OBJS = \
 	shell.o \
 	sync.o \
 	thread.o \
+	timer.o \
 	ui.o \
 	uibutton.o \
 	uidirview.o \
@@ -38,7 +39,7 @@ LIBS = -Wl,--start-group,-lc,-lsyscalls,-lpng,-lfreetype,--end-group
 
 export WOOT_TOP_DIR
 
-all: $(SHARED_LIB)
+all: $(SHARED_LIB) $(STATIC_LIB)
 
 static: $(STATIC_LIB)
 

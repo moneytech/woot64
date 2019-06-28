@@ -12,7 +12,7 @@
 
 #define DEFAULT_RPC_TIMEOUT 1000
 
-static char wmServer[64] = { 0 };
+static char wmServer[MSG_RPC_PAYLOAD_SIZE] = { 0 };
 static pmColor_t colors[WM_COLOR_ID_COUNT];
 static fntFont_t *fonts[WM_FONT_ID_COUNT];
 static const char *fontNames[WM_FONT_ID_COUNT] =

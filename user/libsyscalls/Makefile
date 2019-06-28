@@ -12,7 +12,7 @@ LDFLAGS = -shared
 
 export WOOT_TOP_DIR
 
-all: $(SHARED_LIB)
+all: $(SHARED_LIB) $(STATIC_LIB)
 
 static: $(STATIC_LIB)
 

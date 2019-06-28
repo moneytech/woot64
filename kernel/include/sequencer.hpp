@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cpu.hpp>
-
 template<class T>
 class Sequencer
 {
@@ -14,9 +12,6 @@ public:
 
     T GetNext()
     {
-        bool state = cpuDisableInterrupts();
-        T result = value++;
-        cpuRestoreInterrupts(state);
-        return result;
+        return __sync_fetch_and_add(&value, 1);
     }
 };
