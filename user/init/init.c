@@ -8,11 +8,12 @@ int main(int argc, char *argv[])
     printf("[init] Starting %s\n", argv[0]);
 
     int inputProc = processCreate("/bin/inputhandler");
-    processWait(inputProc, 5000); // wait for daemonization of input handler
+    processWait(inputProc, 2000); // wait for daemonization of input handler
     int wmProc = processCreate("/bin/windowmanager 1024 768 32");
-    processWait(wmProc, 5000); // wait for demonetization of window manager
+    processWait(wmProc, 2000); // wait for demonetization of window manager
+    int timeProc = processCreate("/bin/timekeeper");
+    processWait(timeProc, 2000); // wait for demonetization of timekeeper
 
-    //int testProc = processCreate("/bin/usertest");
     int fmProc = processCreate("/bin/filemanager /bin");
     int conProc = processCreate("/bin/console");
     if(conProc)
@@ -25,12 +26,9 @@ int main(int argc, char *argv[])
         processWait(fmProc, -1);
         processDelete(fmProc);
     }
-    /*if(testProc)
-    {
-        processWait(testProc, -1);
-        processDelete(testProc);
-    }*/
 
+    processWait(timeProc, 1000);
+    processDelete(timeProc);
     processWait(wmProc, 1000);
     processDelete(wmProc);
     processWait(inputProc, 1000);

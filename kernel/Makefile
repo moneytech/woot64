@@ -82,7 +82,7 @@ COMPILE_FLAGS = \
 CFLAGS = $(COMPILE_FLAGS)
 CXXFLAGS = $(COMPILE_FLAGS) -fno-exceptions
 ASMFLAGS = -f elf64 -g dwarf2 -w
-LDFLAGS = -Tlink.ld -z max-page-size=4096 -shared -Bsymbolic -z noreloc-overflow
+LDFLAGS = -Tlink.ld -z max-page-size=4096 -shared -Bsymbolic -z noreloc-overflow --no-undefined
 
 DEPS = link.ld
 

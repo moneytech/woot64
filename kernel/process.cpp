@@ -1025,6 +1025,18 @@ Process::Handle::Handle(::NamedObject *namedObject) :
 {
 }
 
+Process::Handle::Handle(::Mutex *mutex) :
+    Type(HandleType::Mutex),
+    Mutex(mutex)
+{
+}
+
+Process::Handle::Handle(::Semaphore *semaphore) :
+    Type(HandleType::Semaphore),
+    Semaphore(semaphore)
+{
+}
+
 Process::Handle::Handle(::FrameBuffer *frameBuffer) :
     Type(HandleType::FrameBuffer),
     FrameBuffer(frameBuffer)

@@ -128,15 +128,6 @@ void WindowManager::taskButtonActivate(uiControl_t *control)
         wm->RestoreWindow(wnd);
 }
 
-int WindowManager::timerThread(uintptr_t arg)
-{
-    for(;;)
-    {
-        threadSleep(THREAD_SELF, 1000);
-    }
-    return 0;
-}
-
 Window *WindowManager::getWindowById(int id)
 {
     for(Window *wnd : *windows)
@@ -328,9 +319,6 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     fbPixMap(fbPixMap),
     bbPixMap(bbPixMap)
 {
-    // create time thread
-    timerThreadId = threadCreate("timer thread", (void *)timerThread, (uintptr_t)this, nullptr);
-
     int currentPId = getpid();
     wmInitialize(WM_INITIALIZE_WM);
     deskRect = bbPixMap->Contents;

@@ -35,8 +35,13 @@ void Window::titleBarButtonActivate(uiControl_t *sender)
         WindowManager::MinimizeWindow(wnd);
 }
 
+int Window::getNewId()
+{
+    return __sync_add_and_fetch(&ids, 1);
+}
+
 Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
-    WM(wm), Visible(!(flags & WM_CWF_HIDDEN)), id(++ids), owner(owner),
+    WM(wm), Visible(!(flags & WM_CWF_HIDDEN)), id(getNewId()), owner(owner),
     rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
     pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr),
     active(true), dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr)

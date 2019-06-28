@@ -12,6 +12,7 @@ SUBDIRS = \
 	init \
 	inputhandler \
 	ted \
+	timekeeper \
 	usertest \
 	windowmanager \
 	yasm \

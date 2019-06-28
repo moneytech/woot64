@@ -36,6 +36,7 @@ class Window
     uiButton_t *progButton;
 
     static void titleBarButtonActivate(uiControl_t *sender);
+    static int getNewId();
 public:
     static int TitleBarHeight;
 

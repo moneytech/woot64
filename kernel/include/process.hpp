@@ -115,6 +115,8 @@ public:
         Handle(::Stream *stream);
         Handle(::File *file);
         Handle(::NamedObject *namedObject);
+        Handle(::Mutex *mutex);
+        Handle(::Semaphore *semaphore);
         Handle(::FrameBuffer *frameBuffer);
         Handle(::InputDevice *inputDevice);
         Handle(Process::Pipe *pipe);
