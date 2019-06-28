@@ -218,13 +218,10 @@ public:
     int CreateNamedObjectHandle(NamedObject *no);
     NamedObject *GetNamedObject(int handle);
 
-    int NewMutex();
-    Mutex *GetMutex(int idx);
-    int DeleteMutex(int idx);
-
+    int NewMutex(bool recursive);
+    Mutex *GetMutex(int fd);
     int NewSemaphore(int initVal);
-    Semaphore *GetSemaphore(int idx);
-    int DeleteSemaphore(int idx);
+    Semaphore *GetSemaphore(int fd);
 
     ~Process();
 };

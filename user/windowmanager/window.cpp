@@ -121,7 +121,7 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
         uiControlSetBackColor((uiControl_t *)titleBarText, bg);
         uiControlSetFont((uiControl_t *)titleBarText, titleFont);
 
-        uiControlRedraw(titleBar, 0);
+        uiControlRedraw(titleBar, UI_FALSE);
     }
 }
 
@@ -235,7 +235,7 @@ void Window::SetTitle(const char *title)
     if(titleBarText)
     {
         uiControlSetText((uiControl_t *)titleBarText, this->title);
-        uiControlRedraw(titleBar, 0);
+        uiControlRedraw(titleBar, UI_FALSE);
     }
 }
 
@@ -285,7 +285,7 @@ rcRectangle_t Window::SetActive(bool active)
         uiControlSetBackColor(titleBar, bg);
         uiControlSetBackColor((uiControl_t *)titleBarText, bg);
         uiControlSetTextColor((uiControl_t *)titleBarText, fg);
-        uiControlRedraw((uiControl_t *)titleBar, 0);
+        uiControlRedraw((uiControl_t *)titleBar, UI_FALSE);
     }
     rcRectangle_t titleBar = { rect.X, rect.Y - TitleBarHeight, rect.Width, TitleBarHeight };
     return titleBar;

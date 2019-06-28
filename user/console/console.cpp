@@ -218,7 +218,7 @@ extern "C" int main(int argc, char *argv[])
     wmSetWindowTitle(conWindow, "Console");
     uiControlSetBorderStyle(rootControl, UI_BORDER_NONE);
     uiControlSetBackColor(rootControl, conBackColor);
-    uiControlRedraw(rootControl, 1);
+    uiControlRedraw(rootControl, UI_TRUE);
 
     conPixMap = uiControlGetPixMap(rootControl);
     conDirtyRect = conPixMap->Contents;
@@ -398,6 +398,8 @@ extern "C" int main(int argc, char *argv[])
             int ids[128];
             int procCnt = processListIds(ids, sizeof(ids) / sizeof(*ids));
             printf("%-4s %-32s %-4s %-10s\n", "pid", "name", "thr", "mem(kiB)");
+            int threadCount = 0;
+            size_t memUsed = 0;
             for(int i = 0; i < procCnt; ++i)
             {
                 int pid = ids[i];
@@ -407,8 +409,12 @@ extern "C" int main(int argc, char *argv[])
                 if((threads = processGetThreadCount(pid)) < 0) continue;
                 size_t mem = processGetUsedMemory(pid);
                 if(isError(mem)) continue;
+                threadCount += threads;
+                memUsed += mem;
                 printf("%-4d %-32.32s %-4d %-10zu\n", ids[i], name, threads, mem >> 10);
             }
+            printf("Thread count: %d\n", threadCount);
+            printf("Userspace memory usage: %zu kiB\n", memUsed >> 10);
         }
         else if(!strcmp(conCmdArgs[0], "sysinfo"))
         {

@@ -881,7 +881,7 @@ long SysCalls::sysIPCOpenSharedMem(const char *name)
 
 long SysCalls::sysIPCCloseSharedMem(int fd)
 {
-    return Process::GetCurrent()->Close(fd);
+    return Process::GetCurrent()->Close(fd); // TODO: add fd type check
 }
 
 long SysCalls::sysIPCGetSharedMemSize(int fd)
@@ -932,6 +932,57 @@ long SysCalls::sysIPCWaitMessage(void *msg, int number, int source, int rangeSta
 {
     BUFFER_CHECK(msg, sizeof(ipcMessage));
     return IPC::WaitMessage((ipcMessage *)msg, number, source, rangeStart, rangeSize, timeout);
+}
+
+long SysCalls::sysSyncMutexCreate(unsigned flags)
+{
+    return Process::GetCurrent()->NewMutex(flags & 1);
+}
+
+long SysCalls::sysSyncMutexDelete(int fd)
+{
+    return Process::GetCurrent()->Close(fd); // TODO: add handle type check
+}
+
+long SysCalls::sysSyncMutexAcquire(int fd, int timeout)
+{
+    Mutex *mtx = Process::GetCurrent()->GetMutex(fd);
+    if(!mtx) return -EBADF;
+    return mtx->Acquire(timeout < 0 ? 0 : timeout, !timeout);
+}
+
+long SysCalls::sysSyncMutexRelease(int fd)
+{
+    Mutex *mtx = Process::GetCurrent()->GetMutex(fd);
+    if(!mtx) return -EBADF;
+    mtx->Release();
+    return ESUCCESS;
+}
+
+long SysCalls::sysSyncSemaphoreCreate(int count)
+{
+    return Process::GetCurrent()->NewSemaphore(count);
+}
+
+long SysCalls::sysSyncSemaphoreDelete(int fd)
+{
+    return Process::GetCurrent()->Close(fd); // TODO: add handle type check
+}
+
+long SysCalls::sysSyncSemaphoreWait(int fd, int timeout)
+{
+    Semaphore *sem = Process::GetCurrent()->GetSemaphore(fd);
+    if(!sem) return -EBADF;
+    return sem->Wait(timeout < 0 ? 0 : timeout, !timeout, false);
+
+}
+
+long SysCalls::sysSyncSemaphoreSignal(int fd)
+{
+    Semaphore *sem = Process::GetCurrent()->GetSemaphore(fd);
+    if(!sem) return -EBADF;
+    sem->Signal(nullptr);
+    return ESUCCESS;
 }
 
 void SysCalls::Initialize()
@@ -1013,6 +1064,15 @@ void SysCalls::Initialize()
     Handlers[SYS_IPC_UNMAP_SHMEM] = (SysCallHandler)sysIPCUnMapSharedMem;
     Handlers[SYS_IPC_PEEK_MESSAGE] = (SysCallHandler)sysIPCPeekMessage;
     Handlers[SYS_IPC_WAIT_MESSAGE] = (SysCallHandler)sysIPCWaitMessage;
+
+    Handlers[SYS_SYNC_MUTEX_CREATE] = (SysCallHandler)sysSyncMutexCreate;
+    Handlers[SYS_SYNC_MUTEX_DELETE] = (SysCallHandler)sysSyncMutexDelete;
+    Handlers[SYS_SYNC_MUTEX_ACQUIRE] = (SysCallHandler)sysSyncMutexAcquire;
+    Handlers[SYS_SYNC_MUTEX_RELEASE] = (SysCallHandler)sysSyncMutexRelease;
+    Handlers[SYS_SYNC_SEMAPHORE_CREATE] = (SysCallHandler)sysSyncSemaphoreCreate;
+    Handlers[SYS_SYNC_SEMAPHORE_DELETE] = (SysCallHandler)sysSyncSemaphoreDelete;
+    Handlers[SYS_SYNC_SEMAPHORE_WAIT] = (SysCallHandler)sysSyncSemaphoreWait;
+    Handlers[SYS_SYNC_SEMAPHORE_SIGNAL] = (SysCallHandler)sysSyncSemaphoreSignal;
 
     cpuWriteMSR(0xC0000081, (uintptr_t)(SEG_KERNEL_DATA) << 48 | (uintptr_t)(SEG_KERNEL_CODE) << 32);
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);

@@ -30,12 +30,12 @@ int shellInitialize()
             if(nl) *nl = 0;
 
             char *command = strrchr(line, ':');
-            if(!command) // invalid regex (skip)
-                continue;
+            if(!command)
+                continue; // invalid line (skip)
             *command++ = 0;
             regex_t regex;
-            if(regcomp(&regex, line, REG_EXTENDED | REG_ICASE)) // invalid regex (skip)
-                continue;
+            if(regcomp(&regex, line, REG_EXTENDED | REG_ICASE))
+                continue; // invalid regex (skip)
             shellEditor_t editor = { regex, strdup(command) };
             vecAppend(editors, &editor);
         }

@@ -924,103 +924,53 @@ NamedObject *Process::GetNamedObject(int handle)
     return no;
 }
 
-int Process::NewMutex()
+int Process::NewMutex(bool recursive)
 {
-    return -ENOSYS;
-/*    if(!lock.Acquire(0, false))
-        return -EBUSY;
-    int res = -ENOMEM;
-    for(int i = 0; i < MAX_MUTEXES; ++i)
+    Mutex *mutex = new Mutex(recursive, "userspace mutex");
+    if(!Lock())
     {
-        if(!Mutexes[i])
-        {
-            Mutexes[i] = new Mutex(false, nullptr);
-            res = i;
-            break;
-        }
+        delete mutex;
+        return -EBUSY;
     }
-    lock.Release();
-    return res;*/
+    int res = allocHandleSlot(Handle(mutex));
+    if(res < 0) delete mutex;
+    UnLock();
+    return res;
 }
 
-Mutex *Process::GetMutex(int idx)
+Mutex *Process::GetMutex(int fd)
 {
-    return nullptr;
-/*    if(idx < 0 || idx >= MAX_MUTEXES || !lock.Acquire(0, false))
-        return nullptr;
-    Mutex *res = Mutexes[idx];
-    lock.Release();
-    return res;*/
-}
-
-int Process::DeleteMutex(int idx)
-{
-    return -ENOSYS;
-/*    if(idx < 0 || idx >= MAX_MUTEXES)
-        return -EINVAL;
-    if(!lock.Acquire(0, false))
-        return -EBUSY;
-    int res = -EINVAL;
-    if(Mutexes[idx])
-    {
-        delete Mutexes[idx];
-        Mutexes[idx] = nullptr;
-        res = 0;
-    }
-    lock.Release();
-    return res;*/
+    if(!Lock()) return nullptr;
+    Mutex *mtx = static_cast<Mutex *>(GetHandleData(fd, Handle::HandleType::Mutex));
+    UnLock();
+    return mtx;
 }
 
 int Process::NewSemaphore(int initVal)
 {
-    return -ENOSYS;
-/*    if(!lock.Acquire(0, false))
-        return -EBUSY;
-    int res = -ENOMEM;
-    for(int i = 0; i < MAX_SEMAPHORES; ++i)
+    Semaphore *sem = new Semaphore(initVal, "userspace semaphore");
+    if(!Lock())
     {
-        if(!Semaphores[i])
-        {
-            Semaphores[i] = new Semaphore(initVal, nullptr);
-            res = i;
-            break;
-        }
+        delete sem;
+        return -EBUSY;
     }
-    lock.Release();
-    return res;*/
+    int res = allocHandleSlot(Handle(sem));
+    if(res < 0) delete sem;
+    UnLock();
+    return res;
 }
 
-Semaphore *Process::GetSemaphore(int idx)
+Semaphore *Process::GetSemaphore(int fd)
 {
-    return nullptr;
-/*    if(idx < 0 || idx >= MAX_SEMAPHORES || !lock.Acquire(0, false))
-        return nullptr;
-    Semaphore *res = Semaphores[idx];
-    lock.Release();
-    return res;*/
-}
-
-int Process::DeleteSemaphore(int idx)
-{
-    return -ENOSYS;
-/*    if(idx < 0 || idx >= MAX_SEMAPHORES)
-        return -EINVAL;
-    if(!lock.Acquire(0, false))
-        return -EBUSY;
-    int res = -EINVAL;
-    if(Semaphores[idx])
-    {
-        delete Semaphores[idx];
-        Semaphores[idx] = nullptr;
-        res = 0;
-    }
-    lock.Release();
-    return res;*/
+    if(!Lock()) return nullptr;
+    Semaphore *sem = static_cast<Semaphore *>(GetHandleData(fd, Handle::HandleType::Semaphore));
+    UnLock();
+    return sem;
 }
 
 Process::~Process()
 {
-    lock.Acquire(0, false);
+    Lock();
 
     int i = 0;
     for(Handle h : Handles)

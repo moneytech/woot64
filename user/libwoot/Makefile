@@ -10,6 +10,7 @@ OBJS = \
 	rectangle.o \
 	rpc.o \
 	shell.o \
+	sync.o \
 	thread.o \
 	ui.o \
 	uibutton.o \

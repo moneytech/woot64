@@ -81,6 +81,15 @@
 #define SYS_IPC_PEEK_MESSAGE            0x348
 #define SYS_IPC_WAIT_MESSAGE            0x349
 
+#define SYS_SYNC_MUTEX_CREATE           0x350
+#define SYS_SYNC_MUTEX_DELETE           0x351
+#define SYS_SYNC_MUTEX_ACQUIRE          0x352
+#define SYS_SYNC_MUTEX_RELEASE          0x353
+#define SYS_SYNC_SEMAPHORE_CREATE       0x354
+#define SYS_SYNC_SEMAPHORE_DELETE       0x355
+#define SYS_SYNC_SEMAPHORE_WAIT         0x356
+#define SYS_SYNC_SEMAPHORE_SIGNAL       0x357
+
 class SysCalls
 {
     typedef intn (*SysCallHandler)(...);
@@ -163,6 +172,15 @@ class SysCalls
     static long sysIPCUnMapSharedMem(int fd, uintptr_t addr);
     static long sysIPCPeekMessage(void *msg, unsigned offset);
     static long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout);
+
+    static long sysSyncMutexCreate(unsigned flags);
+    static long sysSyncMutexDelete(int fd);
+    static long sysSyncMutexAcquire(int fd, int timeout);
+    static long sysSyncMutexRelease(int fd);
+    static long sysSyncSemaphoreCreate(int count);
+    static long sysSyncSemaphoreDelete(int fd);
+    static long sysSyncSemaphoreWait(int fd, int timeout);
+    static long sysSyncSemaphoreSignal(int fd);
 
 public:
     static void Initialize();

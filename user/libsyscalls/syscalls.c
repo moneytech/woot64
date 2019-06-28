@@ -350,3 +350,43 @@ long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int ra
 {
     return __syscall6(SYS_IPC_WAIT_MESSAGE, (long)msg, number, source, rangeStart, rangeSize, timeout);
 }
+
+long sysSyncMutexCreate(unsigned flags)
+{
+    return __syscall1(SYS_SYNC_MUTEX_CREATE, flags);
+}
+
+long sysSyncMutexDelete(int fd)
+{
+    return __syscall1(SYS_SYNC_MUTEX_DELETE, fd);
+}
+
+long sysSyncMutexAcquire(int fd, int timeout)
+{
+    return __syscall2(SYS_SYNC_MUTEX_ACQUIRE, fd, timeout);
+}
+
+long sysSyncMutexRelease(int fd)
+{
+    return __syscall1(SYS_SYNC_MUTEX_RELEASE, fd);
+}
+
+long sysSyncSemaphoreCreate(int count)
+{
+    return __syscall1(SYS_SYNC_SEMAPHORE_CREATE, count);
+}
+
+long sysSyncSemaphoreDelete(int fd)
+{
+    return __syscall1(SYS_SYNC_SEMAPHORE_DELETE, fd);
+}
+
+long sysSyncSemaphoreWait(int fd, int timeout)
+{
+    return __syscall2(SYS_SYNC_SEMAPHORE_WAIT, fd, timeout);
+}
+
+long sysSyncSemaphoreSignal(int fd)
+{
+    return __syscall1(SYS_SYNC_SEMAPHORE_SIGNAL, fd);
+}

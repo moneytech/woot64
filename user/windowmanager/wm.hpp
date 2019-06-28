@@ -52,6 +52,7 @@ class WindowManager
     };
 
     static void taskButtonActivate(uiControl_t *control);
+    static int timerThread(uintptr_t arg);
 
     Windows *windows = nullptr;
     Window *desktopWnd = nullptr;
@@ -67,6 +68,7 @@ class WindowManager
     uiToolbar_t *taskBar = nullptr;
     rcRectangle_t taskRect;
 
+    int timerThreadId = 0;
     int modifiers = 0;
     int cursorHotX = 0, cursorHotY = 0;
     int dragDeltaX = 0, dragDeltaY = 0;

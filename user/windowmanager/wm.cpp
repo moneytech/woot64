@@ -128,6 +128,15 @@ void WindowManager::taskButtonActivate(uiControl_t *control)
         wm->RestoreWindow(wnd);
 }
 
+int WindowManager::timerThread(uintptr_t arg)
+{
+    for(;;)
+    {
+        threadSleep(THREAD_SELF, 1000);
+    }
+    return 0;
+}
+
 Window *WindowManager::getWindowById(int id)
 {
     for(Window *wnd : *windows)
@@ -319,6 +328,9 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     fbPixMap(fbPixMap),
     bbPixMap(bbPixMap)
 {
+    // create time thread
+    timerThreadId = threadCreate("timer thread", (void *)timerThread, (uintptr_t)this, nullptr);
+
     int currentPId = getpid();
     wmInitialize(WM_INITIALIZE_WM);
     deskRect = bbPixMap->Contents;
@@ -346,7 +358,7 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     uiControlSetBorderStyle(taskRoot, UI_BORDER_RAISED);
     taskBar = uiToolbarCreate(taskRoot, 1, 1, taskRect.Width - 2, taskRect.Height - 2, UI_HORIZONTAL);
     uiToolbarSetChildSpacing(taskBar, 1);
-    uiControlRedraw(taskRoot, 0);
+    uiControlRedraw(taskRoot, UI_FALSE);
 
     // create mouse cursor window
     pmPixMap_t *cursor = pmLoadCUR("/normal.cur", 0, &cursorHotX, &cursorHotY);
@@ -581,7 +593,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                     uiControlSetContext((uiControl_t *)wnd->TaskButton, wnd);
                     uiControlSetTextHAlign((uiControl_t *)wnd->TaskButton, UI_HALIGN_LEFT);
                     uiControlRecalcRects((uiControl_t *)taskBar);
-                    uiControlRedraw((uiControl_t *)taskRoot, 0);
+                    uiControlRedraw((uiControl_t *)taskRoot, UI_FALSE);
                     *dirtyRect = rcAddP(dirtyRect, &taskRect);
                 }
             }
@@ -612,7 +624,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                 {
                     uiButtonDelete(wnd->TaskButton);
                     uiControlRecalcRects((uiControl_t *)taskBar);
-                    uiControlRedraw((uiControl_t *)taskRoot, 0);
+                    uiControlRedraw((uiControl_t *)taskRoot, UI_FALSE);
                     *dirtyRect = rcAddP(dirtyRect, &taskRect);
                 }
 

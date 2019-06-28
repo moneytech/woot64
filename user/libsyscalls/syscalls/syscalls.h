@@ -77,6 +77,15 @@
 #define SYS_IPC_PEEK_MESSAGE            0x348
 #define SYS_IPC_WAIT_MESSAGE            0x349
 
+#define SYS_SYNC_MUTEX_CREATE           0x350
+#define SYS_SYNC_MUTEX_DELETE           0x351
+#define SYS_SYNC_MUTEX_ACQUIRE          0x352
+#define SYS_SYNC_MUTEX_RELEASE          0x353
+#define SYS_SYNC_SEMAPHORE_CREATE       0x354
+#define SYS_SYNC_SEMAPHORE_DELETE       0x355
+#define SYS_SYNC_SEMAPHORE_WAIT         0x356
+#define SYS_SYNC_SEMAPHORE_SIGNAL       0x357
+
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
 typedef __UINTPTR_TYPE__ uintptr_t;
@@ -215,6 +224,15 @@ void *sysIPCMapSharedMem(int fd, void *hint, unsigned flags);
 long sysIPCUnMapSharedMem(int fd, void *addr);
 long sysIPCPeekMessage(void *msg, unsigned offset);
 long sysIPCWaitMessage(void *msg, int number, int source, int rangeStart, int rangeSize, int timeout);
+
+long sysSyncMutexCreate(unsigned flags);
+long sysSyncMutexDelete(int fd);
+long sysSyncMutexAcquire(int fd, int timeout);
+long sysSyncMutexRelease(int fd);
+long sysSyncSemaphoreCreate(int count);
+long sysSyncSemaphoreDelete(int fd);
+long sysSyncSemaphoreWait(int fd, int timeout);
+long sysSyncSemaphoreSignal(int fd);
 
 #ifdef __cplusplus
 }
