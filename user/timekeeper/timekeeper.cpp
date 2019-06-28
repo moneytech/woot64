@@ -31,6 +31,7 @@ struct Timer
     int process;
     int timeout;
     int flags;
+    int state;
 };
 
 int getNewId()
@@ -40,6 +41,56 @@ int getNewId()
 }
 
 int createTimer(int timeout, int flags)
+{
+    return -ENOSYS;
+}
+
+int deleteTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int startTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int stopTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int pauseTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int resumeTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int reloadTimer(int timer)
+{
+    return -ENOSYS;
+}
+
+int setTimeout(int timer, int timeout)
+{
+    return -ENOSYS;
+}
+
+int getTimeout(int timer)
+{
+    return -ENOSYS;
+}
+
+int setFlags(int timer, int flags)
+{
+    return -ENOSYS;
+}
+
+int getFlags(int timer)
 {
     return -ENOSYS;
 }
@@ -63,6 +114,66 @@ extern "C" int main(int argc, char *argv[])
                 timerCreateArgs *args = (timerCreateArgs *)_args;
                 int id = createTimer(args->timeout, args->flags);
                 rpcIPCReturn(msg.Source, msg.ID, &id, sizeof(id));
+            }
+            else if(!strcmp(req, "timerDelete"))
+            {
+                int timer = *(int *)_args;
+                int resp = deleteTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerStart"))
+            {
+                int timer = *(int *)_args;
+                int resp = startTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerStop"))
+            {
+                int timer = *(int *)_args;
+                int resp = stopTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerPause"))
+            {
+                int timer = *(int *)_args;
+                int resp = pauseTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerResume"))
+            {
+                int timer = *(int *)_args;
+                int resp = resumeTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerReload"))
+            {
+                int timer = *(int *)_args;
+                int resp = reloadTimer(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerSetTimeout"))
+            {
+                timerSetTimeoutArgs *args = (timerSetTimeoutArgs *)_args;
+                int id = setTimeout(args->timer, args->timeout);
+                rpcIPCReturn(msg.Source, msg.ID, &id, sizeof(id));
+            }
+            else if(!strcmp(req, "timerGetTimeout"))
+            {
+                int timer = *(int *)_args;
+                int resp = getTimeout(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
+            }
+            else if(!strcmp(req, "timerSetFlags"))
+            {
+                timerSetFlagsArgs *args = (timerSetFlagsArgs *)_args;
+                int id = setFlags(args->timer, args->flags);
+                rpcIPCReturn(msg.Source, msg.ID, &id, sizeof(id));
+            }
+            else if(!strcmp(req, "timerGetFlags"))
+            {
+                int timer = *(int *)_args;
+                int resp = getFlags(timer);
+                rpcIPCReturn(msg.Source, msg.ID, &resp, sizeof(resp));
             }
             else fprintf(stderr, "[windowmanager] Unknown RPC request '%s' from process %d\n", req, msg.Source);
         }
