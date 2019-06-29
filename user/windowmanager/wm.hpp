@@ -67,6 +67,8 @@ class WindowManager
     uiToolbar_t *taskBar = nullptr;
     rcRectangle_t taskRect;
 
+    int caretTimer = 0;
+    int caretVisible = 0;
     int modifiers = 0;
     int cursorHotX = 0, cursorHotY = 0;
     int dragDeltaX = 0, dragDeltaY = 0;

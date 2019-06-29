@@ -148,57 +148,59 @@ int main(int argc, char *argv[])
 
     uiControlRedraw(rootControl, 1);
 
-    int timer = timerCreate(1000, 0);
+    int timer = timerCreate(500, 0);
+    timerStart(timer);
+    int timer2 = timerCreate(3000, TIMER_ONE_SHOT);
+    timerStart(timer2);
 
     srand(time(NULL));
     ipcMessage_t msg;
-    for(int i = 0;; ++i)
+    while(ipcGetMessage(&msg, -1) >= 0)
     {
-        int quit = 0;
-
-        int msgTimeout = 400;
-        while(ipcGetMessage(&msg, msgTimeout) >= 0)
+        ipcProcessMessage(&msg);
+        if(msg.Number == MSG_QUIT)
+            break;
+        else if(msg.Number == MSG_TIMER)
         {
-            msgTimeout = 400;
-            ipcProcessMessage(&msg);
-            if(msg.Number == MSG_QUIT)
+            timerMsg_t *tm = (timerMsg_t *)msg.Data;
+            if(tm->Id == timer)
             {
-                quit = 1;
-                break;
+                char buf[64];
+                time_t ct = time(NULL);
+                strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
+                uiControlSetText((uiControl_t *)lbl, buf);
             }
-            else if(msg.Number == MSG_WM_EVENT)
+            else if(tm->Id == timer2)
             {
-                wmEvent_t *event = (wmEvent_t *)msg.Data;
-                wmProcessEvent(window, event);
-                uiMenuProcessEvent(menu, event);
-                if(event->Type == WM_EVT_CLOSE)
+                uiControlSetBackColor(rootControl, pmColorFromRGB(rand(), rand(), rand()));
+                uiControlRedraw(rootControl, UI_TRUE);
+            }
+            else printf("[usertest] Invalid timer id %d\n", tm->Id);
+        }
+        else if(msg.Number == MSG_WM_EVENT)
+        {
+            wmEvent_t *event = (wmEvent_t *)msg.Data;
+            wmProcessEvent(window, event);
+            uiMenuProcessEvent(menu, event);
+            if(event->Type == WM_EVT_CLOSE)
+                break;
+            else if(event->WindowId == wmGetWindowId(window) && event->Type == WM_EVT_KEYBOARD)
+            {
+                if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
                 {
-                    quit = 1;
-                    break;
-                }
-                else if(event->WindowId == wmGetWindowId(window) && event->Type == WM_EVT_KEYBOARD)
-                {
-                    if(!(event->Keyboard.Flags & WM_EVT_KB_RELEASED))
-                    {
-                        if(event->Keyboard.Key == VK_ESCAPE)
-                        {
-                            quit = 1;
-                            break;
-                        }
-                    }
+                    if(event->Keyboard.Key == VK_ESCAPE)
+                        break;
                 }
             }
         }
-        if(quit) break;
-
-        char buf[64];
-        time_t ct = time(NULL);
-        strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
-        uiControlSetText((uiControl_t *)lbl, buf);
     }
+
 
     printf("[usertest] Closing usertest\n");
 
+    timerStop(timer2);
+    timerDelete(timer2);
+    timerStop(timer);
     timerDelete(timer);
     uiMenuDelete(menu);
     wmDeleteWindow(window);

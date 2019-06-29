@@ -7,12 +7,12 @@ int main(int argc, char *argv[])
     setbuf(stdout, NULL);
     printf("[init] Starting %s\n", argv[0]);
 
+    int timeProc = processCreate("/bin/timekeeper");
+    processWait(timeProc, 2000); // wait for timekeeper
     int inputProc = processCreate("/bin/inputhandler");
     processWait(inputProc, 2000); // wait for daemonization of input handler
     int wmProc = processCreate("/bin/windowmanager 1024 768 32");
     processWait(wmProc, 2000); // wait for demonetization of window manager
-    int timeProc = processCreate("/bin/timekeeper");
-    processWait(timeProc, 2000); // wait for timekeeper
 
     if(inputProc < 0 || wmProc < 0 || timeProc < 0)
     {

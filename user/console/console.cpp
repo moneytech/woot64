@@ -65,6 +65,8 @@ static void putChar(int chr)
         conX = 0;
         ++conY;
     }
+    else if(chr == '\r')
+        conX = 0;
     else if(chr == '\b')
     {
         if(conX > 0)
@@ -106,7 +108,6 @@ static void putChar(int chr)
 
     chrX = conX * FONT_BITS;
     chrY = conY * FONT_SCANLINES;
-    putChar(chrX, chrY, '_');
 }
 
 static void putStr(const char *str)
@@ -274,6 +275,16 @@ extern "C" int main(int argc, char *argv[])
                     quit = true;
                     break;
                 }
+                else if(event->Type == WM_EVT_CARET_TICK)
+                {
+                    putChar(conX * FONT_BITS, conY * FONT_SCANLINES, event->CaretTick.Visible ? '_' : ' ');
+                    updateConsole();
+                }
+                /*else if(event->Type == WM_EVT_LOST_FOCUS)
+                {
+                    putChar(conX * FONT_BITS, conY * FONT_SCANLINES, ' ');
+                    updateConsole();
+                }*/
                 else if(event->Type == WM_EVT_KEYBOARD)
                 {
                     int chr = event->Keyboard.Character;

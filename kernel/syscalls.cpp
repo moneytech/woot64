@@ -84,7 +84,11 @@ struct iovec
     size_t iov_len;     /* Number of bytes to transfer */
 };
 
-#define CLOCK_REALTIME           0
+// for sys_clock_get_time and sys_clock_getres
+#define CLOCK_REALTIME              0
+#define CLOCK_MONOTONIC             1
+#define CLOCK_PROCESS_CPUTIME_ID    2
+#define CLOCK_THREAD_CPUTIME_ID     3
 
 #ifdef __i386__
 typedef unsigned long long dev_t;
@@ -515,11 +519,25 @@ long SysCalls::sys_set_tid_address(int *tidptr)
 long SysCalls::sys_clock_get_time(int clock, struct timespec *t)
 {
     BUFFER_CHECK(t, sizeof(*t));
-    if(clock != CLOCK_REALTIME)
-        return -ENOSYS;
     if(!t) return -EINVAL;
-    t->tv_sec = Time::GetTime();
-    t->tv_nsec = 0;
+    switch(clock)
+    {
+    case CLOCK_REALTIME:
+        t->tv_sec = Time::GetTime();
+        t->tv_nsec = 0;
+        break;
+    case CLOCK_MONOTONIC:
+    {
+        uint64_t ticks = Time::GetTickCount();
+        uint64_t tickFreq = Time::GetTickFrequency();
+        t->tv_sec = ticks / tickFreq;
+        uint64_t rem = ticks % tickFreq;
+        t->tv_nsec = (rem * 1000000000) / tickFreq;
+        break;
+    }
+    default:
+        return -ENOSYS;
+    }
     return ESUCCESS;
 }
 

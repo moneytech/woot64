@@ -6,6 +6,7 @@
 #define MSG_PING                    3
 #define MSG_PONG                    4
 #define MSG_QUIT                    5
+#define MSG_TIMER                   6
 
 // input related messages
 #define MSG_ACQUIRE_KEYBOARD        100

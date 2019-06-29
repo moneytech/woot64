@@ -68,7 +68,8 @@ typedef enum
     WM_EVT_KEYBOARD,
     WM_EVT_MOUSE,
     WM_EVT_MOUSE_ENTER,
-    WM_EVT_MOUSE_LEAVE
+    WM_EVT_MOUSE_LEAVE,
+    WM_EVT_CARET_TICK
 } wmEventType_t;
 
 // keyboard event definitions
@@ -114,6 +115,10 @@ typedef struct wmEvent
             int ButtonsReleased;
             int ButtonsHeld;
         } Mouse;
+        struct
+        {
+            int Visible;
+        } CaretTick;
     };
 } wmEvent_t;
 

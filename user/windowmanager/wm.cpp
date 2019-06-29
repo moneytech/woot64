@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <woot/thread.h>
+#include <woot/timer.h>
 #include <woot/uibutton.h>
 #include <woot/uitoolbar.h>
 #include <woot/wm.h>
@@ -320,8 +321,12 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     bbPixMap(bbPixMap)
 {
     int currentPId = getpid();
+    timerInitialize();
     wmInitialize(WM_INITIALIZE_WM);
     deskRect = bbPixMap->Contents;
+
+    caretTimer = timerCreate(250, 0);
+    timerStart(caretTimer);
 
     // create desktop
     desktopWnd = new Window(this, currentPId, 0, 0, deskRect.Width, deskRect.Height, WM_CWF_NONE, bbPixMap, nullptr);
@@ -369,6 +374,24 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
     {
         threadSleep(THREAD_SELF, 500);
         return 1;
+    }
+    else if(msg->Number == MSG_TIMER)
+    {
+        timerMsg_t *tmsg = (timerMsg_t *)msg->Data;
+        if(tmsg->Id == caretTimer)
+        {
+            if(activeWindow)
+            {
+                wmEvent_t event;
+                memset(&event, 0, sizeof(event));
+                event.Type = WM_EVT_CARET_TICK;
+                event.WindowId = activeWindow->GetId();
+                event.Handled = 0;
+                event.CaretTick.Visible = caretVisible != 0 ? 1 : 0;
+                ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+                caretVisible = !caretVisible;
+            }
+        }
     }
     else if(msg->Number == MSG_WM_EVENT)
     {
@@ -589,7 +612,6 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             topWindow = wnd;
             setActiveWindow(wnd);
             handleMouseEnterLeave();
-
             rpcIPCReturn(msg->Source, msg->ID, &response, sizeof(response));
         }
         else if(!strcmp(req, "wmDeleteWindow"))
@@ -742,6 +764,11 @@ void WindowManager::RestoreWindow(Window *window)
 
 WindowManager::~WindowManager()
 {
+    // cleanup timers
+    if(caretTimer > 0)
+        timerDelete(caretTimer);
+    timerCleanup();
+
     if(taskWnd)
     {
         windows->RemoveOne(taskWnd);

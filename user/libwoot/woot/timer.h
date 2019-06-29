@@ -1,7 +1,11 @@
 #pragma once
 
 #define TIMER_ONE_SHOT      1
-#define TIMER_AUTO_RELOAD   2
+
+typedef struct
+{
+    int Id;
+} timerMsg_t;
 
 #ifdef __cplusplus
 extern "C" {
