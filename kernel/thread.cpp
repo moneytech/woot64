@@ -507,7 +507,7 @@ bool Thread::QuickResume(Ints::State *state)
 {
     bool ints = cpuDisableInterrupts();
     if(!Resume(true)) return false;
-    Switch(state, GetNext(true));
+    Switch(state, GetNext(false));
     cpuRestoreInterrupts(ints);
     return true;
 }

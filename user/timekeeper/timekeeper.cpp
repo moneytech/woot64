@@ -3,9 +3,12 @@
 #include <string.h>
 #include <woot/ipc.h>
 #include <woot/rpc.h>
+#include <woot/sync.h>
 #include <woot/thread.h>
 
 #define PROG_NAME "timekeeper"
+
+static int timerMutex;
 
 struct timerCreateArgs
 {
@@ -34,71 +37,86 @@ struct Timer
     int state;
 };
 
-int getNewId()
+static int getNewId()
 {
     static int ids = 0;
     return __sync_add_and_fetch(&ids, 1);
 }
 
-int createTimer(int timeout, int flags)
+static int createTimer(int timeout, int flags)
 {
     return -ENOSYS;
 }
 
-int deleteTimer(int timer)
+static int deleteTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int startTimer(int timer)
+static int startTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int stopTimer(int timer)
+static int stopTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int pauseTimer(int timer)
+static int pauseTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int resumeTimer(int timer)
+static int resumeTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int reloadTimer(int timer)
+static int reloadTimer(int timer)
 {
     return -ENOSYS;
 }
 
-int setTimeout(int timer, int timeout)
+static int setTimeout(int timer, int timeout)
 {
     return -ENOSYS;
 }
 
-int getTimeout(int timer)
+static int getTimeout(int timer)
 {
     return -ENOSYS;
 }
 
-int setFlags(int timer, int flags)
+static int setFlags(int timer, int flags)
 {
     return -ENOSYS;
 }
 
-int getFlags(int timer)
+static int getFlags(int timer)
 {
     return -ENOSYS;
+}
+
+static int timerThreadProc(uintptr_t arg)
+{
+    for(int cycle = 0;; ++cycle)
+    {
+        threadSleep(THREAD_SELF, 1000);
+        fprintf(stderr, "%d\n", cycle);
+    }
+    return 0;
 }
 
 extern "C" int main(int argc, char *argv[])
 {
     fprintf(stderr, "[" PROG_NAME "] Time keeper started\n");
+
+    timerMutex = syncMutexCreate(0);
+    int timerThread = threadCreate("timer thread", (void *)timerThreadProc, 0, NULL);
+    threadResume(timerThread);
     threadDaemonize();
+
     for(ipcMessage_t msg;;)
     {
         ipcGetMessage(&msg, -1);
@@ -181,5 +199,9 @@ extern "C" int main(int argc, char *argv[])
             rpcIPCFindServerRespond(msg.Source, msg.ID);
     }
     fprintf(stderr, "[" PROG_NAME "] Stopping time keeper\n");
+
+    threadDelete(timerThread);
+    syncMutexDelete(timerMutex);
+
     return 0;
 }
