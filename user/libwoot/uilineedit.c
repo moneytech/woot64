@@ -10,9 +10,20 @@ struct uiLineEdit
     uiControl_t Control;
     int CursorPosition;
     int EditOffset;
+    int CaretVisible;
+
+    int CaretX;
+    int CaretY;
+    int CaretH;
 
     uiLineEditAcceptInputHandler OnAcceptInput;
 };
+
+static void invertVLine(pmPixMap_t *pixMap, int x, int y, int h)
+{
+    for(int ey = y + h; y < ey; ++y)
+        pmSetPixel(pixMap, x, y, pmColorInvert(pmGetPixel(pixMap, x, y)));
+}
 
 static char *stringInsert(char *str, int *pos, char chr)
 {
@@ -121,6 +132,26 @@ static void calculateTextRect(uiControl_t *control, rcRectangle_t *rect, rcRecta
     }
 }
 
+static void lineEditOnCaretPaint(uiControl_t *sender)
+{
+    uiLineEdit_t *edit = (uiLineEdit_t *)sender;
+    if(edit->CaretVisible) return;
+    invertVLine(sender->PixMap, edit->CaretX, edit->CaretY, edit->CaretH);
+    pmInvalidate(sender->PixMap, edit->CaretX, edit->CaretY, 1, edit->CaretH);
+    edit->CaretVisible = 1;
+    if(sender->Window) wmUpdateWindow(sender->Window);
+}
+
+static void lineEditOnCaretClear(uiControl_t *sender)
+{
+    uiLineEdit_t *edit = (uiLineEdit_t *)sender;
+    if(!edit->CaretVisible) return;
+    invertVLine(sender->PixMap, edit->CaretX, edit->CaretY, edit->CaretH);
+    pmInvalidate(sender->PixMap, edit->CaretX, edit->CaretY, 1, edit->CaretH);
+    edit->CaretVisible = 0;
+    if(sender->Window) wmUpdateWindow(sender->Window);
+}
+
 static void drawText(uiControl_t *control)
 {
     rcRectangle_t faceRect;
@@ -142,7 +173,6 @@ static void drawText(uiControl_t *control)
 
     uiLineEdit_t *edit = (uiLineEdit_t *)control;
     int cursorOffs = fntMeasureString(control->Font, control->Text, edit->CursorPosition);
-
     int textOffs = edit->EditOffset;
 
     if(control->HasFocus)
@@ -157,8 +187,15 @@ static void drawText(uiControl_t *control)
 
     fntDrawString(control->Font, control->PixMap, faceRect.X + textOffs, faceRect.Y, control->Text, control->TextColor);
 
+    edit->CaretX = faceRect.X + cursorOffs + textOffs;
+    edit->CaretY = faceRect.Y;
+    edit->CaretH = faceRect.Height;
+
     if(control->HasFocus)
-        pmVLine(control->PixMap, faceRect.X + cursorOffs + textOffs, faceRect.Y, faceRect.Y + faceRect.Height, control->TextColor);
+    {   // make caret always visible on repaint (for better visibility)
+        edit->CaretVisible = 0;
+        lineEditOnCaretPaint(control);
+    }
 
     edit->EditOffset = textOffs;
 }
@@ -238,6 +275,8 @@ uiLineEdit_t *uiLineEditCreate(uiControl_t *parent, int x, int y, int width, int
     control->Control.BorderStyle = UI_BORDER_SUNKEN;
     control->Control.PreKeyPress = lineEditPreKeyPress;
     control->Control.OnPaint = lineEditOnPaint;
+    control->Control.OnCaretPaint = lineEditOnCaretPaint;
+    control->Control.OnCaretClear = lineEditOnCaretClear;
 
     control->CursorPosition = -1; // -1 means end of text
     control->EditOffset = 0;

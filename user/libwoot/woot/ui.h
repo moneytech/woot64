@@ -131,6 +131,9 @@ struct uiControl
     uiActivateHandler OnActivate;
     uiTextChangedHandler OnTextChanged;
     uiRecalcRectsHandler OnRecalcRects;
+
+    uiEventHandler OnCaretPaint;
+    uiEventHandler OnCaretClear;
 };
 
 void uiDrawDefaultBorder(uiControl_t *control);
@@ -186,6 +189,8 @@ void uiControlSetOnGotFocus(uiControl_t *control, uiGotFocusHandler handler);
 void uiControlSetOnFocusLost(uiControl_t *control, uiFocusLostHandler handler);
 void uiControlSetOnActivate(uiControl_t *control, uiActivateHandler handler);
 void uiControlSetOnTextChanged(uiControl_t *control, uiTextChangedHandler handler);
+void uiControlSetOnCaretPaint(uiControl_t *control, uiEventHandler handler);
+void uiControlSetOnCaretClear(uiControl_t *control, uiEventHandler handler);
 
 #ifdef __cplusplus
 }

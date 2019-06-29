@@ -325,7 +325,7 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     wmInitialize(WM_INITIALIZE_WM);
     deskRect = bbPixMap->Contents;
 
-    caretTimer = timerCreate(250, 0);
+    caretTimer = timerCreate(750, 0);
     timerStart(caretTimer);
 
     // create desktop

@@ -608,6 +608,16 @@ int uiControlProcessEvent(uiControl_t *control, wmEvent_t *event)
         }
         return 1;
     }
+    else if(event->Type == WM_EVT_CARET_TICK)
+    {
+        uiControl_t *focus = uiControlFindFocus(control);
+        if(!focus) focus = control;
+        if(focus)
+        {
+            uiEventHandler handler = event->CaretTick.Visible ? focus->OnCaretPaint : focus->OnCaretClear;
+            if(handler) handler(focus);
+        }
+    }
     else if(event->Type == WM_EVT_MOUSE)
         return processMouseEvent(control, event);
     return 1;
@@ -733,4 +743,16 @@ void uiControlSetOnTextChanged(uiControl_t *control, uiTextChangedHandler handle
 {
     if(!control) return;
     control->OnTextChanged = handler;
+}
+
+void uiControlSetOnCaretPaint(uiControl_t *control, uiEventHandler handler)
+{
+    if(!control) return;
+    control->OnCaretPaint = handler;
+}
+
+void uiControlSetOnCaretClear(uiControl_t *control, uiEventHandler handler)
+{
+    if(!control) return;
+    control->OnCaretClear = handler;
 }

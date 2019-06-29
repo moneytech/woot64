@@ -636,8 +636,8 @@ void pmInvalidateRect(pmPixMap_t *pixMap, rcRectangle_t rect)
     if(!pixMap) return;
     if(pixMap->Parent)
     {
-        rect.X += pixMap->Parent->Contents.X;
-        rect.Y += pixMap->Parent->Contents.Y;
+        rect.X += pixMap->Contents.X;
+        rect.Y += pixMap->Contents.Y;
         pmInvalidateRect(pixMap->Parent, rect);
         return;
     }
@@ -650,8 +650,8 @@ void pmInvalidateRectP(pmPixMap_t *pixMap, rcRectangle_t *rect)
     rcRectangle_t r = *rect;
     if(pixMap->Parent)
     {
-        r.X += pixMap->Parent->Contents.X;
-        r.Y += pixMap->Parent->Contents.Y;
+        r.X += pixMap->Contents.X;
+        r.Y += pixMap->Contents.Y;
         pmInvalidateRectP(pixMap->Parent, &r);
         return;
     }
@@ -660,7 +660,9 @@ void pmInvalidateRectP(pmPixMap_t *pixMap, rcRectangle_t *rect)
 
 void pmInvalidateWhole(pmPixMap_t *pixMap)
 {
-    pmInvalidateRectP(pixMap, &pixMap->Contents);
+    rcRectangle_t rect = pixMap->Contents;
+    rect.X = 0; rect.Y = 0;
+    pmInvalidateRectP(pixMap, &rect);
 }
 
 rcRectangle_t pmGetDirtyRectangle(pmPixMap_t *pixMap)
