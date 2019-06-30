@@ -182,6 +182,7 @@ int Process::processEntryPoint(const char *cmdline)
     stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
 
     ct->AllocStack((uint8_t **)&ct->PThread, PAGE_SIZE);
+    Memory::Zero(ct->PThread, sizeof(pthread));
     ct->PThread->self = ct->PThread;
     ct->PThread->detach_state = 1; // DT_JOINABLE
     ct->PThread->tid = ct->Id;
@@ -889,8 +890,8 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
     t->UserArgument = arg;
 
     t->PThread = (struct pthread *)SBrk(PAGE_SIZE, true);
+    Memory::Zero(t->PThread, sizeof(pthread));
     t->PThread->self = t->PThread;
-
     t->PThread->detach_state = 1; // DT_JOINABLE
     t->PThread->tid = t->Id;
     t->PThread->robust_list.head = &t->PThread->robust_list.head;

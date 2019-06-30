@@ -59,6 +59,12 @@ $(CFG_DIR)/editors.cfg: editors.cfg
 	mkdir -p $(CFG_DIR)
 	cp $< $@
 
+pixmap.o: pixmap.c
+	$(CC) $(CFLAGS) -O2 -c $< -o $@
+
+font.o: font.c
+	$(CC) $(CFLAGS) -O2 -c $< -o $@
+
 clean:
 	rm -f $(OBJS) $(STATIC_LIB) $(SHARED_LIB)
 

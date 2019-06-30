@@ -312,7 +312,6 @@ int pmFormatEqual(pmPixelFormat_t a, pmPixelFormat_t b)
     return pmFormatEqualP(&a, &b);
 }
 
-
 int pmFormatEqualP(pmPixelFormat_t *a, pmPixelFormat_t *b)
 {
     return a->BPP == b->BPP &&

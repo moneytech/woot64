@@ -470,7 +470,7 @@ void uiControlSetText(uiControl_t *control, const char *text)
         if(control->Text) free(control->Text);
         control->Text = text ? strdup(text) : NULL;
     }
-    uiControlRedraw(control, 1);
+    uiControlRedraw(control, UI_FALSE);
     if(control->OnTextChanged)
         control->OnTextChanged(control);
 }
