@@ -146,7 +146,7 @@ extern "C" int main(int argc, char *argv[])
     view = uiDirViewCreate(rootControl, 2, 34, rootSize.Width - 4, rootSize.Height - 36, cwd);
     uiDirViewSetOnFileActivate(view, fileActivate);
 
-    uiControlRedraw(rootControl, 1);
+    uiControlRedraw(rootControl, UI_TRUE);
     wmRedrawWindow(window);
 
     ipcMessage_t msg;

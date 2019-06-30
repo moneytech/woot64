@@ -959,6 +959,9 @@ void pmSetPixel(pmPixMap_t *pixMap, int x, int y, pmColor_t color)
 
 pmColor_t pmGetPixel(pmPixMap_t *pixMap, int x, int y)
 {
+    if(!pixMap->Contents.Width || !pixMap->Contents.Height)
+        return pmColorBlack; // avoid division by zero
+
     x = x < 0 ? pixMap->Contents.Width - (-x % pixMap->Contents.Width) : x % pixMap->Contents.Width;
     y = y < 0 ? pixMap->Contents.Height - (-y % pixMap->Contents.Height) : y % pixMap->Contents.Height;
 

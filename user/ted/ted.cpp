@@ -77,7 +77,7 @@ extern "C" int main(int argc, char *argv[])
 
     uiTextEditSetEditable(textEdit, UI_TRUE);
     uiControlSetFocus((uiControl_t *)textEdit);
-    uiControlRedraw(rootControl, 1);
+    uiControlRedraw(rootControl, UI_TRUE);
 
     ipcMessage_t msg;
     for(;;)
