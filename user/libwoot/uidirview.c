@@ -33,11 +33,6 @@ static void filesContainerPaint(uiControl_t *sender)
     uiDrawDefaultBorder(sender);
 }
 
-static void scrollbarChangePosition(uiScrollbar_t *scroll)
-{
-
-}
-
 static void fileTileActivate(uiControl_t *sender)
 {
     fileTile_t *tile = (fileTile_t *)sender;
@@ -72,7 +67,7 @@ static int readDir(uiDirView_t *view)
     closedir(dir);
 
     uiScrollbarSetMinPosition(view->Scroll, 0);
-    uiScrollbarSetMaxPosition(view->Scroll, i);
+    uiScrollbarSetMaxPosition(view->Scroll, i + 1);
     uiScrollbarSetZoom(view->Scroll, view->TilesVisible);
     uiScrollbarSetPosition(view->Scroll, 0);
     uiControlRedraw((uiControl_t *)view->Scroll, UI_TRUE);
@@ -85,7 +80,7 @@ static void updateTiles(uiDirView_t *view)
     int fiCount = vecSize(view->Infos);
     int tiCount = vecSize(view->Tiles);
 
-    int i = 0, j = 0;
+    int i = uiScrollbarGetPosition(view->Scroll), j = 0;
     for(; i < fiCount && j < tiCount; ++i, ++j)
     {
         uiDirViewFileInfo_t *fi = (uiDirViewFileInfo_t *)vecGet(view->Infos, i);
@@ -109,6 +104,12 @@ static void updateTiles(uiDirView_t *view)
         uiControlSetContext((uiControl_t *)ti, NULL);
     }
     uiControlRedraw(view->FilesContainer, UI_TRUE);
+}
+
+static void scrollbarChangePosition(uiScrollbar_t *scroll)
+{
+    uiDirView_t *view = (uiDirView_t *)uiControlGetParent((uiControl_t *)scroll);
+    updateTiles(view);
 }
 
 uiDirView_t *uiDirViewCreate(uiControl_t *parent, int x, int y, int w, int h, const char *path)
