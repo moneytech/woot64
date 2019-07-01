@@ -171,10 +171,7 @@ int main(int argc, char *argv[])
                 uiControlSetText((uiControl_t *)lbl, buf);
             }
             else if(tm->Id == timer2)
-            {
-                uiControlSetBackColor(rootControl, pmColorFromRGB(rand(), rand(), rand()));
-                uiControlRedraw(rootControl, UI_TRUE);
-            }
+                printf("[usertest] timer2\n");
             else printf("[usertest] Invalid timer id %d\n", tm->Id);
         }
         else if(msg.Number == MSG_WM_EVENT)
