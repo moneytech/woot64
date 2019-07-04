@@ -276,6 +276,7 @@ void WindowManager::setActiveWindow(Window *window)
     {
         if(activeWindow)
         {
+            caretTick(0);
             rcRectangle_t rc = activeWindow->SetActive(false);
             activeWindow->UpdateWindowGraphics(&rc);
             if(activeWindow->TaskButton)
@@ -288,6 +289,7 @@ void WindowManager::setActiveWindow(Window *window)
         activeWindow = window;
         if(activeWindow)
         {
+            caretTick(1);
             rcRectangle_t rc = activeWindow->SetActive(true);
             activeWindow->UpdateWindowGraphics(&rc);
             if(activeWindow->TaskButton)
@@ -313,6 +315,28 @@ void WindowManager::wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int
     event->Mouse.ButtonsPressed = mouseEv->ButtonsPressed;
     event->Mouse.ButtonsHeld = mouseEv->ButtonsHeld;
     event->Mouse.ButtonsReleased = mouseEv->ButtonsReleased;
+}
+
+void WindowManager::caretTick(int visible)
+{
+    if(!activeWindow)
+        return;
+    wmEvent_t event;
+    memset(&event, 0, sizeof(event));
+    event.Type = WM_EVT_CARET_TICK;
+    event.WindowId = activeWindow->GetId();
+    event.Handled = 0;
+    if(visible < 0)
+    {
+        event.CaretTick.Visible = caretVisible != 0 ? 1 : 0;
+        caretVisible = !caretVisible;
+    }
+    else
+    {
+        caretVisible = visible;
+        event.CaretTick.Visible = caretVisible != 0 ? 1 : 0;
+    }
+    ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
 }
 
 WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
@@ -379,19 +403,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
     {
         timerMsg_t *tmsg = (timerMsg_t *)msg->Data;
         if(tmsg->Id == caretTimer)
-        {
-            if(activeWindow)
-            {
-                wmEvent_t event;
-                memset(&event, 0, sizeof(event));
-                event.Type = WM_EVT_CARET_TICK;
-                event.WindowId = activeWindow->GetId();
-                event.Handled = 0;
-                event.CaretTick.Visible = caretVisible != 0 ? 1 : 0;
-                ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
-                caretVisible = !caretVisible;
-            }
-        }
+            caretTick(-1);
     }
     else if(msg->Number == MSG_WM_EVENT)
     {

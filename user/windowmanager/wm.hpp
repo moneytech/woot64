@@ -89,6 +89,7 @@ class WindowManager
     void showWindow(Window *wnd);
     void setActiveWindow(Window *window);
     void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
+    void caretTick(int visible);
 
 public:
     WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap);
