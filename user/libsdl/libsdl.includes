@@ -1,0 +1,107 @@
+SDL-1.2.15/include
+SDL-1.2.15/src
+SDL-1.2.15/src/audio
+SDL-1.2.15/src/audio/alsa
+SDL-1.2.15/src/audio/arts
+SDL-1.2.15/src/audio/baudio
+SDL-1.2.15/src/audio/bsd
+SDL-1.2.15/src/audio/dart
+SDL-1.2.15/src/audio/dc
+SDL-1.2.15/src/audio/disk
+SDL-1.2.15/src/audio/dma
+SDL-1.2.15/src/audio/dmedia
+SDL-1.2.15/src/audio/dsp
+SDL-1.2.15/src/audio/dummy
+SDL-1.2.15/src/audio/esd
+SDL-1.2.15/src/audio/macosx
+SDL-1.2.15/src/audio/macrom
+SDL-1.2.15/src/audio/mint
+SDL-1.2.15/src/audio/mme
+SDL-1.2.15/src/audio/nas
+SDL-1.2.15/src/audio/nds
+SDL-1.2.15/src/audio/nto
+SDL-1.2.15/src/audio/paudio
+SDL-1.2.15/src/audio/pulse
+SDL-1.2.15/src/audio/sun
+SDL-1.2.15/src/audio/symbian
+SDL-1.2.15/src/audio/ums
+SDL-1.2.15/src/audio/windib
+SDL-1.2.15/src/audio/windx5
+SDL-1.2.15/src/cdrom
+SDL-1.2.15/src/cdrom/macos
+SDL-1.2.15/src/cdrom/macosx
+SDL-1.2.15/src/events
+SDL-1.2.15/src/hermes
+SDL-1.2.15/src/joystick
+SDL-1.2.15/src/main/beos
+SDL-1.2.15/src/main/macosx
+SDL-1.2.15/src/main/symbian/EKA2
+SDL-1.2.15/src/thread
+SDL-1.2.15/src/thread/beos
+SDL-1.2.15/src/thread/dc
+SDL-1.2.15/src/thread/generic
+SDL-1.2.15/src/thread/irix
+SDL-1.2.15/src/thread/os2
+SDL-1.2.15/src/thread/pth
+SDL-1.2.15/src/thread/pthread
+SDL-1.2.15/src/thread/riscos
+SDL-1.2.15/src/thread/symbian
+SDL-1.2.15/src/thread/win32
+SDL-1.2.15/src/timer
+SDL-1.2.15/src/timer/macos
+SDL-1.2.15/src/timer/mint
+SDL-1.2.15/src/video
+SDL-1.2.15/src/video/aalib
+SDL-1.2.15/src/video/ataricommon
+SDL-1.2.15/src/video/bwindow
+SDL-1.2.15/src/video/caca
+SDL-1.2.15/src/video/dc
+SDL-1.2.15/src/video/dga
+SDL-1.2.15/src/video/directfb
+SDL-1.2.15/src/video/dummy
+SDL-1.2.15/src/video/fbcon
+SDL-1.2.15/src/video/gapi
+SDL-1.2.15/src/video/gem
+SDL-1.2.15/src/video/ggi
+SDL-1.2.15/src/video/ipod
+SDL-1.2.15/src/video/maccommon
+SDL-1.2.15/src/video/macdsp
+SDL-1.2.15/src/video/macrom
+SDL-1.2.15/src/video/nanox
+SDL-1.2.15/src/video/nds
+SDL-1.2.15/src/video/os2fslib
+SDL-1.2.15/src/video/photon
+SDL-1.2.15/src/video/picogui
+SDL-1.2.15/src/video/ps2gs
+SDL-1.2.15/src/video/ps3
+SDL-1.2.15/src/video/ps3/spulibs
+SDL-1.2.15/src/video/qtopia
+SDL-1.2.15/src/video/quartz
+SDL-1.2.15/src/video/riscos
+SDL-1.2.15/src/video/svga
+SDL-1.2.15/src/video/symbian
+SDL-1.2.15/src/video/symbian/EKA1
+SDL-1.2.15/src/video/symbian/EKA2
+SDL-1.2.15/src/video/vgl
+SDL-1.2.15/src/video/wincommon
+SDL-1.2.15/src/video/windib
+SDL-1.2.15/src/video/windx5
+SDL-1.2.15/src/video/wscons
+SDL-1.2.15/src/video/x11
+SDL-1.2.15/src/video/xbios
+SDL-1.2.15/src/video/Xext/extensions
+SDL-1.2.15/src/video/Xext/Xv
+SDL-1.2.15/VisualC/SDL
+SDL-1.2.15/Xcode/SDLTest
+SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL Cocoa Application
+SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeLeopard/SDL OpenGL Application/atlantis
+SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL Cocoa Application
+SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeSnowLeopard/SDL OpenGL Application/atlantis
+SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application
+SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application
+SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application/atlantis

@@ -7,6 +7,7 @@ SUBDIRS = \
 	libwoot \
 	libgmp \
 	libmpfr \
+	libsdl \
 	console \
 	filemanager \
 	init \
