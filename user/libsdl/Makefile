@@ -32,7 +32,7 @@ build/config.status:
 	cd build && \
 	rm -rf ./* && \
 	../SDL-1.2.15/configure \
-	--prefix="$(WOOT_TOP_DIR)/user/libfreetype" \
+	--prefix="$(WOOT_TOP_DIR)/user/libsdl" \
 	--host=x86_64-woot
 
 install: $(LIB_DIR)/$(SHARED_LIB)

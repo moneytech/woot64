@@ -29,6 +29,7 @@ void Window::titleBarButtonActivate(uiControl_t *sender)
     {
         wmEvent_t event;
         event.Type = WM_EVT_CLOSE;
+        event.WindowId = wnd->id;
         ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
     }
     else if(btn == wnd->minButton)

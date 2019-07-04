@@ -105,3 +105,6 @@ SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Application
 SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL Cocoa Application
 SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application
 SDL-1.2.15/Xcode/TemplatesForXcodeTiger/SDL OpenGL Application/atlantis
+SDL-1.2.15/src/video/woot
+.
+../libwoot

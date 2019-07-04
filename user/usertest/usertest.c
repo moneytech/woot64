@@ -26,15 +26,41 @@
 #include <woot/video.h>
 #include <woot/wm.h>
 
+#include <SDL/SDL.h>
+
 static pmPixMap_t *pm = NULL;
 static wmWindow_t *window = NULL;
 static uiMenu_t *menu = NULL;
 
 static void btnActivate(uiControl_t *sender)
 {
-    int mx, my;
+    int res = SDL_Init(0);
+    if(res < 0)
+    {
+        fprintf(stderr, "[usertest] SDL_Init() failed: %s\n", SDL_GetError());
+        return;
+    }
+    fprintf(stderr, "[usertest] SDL_Init() succeeded\n");
+
+    SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, 0);
+    if(!surf)
+    {
+        fprintf(stderr, "[usertest] SDL_SetVideoMode failed: %s\n", SDL_GetError());
+        return;
+    }
+    fprintf(stderr, "[usertest] SDL_SetVideoMode succeeded\n");
+
+    SDL_Event event;
+    while(SDL_WaitEvent(&event))
+    {
+        if(event.type == SDL_QUIT)
+            break;
+    }
+    SDL_Quit();
+
+    /*int mx, my;
     wmGetMousePos(&mx, &my);
-    uiMenuShow(menu, mx - 4, my - 4);
+    uiMenuShow(menu, mx - 4, my - 4);*/
 }
 
 static void sldChange(uiSlider_t *sender)

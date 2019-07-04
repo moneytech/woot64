@@ -15,12 +15,14 @@ ARGS="-Wno-unused-command-line-argument \
 -I$WOOT_TOP_DIR/user/libfreetype/include/freetype2 \
 -I$WOOT_TOP_DIR/user/libwoot \
 -I$WOOT_TOP_DIR/user/libgmp/include \
+-I$WOOT_TOP_DIR/user/libsdl/include \
 -L$WOOT_TOP_DIR/user/libsyscalls \
 -L$WOOT_TOP_DIR/user/libc/lib \
 -L$WOOT_TOP_DIR/user/libz/lib \
 -L$WOOT_TOP_DIR/user/libpng/lib \
 -L$WOOT_TOP_DIR/user/libfreetype/lib \
 -L$WOOT_TOP_DIR/user/libwoot \
--L$WOOT_TOP_DIR/user/libgmp/lib"
+-L$WOOT_TOP_DIR/user/libgmp/lib \
+-L$WOOT_TOP_DIR/user/libsdl/lib"
 
 $COMMAND $ARGS "$@"

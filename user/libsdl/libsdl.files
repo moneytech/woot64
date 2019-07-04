@@ -1280,6 +1280,10 @@ SDL-1.2.15/src/video/windx5/SDL_dx5video.h
 SDL-1.2.15/src/video/windx5/SDL_dx5yuv.c
 SDL-1.2.15/src/video/windx5/SDL_dx5yuv_c.h
 SDL-1.2.15/src/video/windx5/directx.h
+SDL-1.2.15/src/video/woot/SDL_wootEvents.c
+SDL-1.2.15/src/video/woot/SDL_wootEvents.h
+SDL-1.2.15/src/video/woot/SDL_wootVideo.c
+SDL-1.2.15/src/video/woot/SDL_wootVideo.h
 SDL-1.2.15/src/video/wscons/SDL_wsconsevents.c
 SDL-1.2.15/src/video/wscons/SDL_wsconsevents_c.h
 SDL-1.2.15/src/video/wscons/SDL_wsconsmouse.c
