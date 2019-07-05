@@ -29,10 +29,14 @@ reconfigure:
 	rm -rf build
 	$(MAKE) configure
 
+# mpfrs build system seems a little bit borked so
+# those touch command are here to help
 build/config.status:
 	mkdir -p build
 	cd build && \
 	rm -rf ./* && \
+	touch ../mpfr-4.0.2/aclocal.m4 && \
+	touch ../mpfr-4.0.2/Makefile.in && \
 	../mpfr-4.0.2/configure \
 	--prefix="$(WOOT_TOP_DIR)/user/libmpfr" \
 	--host=x86_64-linux
@@ -54,5 +58,5 @@ clean:
 	-rm -rf bin lib share include
 	$(MAKE) -C build clean
 
-.PHONY: clean install reconfigure distclean
+.PHONY: clean install configure reconfigure distclean
 
