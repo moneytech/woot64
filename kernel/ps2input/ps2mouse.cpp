@@ -1,3 +1,4 @@
+#include <cpu.hpp>
 #include <debug.hpp>
 #include <irqs.hpp>
 #include <ps2.hpp>

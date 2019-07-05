@@ -1,3 +1,4 @@
+#include <cpu.hpp>
 #include <debug.hpp>
 #include <mutex.hpp>
 #include <thread.hpp>
