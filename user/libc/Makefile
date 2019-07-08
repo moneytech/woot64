@@ -1,13 +1,15 @@
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
 CC = clang
+AR = ar
+RANLIB = ranlib
 
 SHARED_LIB = libc.so
 STATIC_LIB = libc.a
 SHARED_LIB_PATH = lib/$(SHARED_LIB)
 STATIC_LIB_PATH = lib/$(STATIC_LIB)
 
-export WOOT_TOP_DIR CC
+export WOOT_TOP_DIR CC AR RANLIB
 
 all: $(SHARED_LIB_PATH)
 
