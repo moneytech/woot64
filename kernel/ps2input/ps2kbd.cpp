@@ -186,8 +186,6 @@ bool PS2Keyboard::interrupt(Ints::State *state, void *context)
     bool release = data & 0x80;
     data &= 0x7F;
     VirtualKey vk = kbd->ex ? scancodeTableEx[data] : scancodeTable[data];
-    if(vk == VirtualKey::Scroll)
-        asm("int $2");
     kbd->events.Write(Event(kbd, vk, release));
     kbd->ex = false;
     kbd->eventSem.Signal(state);

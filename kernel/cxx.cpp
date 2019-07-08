@@ -96,3 +96,13 @@ void operator delete[](void *ptr)
 {
     Heap::Free(ptr);
 }
+
+void operator delete(void *ptr, size_t size)
+{
+    Heap::Free(ptr);
+}
+
+void operator delete[](void *ptr, size_t size)
+{
+    Heap::Free(ptr);
+}
