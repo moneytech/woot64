@@ -1,8 +1,9 @@
 WOOT is yet another hobby operating system. It's 64 bit version of previous projects which can be found [here](https://github.com/pvc988/woot) and [here](https://github.com/pvc988/woot-os).
 
-Makefiles are meant to be built under Linux. Image creation makefile rules use sudo, so you may want to edit your sudoers file accordingly or deal with it your way. You'll most probably need losetup, mount and umount. Most of the project uses clang as its default compiler but should also compile just fine with GCC.
+Makefiles are meant to be built under Linux. Use `make hdd.img` to create hard disk image file. `make` will build all needed executables and binaries. `make install` will install all needed files to hard disk image. Image file can then be run in a VM or dd'd to hard disk and booted on real PC.
 
-To build, just run make in top directory. With a little bit of luck everything will just build. hdd.img file containg ext2 disk image should be created. Image file can be run in a VM or dd'd to hard disk and booted on real PC.
+Most of the project uses clang as its default compiler but should also compile just fine with GCC.
+
 
 Most important changes in this version (0.4):
 
