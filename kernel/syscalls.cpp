@@ -29,6 +29,7 @@ INLINE_ASM_SYNTAX
 ".extern mainTSS\n"
 ".type syscallHandler, function\n"
 "syscallHandler:\n"
+"sub rsp, 128\n"                            // deal with red zone
 "push rcx\n"                                // save return address
 "push rbp\n"                                // save user frame pointer
 "mov rbp, rsp\n"                            // save user stack pointer
@@ -74,9 +75,12 @@ INLINE_ASM_SYNTAX
 "mov rsp, rbp\n"                            // restore user stack pointer
 "pop rbp\n"                                 // restore user frame pointer
 "pop rcx\n"                                 // restore return address
+"add rsp, 128\n"                            // deal with red zone
 "sysret\n"                                  // return to usermode code
 NORMAL_ASM_SYNTAX
 );
+
+#pragma pack(push, 1)
 
 struct iovec
 {
@@ -198,6 +202,8 @@ struct sysinfo
     unsigned int mem_unit;   /* Memory unit size in bytes */
     char _f[20-2*sizeof(long)-sizeof(int)]; /* Padding to 64 bytes */
 };
+
+#pragma pack(pop)
 
 long SysCalls::InvalidHandler()
 {
@@ -1096,3 +1102,4 @@ void SysCalls::Initialize()
     cpuWriteMSR(0xC0000082, (uintptr_t)syscallHandler);
     cpuWriteMSR(0xC0000084, 0x00000200);
 }
+

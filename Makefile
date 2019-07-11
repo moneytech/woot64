@@ -1,5 +1,4 @@
-MOUNTPOINT = /mnt
-LOOP_DEVICE = /dev/loop7
+MOUNTPOINT = mnt
 QEMU = /usr/bin/qemu-system-x86_64
 IMGFILE = hdd.img
 
@@ -44,12 +43,12 @@ root/clock_small.png: clock_small.png
 	cp $? $@
 
 try-mount:
-	sudo losetup -P $(LOOP_DEVICE) hdd.img
-	sudo mount $(LOOP_DEVICE)p1 $(MOUNTPOINT)
+	mkdir -p mnt
+	guestmount -a $(IMGFILE) -m /dev/sda1 mnt
 
 try-umount:
-	-sudo umount $(MOUNTPOINT)
-	-sudo losetup -D $(LOOP_DEVICE)
+	guestunmount mnt
+	sleep 1
 
 clean:
 	-for dir in $(SUBDIRS); do $(MAKE) -C $$dir clean; done
@@ -69,7 +68,7 @@ run-dint:
 	$(QEMU) $(QEMU_ARGS) -d int
 
 run-kvm:
-	$(QEMU) $(QEMU_ARGS)
+	$(QEMU) $(QEMU_ARGS) -enable-kvm
 
-.PHONY: clean distclean clean-$(IMGFILE) run run-qemu install
+.PHONY: clean distclean clean-$(IMGFILE) run run-dint run-kvm install
 
