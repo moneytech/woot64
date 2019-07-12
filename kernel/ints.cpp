@@ -120,8 +120,15 @@ void Ints::CommonHandler(Ints::State *state)
 
         if(ct && ct->ExcCount > 1)
         {
-            DEBUG("Something went wrong when building stack trace. Killing thread.\n");
+            DEBUG("Something went wrong when building stack dump/trace. Killing thread.\n");
             Thread::Finalize(ct, 127);
+        }
+
+        DEBUG("Stack dump:\n");
+        for(int i = -4, j = 0; i <= 8; ++i, ++j)
+        {
+            uintptr_t *stack = reinterpret_cast<uintptr_t *>(state->RSP);
+            DEBUG("%3d: %p\n", i * static_cast<int>(sizeof(uintptr_t)), stack[i]);
         }
 
         if(ct)
