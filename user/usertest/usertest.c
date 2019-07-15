@@ -34,6 +34,8 @@ static uiMenu_t *menu = NULL;
 
 static void btnActivate(uiControl_t *sender)
 {
+    (void)sender;
+
     int res = SDL_Init(0);
     if(res < 0)
     {
@@ -83,6 +85,7 @@ static void menuItemActivate(uiControl_t *sender)
 
 int main(int argc, char *argv[])
 {
+    (void)argc, (void)argv;
     setbuf(stdout, NULL);
 
     // initialize window manager
@@ -133,6 +136,8 @@ int main(int argc, char *argv[])
     uiScrollbar_t *scroll2 = uiScrollbarCreate(rootControl, 1, 183, 283, 16, 1, 0, 99, 88, 40);
     uiTextEdit_t *edit2 = uiTextEditCreate(rootControl, 10, 240, pm->Contents.Width - 20, 100);
 
+    (void)sld, (void)sld2, (void)scroll, (void)scroll2;
+
     menu = uiMenuCreate();
     uiMenuAddItem(menu, "Abca", placeholder24, NULL, menuItemActivate);
     uiMenuAddItem(menu, "Meheha", NULL, NULL, menuItemActivate);
@@ -179,7 +184,7 @@ int main(int argc, char *argv[])
     int timer2 = timerCreate(3000, TIMER_ONE_SHOT);
     timerStart(timer2);
 
-    srand(time(NULL));
+    srand((unsigned int)time(NULL));
     ipcMessage_t msg;
     while(ipcGetMessage(&msg, -1) >= 0)
     {
