@@ -147,13 +147,13 @@ extern isr0
     add rdx, ISR_STUB_SIZE
     loop .next_idt_entry
 
-; double fault handler uses IST1
+; fine tune some idt entries
     mov rdi, KERNEL_BASE
     add rdi, idt - KERNEL_BASE
-    mov byte [rdi + 16 * 8 + 4], 0x01
+    mov byte [rdi + 16 * 3 + 5], 0xEE ; allow int 3 from user mode
+    mov byte [rdi + 16 * 8 + 4], 0x01 ; double fault handler uses IST1
 
     lidt [idt_descr - KERNEL_BASE]
-
 
     ; jump to 64 bit entry point
     mov rbx, KERNEL_BASE

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ints.hpp>
 #include <types.h>
 
 class Stream;
@@ -17,8 +18,11 @@ class Stream;
 
 class Misc
 {
+    static Ints::Handler handler;
+    static bool int3Handler(Ints::State *state, void *context);
 public:
     static void InitializeDebugStream();
+    static void InitializeBreakpointInt();
     static uint64_t PowMax(uint64_t base, uint64_t exp);
 
     template<class T>

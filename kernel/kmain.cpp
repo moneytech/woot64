@@ -24,7 +24,9 @@
 
 extern "C" int kmain(multiboot_info_t *mbootInfo)
 {
+    (void)mbootInfo;
     DEBUG("Starting WOOT v%d.%d (%s)\n", KERNEL_VERSION_MAJOR, KERNEL_VERSION_MINOR, KERNEL_VERSION_DESCR);
+    Misc::InitializeBreakpointInt();
     IRQs::Initialize();
     Time::Initialize();
     Time::DateTime bootDateTime;
