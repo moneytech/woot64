@@ -76,7 +76,7 @@ INLINE_ASM_SYNTAX
 "pop rbp\n"                                 // restore user frame pointer
 "pop rcx\n"                                 // restore return address
 "add rsp, 128\n"                            // deal with red zone
-"sysret\n"                                  // return to usermode code
+"sysretq\n"                                 // return to usermode code
 NORMAL_ASM_SYNTAX
 );
 
