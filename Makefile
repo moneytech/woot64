@@ -30,11 +30,8 @@ install: $(IMGFILE)
 	-cp -r ./root/* $(MOUNTPOINT)
 	$(MAKE) try-umount
 
-$(IMGFILE): hdd-empty-ext2.img.gz
+$(IMGFILE): hdd-grub-ext2.img.gz
 	gunzip -c $? > $@
-	$(MAKE) try-mount
-	grub-install --boot-directory=$(MOUNTPOINT)/boot $(LOOP_DEVICE)
-	$(MAKE) try-umount
 
 root/logo.png: logo.png
 	cp $? $@
@@ -43,8 +40,8 @@ root/clock_small.png: clock_small.png
 	cp $? $@
 
 try-mount:
-	mkdir -p mnt
-	guestmount -a $(IMGFILE) -m /dev/sda1 mnt
+	mkdir -p $(MOUNTPOINT)
+	guestmount -a $(IMGFILE) -m /dev/sda1 $(MOUNTPOINT)
 
 try-umount:
 	guestunmount mnt
