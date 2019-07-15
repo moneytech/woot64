@@ -7,7 +7,7 @@
 typedef uintptr_t AddressSpace;
 class Bitmap;
 
-#define PG_INVALID_ADDRESS  ((uintptr_t)((void *)(-1)))
+#define PG_INVALID_ADDRESS  (static_cast<uintptr_t>(-1))
 #define PG_CURRENT_ADDR_SPC PG_INVALID_ADDRESS
 
 class Paging

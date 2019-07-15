@@ -10,6 +10,8 @@
 #include <stringbuilder.hpp>
 #include <sysdefs.h>
 
+#define MIN_LOAD_ADDR   0x0000000000000000
+
 static const char *libDir = "WOOT_OS~/lib";
 
 static char *dupBase(const char *name)
@@ -104,7 +106,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
     proc->AddELF(elf);
 
     // calculate boundaries
-    uintptr_t lowest_vaddr = ~0;
+    uintptr_t lowest_vaddr = __UINTPTR_MAX__;
     uintptr_t highest_vaddr = 0;
     for(int i = 0; i < ehdr->e_phnum; ++i)
     {
@@ -128,12 +130,12 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
 
         // check if image can be mapped where it wants
         bool fits = true;
-        if(lowest_vaddr >= (1 << 20))
+        if(lowest_vaddr >= MIN_LOAD_ADDR)
         {
             for(uintptr_t va = lowest_vaddr; va < highest_vaddr; va += PAGE_SIZE)
             {
                 uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                if(pa != ~0)
+                if(pa != PG_INVALID_ADDRESS)
                 {
                     fits = false;
                     break;
@@ -153,7 +155,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                 {
                     checkedBytes += PAGE_SIZE;
                     uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                    if(pa != ~0)
+                    if(pa != PG_INVALID_ADDRESS)
                     {
                         fits = false;
                         break;
@@ -205,7 +207,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                     return nullptr;
                 }
                 uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                if(!user && pa != ~0)
+                if(!user && pa != PG_INVALID_ADDRESS)
                 {
                     /*printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
                     delete f;
@@ -213,7 +215,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                     continue;
                 }
                 pa = Paging::AllocFrame();
-                if(pa == ~0)
+                if(pa == PG_INVALID_ADDRESS)
                 {
                     DEBUG("[elf] Couldn't allocate memory for data in file '%s'\n", filename);
                     delete f;

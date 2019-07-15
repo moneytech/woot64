@@ -128,16 +128,15 @@ int64_t BufferedVolume::access(uint8_t *buffer, int64_t n, int64_t position, boo
         }
         BlockBuffer *b = buffers + bufIdx;
         b->Time = lru.GetNext();
-        if(buffer)
+        if(!buffer)
+            DEBUG("[bufferedvolume] BufferedVolume::access() with buffer == 0\n");
+        if(write)
         {
-            if(write)
-            {
-                Memory::Move(b->Buffer + inBlockOffset, buffer, bytesToXfer);
-                b->Dirty = true;
-            }
-            else Memory::Move(buffer, b->Buffer + inBlockOffset, bytesToXfer);
-            buffer += bytesToXfer;
+            Memory::Move(b->Buffer + inBlockOffset, buffer, bytesToXfer);
+            b->Dirty = true;
         }
+        else Memory::Move(buffer, b->Buffer + inBlockOffset, bytesToXfer);
+        buffer += bytesToXfer;
         bytesLeft -= bytesToXfer;
         position += bytesToXfer;
     }
