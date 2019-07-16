@@ -12,6 +12,8 @@
 #include "vector.hpp"
 #include "window.hpp"
 
+#define MOUSE_ACCELL 0
+
 extern "C" int main(int argc, char *argv[])
 {
     int screenWidth = 640;
@@ -460,12 +462,14 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         inpMouseEvent_t *mouseEv = (inpMouseEvent_t *)msg->Data;
 
         // mouse acceleration
+#if MOUSE_ACCELL
         float mouseSpeed = mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1];
         if(mouseSpeed > 16)
         {
             mouseEv->Delta[0] += mouseEv->Delta[0] >> 1;
             mouseEv->Delta[1] += mouseEv->Delta[1] >> 1;
         }
+#endif // MOUSE_ACCELL
 
         mouseX += mouseEv->Delta[0];
         mouseY += mouseEv->Delta[1];
