@@ -12,7 +12,7 @@
 #include "vector.hpp"
 #include "window.hpp"
 
-#define MOUSE_ACCELL 0
+#define MOUSE_ACCELERATION 0
 
 extern "C" int main(int argc, char *argv[])
 {
@@ -462,7 +462,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         inpMouseEvent_t *mouseEv = (inpMouseEvent_t *)msg->Data;
 
         // mouse acceleration
-#if MOUSE_ACCELL
+#if MOUSE_ACCELERATION
         float mouseSpeed = mouseEv->Delta[0] * mouseEv->Delta[0] + mouseEv->Delta[1] * mouseEv->Delta[1];
         if(mouseSpeed > 16)
         {
