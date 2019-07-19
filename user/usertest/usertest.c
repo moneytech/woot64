@@ -26,15 +26,38 @@
 #include <woot/video.h>
 #include <woot/wm.h>
 
+#define UNW_LOCAL_ONLY
+#include <libunwind.h>
 #include <SDL/SDL.h>
 
 static pmPixMap_t *pm = NULL;
 static wmWindow_t *window = NULL;
 static uiMenu_t *menu = NULL;
 
+void backtrace()
+{
+    unw_cursor_t cursor;
+    unw_context_t context;
+
+    unw_getcontext(&context);
+    unw_init_local(&cursor, &context);
+
+    fprintf(stderr, "backtrace:\n");
+    while(unw_step(&cursor))
+    {
+        unw_word_t ip, off;
+        unw_get_reg(&cursor, UNW_REG_IP, &ip);
+        char symbol[256] = "<unknown>";
+        unw_get_proc_name(&cursor, symbol, sizeof(symbol), &off);
+        fprintf(stderr, "%p: %s + %zd", (void *)ip, symbol, off);
+    }
+}
+
 static void btnActivate(uiControl_t *sender)
 {
     (void)sender;
+
+    backtrace();
 
     int res = SDL_Init(0);
     if(res < 0)

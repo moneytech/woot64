@@ -1,0 +1,16 @@
+xz-5.2.4/dos
+xz-5.2.4/lib
+xz-5.2.4/src/common
+xz-5.2.4/src/liblzma/api
+xz-5.2.4/src/liblzma/api/lzma
+xz-5.2.4/src/liblzma/check
+xz-5.2.4/src/liblzma/common
+xz-5.2.4/src/liblzma/delta
+xz-5.2.4/src/liblzma/lz
+xz-5.2.4/src/liblzma/lzma
+xz-5.2.4/src/liblzma/rangecoder
+xz-5.2.4/src/liblzma/simple
+xz-5.2.4/src/xz
+xz-5.2.4/tests
+xz-5.2.4/windows/vs2013
+xz-5.2.4/windows/vs2017

@@ -8,6 +8,7 @@ SUBDIRS = \
 	libgmp \
 	libmpfr \
 	libsdl \
+	liblzma \
 	libunwind \
 	console \
 	filemanager \

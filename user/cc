@@ -16,6 +16,8 @@ ARGS="-Wno-unused-command-line-argument \
 -I$WOOT_TOP_DIR/user/libwoot \
 -I$WOOT_TOP_DIR/user/libgmp/include \
 -I$WOOT_TOP_DIR/user/libsdl/include \
+-I$WOOT_TOP_DIR/user/liblzma/include \
+-I$WOOT_TOP_DIR/user/libunwind/include \
 -L$WOOT_TOP_DIR/user/libsyscalls \
 -L$WOOT_TOP_DIR/user/libc/lib \
 -L$WOOT_TOP_DIR/user/libz/lib \
@@ -23,6 +25,8 @@ ARGS="-Wno-unused-command-line-argument \
 -L$WOOT_TOP_DIR/user/libfreetype/lib \
 -L$WOOT_TOP_DIR/user/libwoot \
 -L$WOOT_TOP_DIR/user/libgmp/lib \
--L$WOOT_TOP_DIR/user/libsdl/lib"
+-L$WOOT_TOP_DIR/user/libsdl/lib \
+-L$WOOT_TOP_DIR/user/liblzma/lib \
+-L$WOOT_TOP_DIR/user/libunwind/lib"
 
 $COMMAND $ARGS "$@"
