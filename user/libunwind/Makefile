@@ -3,7 +3,7 @@ SRC_DIR = $(WOOT_TOP_DIR)/user/libunwind/libunwind-master
 BUILD_DIR = $(WOOT_TOP_DIR)/user/libunwind/build
 CONFIG_STATUS = $(BUILD_DIR)/config.status
 CONFIG_OPTS = --prefix=$(WOOT_TOP_DIR)/user/libunwind \
-	--disable-tests --disable-shared --host=x86_64-none-linux
+	--disable-tests --disable-shared --host=x86_64-woot
 
 CC = $(WOOT_TOP_DIR)/user/cc
 CXX = $(WOOT_TOP_DIR)/user/cxx
@@ -37,6 +37,6 @@ clean:
 	$(MAKE) -C build clean
 
 distclean:
-	rm -rf build
+	rm -rf build include lib
 
 .PHONY: preconfigure configure clean distclean install

@@ -31,3 +31,12 @@ libunwind-master/src/unwind
 libunwind-master/src/x86
 libunwind-master/src/x86_64
 libunwind-master/tests
+libunwind-master/src/dwarf
+.
+libunwind-master/aux
+libunwind-master/src/ppc
+libunwind-master/config
+libunwind-master/scripts
+libunwind-master/doc
+libunwind-master
+libunwind-master/src/mi
