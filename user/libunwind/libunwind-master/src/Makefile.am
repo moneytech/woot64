@@ -156,6 +156,8 @@ libunwind_la_SOURCES_os_qnx = os-qnx.c
 
 libunwind_la_SOURCES_os_solaris = os-solaris.c
 
+libunwind_la_SOURCES_os_woot = os-woot.c
+
 libunwind_dwarf_common_la_SOURCES = dwarf/global.c
 
 libunwind_dwarf_local_la_SOURCES = \
@@ -553,6 +555,12 @@ if OS_QNX
  libunwind_la_SOURCES_arm_os_local    = arm/Los-other.c
 endif
 
+if OS_WOOT
+ libunwind_la_SOURCES_os              = $(libunwind_la_SOURCES_os_woot)
+ libunwind_la_SOURCES_x86_64_os       = x86_64/Gos-woot.c
+ libunwind_la_SOURCES_x86_64_os_local = x86_64/Los-woot.c
+endif
+
 if ARCH_AARCH64
  lib_LTLIBRARIES += libunwind-aarch64.la
  libunwind_la_SOURCES = $(libunwind_la_SOURCES_aarch64)
@@ -750,6 +758,7 @@ EXTRA_DIST =	$(libunwind_la_SOURCES_aarch64)			\
 		$(libunwind_la_SOURCES_os_hpux)			\
 		$(libunwind_la_SOURCES_os_qnx)			\
 		$(libunwind_la_SOURCES_os_solaris)		\
+		$(libunwind_la_SOURCES_os_woot)		\
 		$(libunwind_la_SOURCES_common)			\
 		$(libunwind_la_SOURCES_local)			\
 		$(libunwind_la_SOURCES_generic)			\

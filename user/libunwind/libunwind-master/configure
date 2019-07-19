@@ -668,6 +668,8 @@ USE_ELF64_FALSE
 USE_ELF64_TRUE
 USE_ELF32_FALSE
 USE_ELF32_TRUE
+OS_WOOT_FALSE
+OS_WOOT_TRUE
 OS_SOLARIS_FALSE
 OS_SOLARIS_TRUE
 OS_QNX_FALSE
@@ -17767,6 +17769,14 @@ else
   OS_SOLARIS_FALSE=
 fi
 
+ if expr x$target_os : xwoot >/dev/null; then
+  OS_WOOT_TRUE=
+  OS_WOOT_FALSE='#'
+else
+  OS_WOOT_TRUE='#'
+  OS_WOOT_FALSE=
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ELF helper width" >&5
 $as_echo_n "checking for ELF helper width... " >&6; }
@@ -18665,6 +18675,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${OS_SOLARIS_TRUE}" && test -z "${OS_SOLARIS_FALSE}"; then
   as_fn_error $? "conditional \"OS_SOLARIS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${OS_WOOT_TRUE}" && test -z "${OS_WOOT_FALSE}"; then
+  as_fn_error $? "conditional \"OS_WOOT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_ELF32_TRUE}" && test -z "${USE_ELF32_FALSE}"; then

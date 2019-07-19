@@ -181,6 +181,7 @@ AM_CONDITIONAL(OS_HPUX, expr x$target_os : xhpux >/dev/null)
 AM_CONDITIONAL(OS_FREEBSD, expr x$target_os : xfreebsd >/dev/null)
 AM_CONDITIONAL(OS_QNX, expr x$target_os : xnto-qnx >/dev/null)
 AM_CONDITIONAL(OS_SOLARIS, expr x$target_os : xsolaris >/dev/null)
+AM_CONDITIONAL(OS_WOOT, expr x$target_os : xwoot >/dev/null)
 
 AC_MSG_CHECKING([for ELF helper width])
 case "${target_arch}" in

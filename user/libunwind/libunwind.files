@@ -1354,6 +1354,7 @@ libunwind-master/src/os-qnx.c
 libunwind-master/src/os-solaris.c
 libunwind-master/src/os-solaris.c
 libunwind-master/src/os-solaris.c
+libunwind-master/src/os-woot.c
 libunwind-master/src/ppc/Gapply_reg_state.c
 libunwind-master/src/ppc/Gapply_reg_state.c
 libunwind-master/src/ppc/Gapply_reg_state.c
@@ -2110,6 +2111,7 @@ libunwind-master/src/x86_64/Gos-linux.c
 libunwind-master/src/x86_64/Gos-solaris.c
 libunwind-master/src/x86_64/Gos-solaris.c
 libunwind-master/src/x86_64/Gos-solaris.c
+libunwind-master/src/x86_64/Gos-woot.c
 libunwind-master/src/x86_64/Greg_states_iterate.c
 libunwind-master/src/x86_64/Greg_states_iterate.c
 libunwind-master/src/x86_64/Greg_states_iterate.c
@@ -2161,6 +2163,7 @@ libunwind-master/src/x86_64/Los-linux.c
 libunwind-master/src/x86_64/Los-solaris.c
 libunwind-master/src/x86_64/Los-solaris.c
 libunwind-master/src/x86_64/Los-solaris.c
+libunwind-master/src/x86_64/Los-woot.c
 libunwind-master/src/x86_64/Lreg_states_iterate.c
 libunwind-master/src/x86_64/Lreg_states_iterate.c
 libunwind-master/src/x86_64/Lreg_states_iterate.c
