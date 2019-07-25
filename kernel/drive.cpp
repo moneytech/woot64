@@ -74,12 +74,12 @@ bool Drive::ForEach(bool (*callback)(Drive *, void *), void *arg)
     return true;
 }
 
-int64_t Drive::ReadSectors(void *buffer, uint64_t start, int64_t count)
+int64_t Drive::ReadSectors(void *buffer, uint64_t start, uint64_t count)
 {
     return -ENOSYS;
 }
 
-int64_t Drive::WriteSectors(const void *buffer, uint64_t start, int64_t count)
+int64_t Drive::WriteSectors(const void *buffer, uint64_t start, uint64_t count)
 {
     return -ENOSYS;
 }

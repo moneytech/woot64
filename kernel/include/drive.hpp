@@ -29,8 +29,8 @@ public:
     static Drive *GetById(int id);
     static bool ForEach(bool (*callback)(Drive *drive, void *arg), void *arg);
 
-    virtual int64_t ReadSectors(void *buffer, uint64_t start, int64_t count);
-    virtual int64_t WriteSectors(const void *buffer, uint64_t start, int64_t count);
+    virtual int64_t ReadSectors(void *buffer, uint64_t start, uint64_t count);
+    virtual int64_t WriteSectors(const void *buffer, uint64_t start, uint64_t count);
     virtual bool HasMedia();
     virtual ~Drive();
 

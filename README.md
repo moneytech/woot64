@@ -13,6 +13,7 @@ Most important changes in this version (0.4):
 * inter-process communication
 * simple RPC mechanism
 * unix-like pipes
+* UEFI and GPT support
 
 And this is how it looks for now:
 ![Screenshot](screenshot.png?raw=true "Screenshot")

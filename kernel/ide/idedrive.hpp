@@ -67,8 +67,8 @@ public:
     static void Initialize();
     static void Cleanup();
 
-    virtual int64_t ReadSectors(void *buffer, uint64_t start, int64_t count);
-    virtual int64_t WriteSectors(const void *buffer, uint64_t start, int64_t count);
+    virtual int64_t ReadSectors(void *buffer, uint64_t start, uint64_t count);
+    virtual int64_t WriteSectors(const void *buffer, uint64_t start, uint64_t count);
     virtual void GetDisplayName(char *buf, size_t bufSize);
     virtual ~IDEDrive();
 };

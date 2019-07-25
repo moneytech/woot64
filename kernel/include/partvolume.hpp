@@ -22,7 +22,7 @@ public:
     static void Initialize();
     static void Cleanup();
 
-    PartVolume(Drive *drive, VolumeType *vt, uint64_t firstSector, uint64_t sectorCount);
+    PartVolume(Drive *parentDrive, VolumeType *vt, uint64_t firstSector, uint64_t sectorCount);
 
     virtual uint64_t GetSectorCount() override;
     virtual size_t ReadSectors(void *buffer, uint64_t firstSector, size_t n) override;

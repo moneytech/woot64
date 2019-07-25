@@ -276,7 +276,7 @@ void IDEDrive::Cleanup()
 {
 }
 
-int64_t IDEDrive::ReadSectors(void *buffer, uint64_t start, int64_t count)
+int64_t IDEDrive::ReadSectors(void *buffer, uint64_t start, uint64_t count)
 {
     int64_t blocks = align(count, MaxBlockTransfer) / MaxBlockTransfer;
     uint8_t *buf = (uint8_t *)buffer;
@@ -297,7 +297,7 @@ int64_t IDEDrive::ReadSectors(void *buffer, uint64_t start, int64_t count)
     return st;
 }
 
-int64_t IDEDrive::WriteSectors(const void *buffer, uint64_t start, int64_t count)
+int64_t IDEDrive::WriteSectors(const void *buffer, uint64_t start, uint64_t count)
 {
     int64_t blocks = align(count, MaxBlockTransfer) / MaxBlockTransfer;
     uint8_t *buf = (uint8_t *)buffer;
