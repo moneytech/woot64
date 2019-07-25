@@ -79,8 +79,7 @@ File::File(::DEntry *dentry, int flags, mode_t mode) :
 
 int64_t File::getSize()
 {
-    int64_t size = DEntry && DEntry->INode ? DEntry->INode->GetSize() : -EINVAL;
-    return size;
+    return DEntry && DEntry->INode ? static_cast<int64_t>(DEntry->INode->GetSize()) : -EINVAL;
 }
 
 File *File::Open(::DEntry *parent, const char *name, int flags, mode_t mode)
@@ -97,7 +96,7 @@ File *File::Open(const char *name, int flags, mode_t mode)
 {
     if(!name || !String::Length(name))
         name = ".";
-    name = (const char *)String::TrimStart((char *)name, " \t");
+    name = reinterpret_cast<const char *>(String::TrimStart(const_cast<char *>(name), " \t"));
     Tokenizer path(name, PATH_SEPARATORS, 0);
     if(!path[0]) return nullptr;
     char *fsSep = path[0] ? String::Find(path[0], FS_SEPARATOR, false) : nullptr;

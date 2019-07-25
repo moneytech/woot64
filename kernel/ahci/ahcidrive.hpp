@@ -43,7 +43,7 @@ class AHCIDrive : public Drive
         void Disable();
         void EnableInterrupts();
         void DisableInterrupts();
-        void Reset();
+        int Reset();
         ~Controller();
     };
 

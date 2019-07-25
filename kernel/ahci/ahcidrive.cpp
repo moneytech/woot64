@@ -314,7 +314,7 @@ char *AHCIDrive::getStringFromID(ATAIdentifyResponse *id, uint offset, uint leng
 
 int AHCIDrive::sectorTransfer(bool write, void *buffer, uint64_t start, int64_t count)
 {
-    //DEBUG("[ahcidrive] sectorTransfer: start: %lu\n", start);
+    //DEBUG("[ahcidrive] sectorTransfer: drive: %d start: %lu count: %ld\n", Id, start, count);
 
     if(!count) return 0;
 
@@ -436,18 +436,18 @@ void AHCIDrive::Initialize()
             Port *port = ctrl->Ports[i];
             if(!port) continue;
 
-            DeviceType devType = port->GetDeviceType();
-
-            if(devType == DeviceType::None)
-                continue;
-
-            DEBUG("[ahcidrive] Found %s on port %d\n", deviceTypeNames[(int)devType], i);
             int res = port->Rebase();
+            port->Interrupt->Wait(1000, false, false); // Something is fishy about this interrupt here
             if(res)
             {
-                DEBUG("[ahcidrive] Couldn't rebase device on port %d (error: %d)\n", i, res);
+                DEBUG("[ahcidrive] Couldn't rebase port %d (error: %d)\n", i, res);
                 continue;
             }
+            port->DevType = port->GetDeviceType();
+            if(port->DevType == DeviceType::None)
+                continue;
+
+            DEBUG("[ahcidrive] Found %s on port %d\n", deviceTypeNames[static_cast<int>(port->DevType)], i);
 
             ATAIdentifyResponse resp;
             res = port->IdentifyDrive(&resp);
@@ -532,7 +532,7 @@ bool AHCIDrive::Controller::interrupt(Ints::State *state, void *context)
     {
         volatile Port *port = ctrl->Ports[i];
         if(!port || !port->Registers->IS) continue;
-        //DEBUG("            on port %d\n", i);
+        //DEBUG("            on port %d IS = %.8x\n", i, port->Registers->IS);
         port->Registers->IS = ~0; // clear all interrupts flags on this port
         port->Interrupt->Signal(state);
     }
@@ -550,6 +550,7 @@ AHCIDrive::Controller::Controller(Device *parent, uintptr_t base, uint8_t irq) :
     IRQs::RegisterHandler(irq, &interruptHandler);
     IRQs::Enable(irq);
 
+    Reset();
     Enable();
     EnableInterrupts();
 
@@ -580,11 +581,13 @@ void AHCIDrive::Controller::DisableInterrupts()
     Registers->GHC &= ~HBA_GHC_IE;
 }
 
-void AHCIDrive::Controller::Reset()
+int AHCIDrive::Controller::Reset()
 {
     Registers->GHC = 1;
-    while(Registers->GHC & 1)
+    int retry = 1000;
+    while(Registers->GHC & 1 && --retry)
         Time::Sleep(1, false);
+    return retry ? 0 : -EBUSY;
 }
 
 AHCIDrive::Controller::~Controller()
@@ -603,7 +606,7 @@ AHCIDrive::Controller::~Controller()
 AHCIDrive::Port::Port(AHCIDrive::Controller *controller, int portNumber) :
     Parent(controller), PortNumber(portNumber),
     Registers(controller->Registers->Ports + portNumber),
-    DevType(GetDeviceType()),
+    DevType(DeviceType::None),
     Interrupt(new Semaphore(0, "ahcidriveport"))
 {
     Registers->IE = 0x0000000F; // enable needed interrupts
