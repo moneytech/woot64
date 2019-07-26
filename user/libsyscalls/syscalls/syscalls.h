@@ -56,6 +56,7 @@
 #define SYS_THREAD_WAIT                 0x325
 #define SYS_THREAD_ABORT                0x326
 #define SYS_THREAD_DAEMONIZE            0x327
+#define SYS_THREAD_GET_ID               0x328
 
 #define SYS_PROCESS_CREATE              0x330
 #define SYS_PROCESS_DELETE              0x331
@@ -85,6 +86,15 @@
 #define SYS_SYNC_SEMAPHORE_DELETE       0x355
 #define SYS_SYNC_SEMAPHORE_WAIT         0x356
 #define SYS_SYNC_SEMAPHORE_SIGNAL       0x357
+
+#define SYS_SIGNAL_GET_HANDLER          0x360
+#define SYS_SIGNAL_SET_HANDLER          0x361
+#define SYS_SIGNAL_IS_ENABLED           0x362
+#define SYS_SIGNAL_ENABLE               0x363
+#define SYS_SIGNAL_DISABLE              0x364
+#define SYS_SIGNAL_RAISE                0x365
+#define SYS_SIGNAL_RETURN               0x366
+#define SYS_SIGNAL_GET_CURRENT          0x367
 
 typedef __SIZE_TYPE__ size_t;
 typedef __INTPTR_TYPE__ off_t;
@@ -164,7 +174,7 @@ long sys_writev(int fd, const void *vec, size_t vlen);
 long sys_pipe(int *fds);
 long sys_dup(int fd);
 long sys_dup2(int oldfd, int newfd);
-long sys_getpid();
+long sys_getpid(void);
 long sys_exit(long error_code);
 long sys_getdents(int fd, void *de, size_t count);
 long sys_getcwd(char *buf, size_t size);
@@ -176,8 +186,8 @@ int sys_set_tid_address(int *tidptr);
 long sys_clock_get_time(int clock, void *ts);
 long sys_exit_group(long error_code);
 
-long sysFBGetCount();
-long sysFBGetDefault();
+long sysFBGetCount(void);
+long sysFBGetDefault(void);
 long sysFBListIds(int *buf, unsigned bufSize);
 long sysFBGetName(int id, char *buf, unsigned bufSize);
 long sysFBOpen(int id);
@@ -188,7 +198,7 @@ long sysFBSetMode(int fd, int mode);
 void *sysFBMapPixels(int fd, void *hint);
 long sysFBGetCurrentMode(int fd);
 
-long sysInDevGetCount();
+long sysInDevGetCount(void);
 long sysInDevListIds(int *buf, unsigned bufSize);
 long sysInDevGetType(int id);
 long sysInDevGetName(int id, char *buf, unsigned bufSize);
@@ -203,7 +213,8 @@ long sysThreadSuspend(int tid);
 long sysThreadSleep(int tid, int ms);
 long sysThreadWait(int tid, int timeout);
 long sysThreadAbort(int tid, int retVal);
-long sysThreadDaemonize();
+long sysThreadDaemonize(void);
+long sysThreadGetId(void);
 
 long sysProcessCreate(const char *cmdline);
 long sysProcessDelete(int pid);
@@ -233,6 +244,15 @@ long sysSyncSemaphoreCreate(int count);
 long sysSyncSemaphoreDelete(int fd);
 long sysSyncSemaphoreWait(int fd, int timeout);
 long sysSyncSemaphoreSignal(int fd);
+
+void *sysSignalGetHandler(unsigned signum);
+long sysSignalSetHandler(unsigned signum, void *handler);
+long sysSignalIsEnabled(unsigned signum);
+long sysSignalEnable(unsigned signum);
+long sysSignalDisable(unsigned signum);
+long sysSignalRaise(int tid, unsigned signum);
+long sysSignalReturn(void);
+long sysSignalGetCurrent(void);
 
 #ifdef __cplusplus
 }

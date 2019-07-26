@@ -12,6 +12,7 @@
 #include <paging.hpp>
 #include <process.hpp>
 #include <sharedmem.hpp>
+#include <signal.hpp>
 #include <string.hpp>
 #include <stringbuilder.hpp>
 #include <syscalls.hpp>
@@ -59,6 +60,10 @@ INLINE_ASM_SYNTAX
 "jmp 2f\n"                                  //   and return
 "1: call r11\n"                             // call actual handler
 "2: pop r11\n"                              // restore flags
+
+"push rax\n"                                // save syscall result
+"call _ZN8SysCalls13SignalHandlerEv\n"      // call function for handling syscall initiated signals
+"pop rax\n"                                 // restore syscall result
 
 "pop r15\n"
 "pop r14\n"
@@ -211,6 +216,17 @@ long SysCalls::InvalidHandler()
     uintn number; asm volatile("": "=a"(number));
     DEBUG("[syscalls] Unknown syscall %d\n", number);
     return -ENOSYS;
+}
+
+long SysCalls::SignalHandler()
+{
+    if(Thread::GetCurrent()->CurrentSignal < 0)
+    {
+        uintptr_t *thisStackFrame = reinterpret_cast<uintptr_t *>(__builtin_frame_address(0));
+        uintptr_t *prevStackFrame = reinterpret_cast<uintptr_t *>(*thisStackFrame);
+        Signal::HandleSignals(Thread::GetCurrent(), prevStackFrame + 1);
+    }
+    return 0;
 }
 
 long SysCalls::sys_read(int fd, char *buf, size_t count)
@@ -805,6 +821,11 @@ long SysCalls::sysThreadDaemonize()
     return ESUCCESS;
 }
 
+long SysCalls::sysThreadGetId()
+{
+    return Thread::GetCurrent()->Id;
+}
+
 long SysCalls::sysProcessCreate(const char *cmdline)
 {
     BUFFER_CHECK(cmdline, String::Size(cmdline))
@@ -1009,6 +1030,72 @@ long SysCalls::sysSyncSemaphoreSignal(int fd)
     return ESUCCESS;
 }
 
+long SysCalls::sysSignalGetHandler(unsigned signum)
+{
+    return signum < SIGNAL_COUNT ? reinterpret_cast<long>(Thread::GetCurrent()->SignalHandlers[signum]) : 0;
+}
+
+long SysCalls::sysSignalSetHandler(unsigned signum, void *handler)
+{
+    if(signum >= SIGNAL_COUNT)
+        return -EINVAL;
+    Thread::GetCurrent()->SignalHandlers[signum] = handler;
+    return ESUCCESS;
+}
+
+long SysCalls::sysSignalIsEnabled(unsigned signum)
+{
+    if(signum >= SIGNAL_COUNT)
+        return -EINVAL;
+    return (1ull << signum) & Thread::GetCurrent()->SignalMask ? 1 : 0;
+}
+
+long SysCalls::sysSignalEnable(unsigned signum)
+{
+    if(signum >= SIGNAL_COUNT)
+        return -EINVAL;
+    Thread::GetCurrent()->SignalMask |= 1ull << signum;
+    return ESUCCESS;
+}
+
+long SysCalls::sysSignalDisable(unsigned signum)
+{
+    if(signum >= SIGNAL_COUNT)
+        return -EINVAL;
+    Thread::GetCurrent()->SignalMask &= ~(1ull << signum);
+    return ESUCCESS;
+}
+
+long SysCalls::sysSignalRaise(pid_t tid, unsigned signum)
+{
+    Thread *t = tid == -1 ? Thread::GetCurrent() : Thread::GetByID(tid);
+    if(!t) return -ESRCH;
+    if(signum >= SIGNAL_COUNT)
+        return -EINVAL;
+    Signal::Raise(t, signum);
+    return ESUCCESS;
+}
+
+long SysCalls::sysSignalReturn()
+{
+    Thread *ct = Thread::GetCurrent();
+
+    // HACKHACK: modifying syscall return address
+    uintptr_t *thisStackFrame = reinterpret_cast<uintptr_t *>(__builtin_frame_address(0));
+    uintptr_t *prevStackFrame = reinterpret_cast<uintptr_t *>(*thisStackFrame);
+    prevStackFrame[1] = ct->SignalRetAddr;
+    ct->Suspend();  // Resume called from Signal::Raise should keep
+                    // thread from actually suspending thanks to WakeCount
+
+    ct->CurrentSignal = -1;
+    return ESUCCESS;
+}
+
+long SysCalls::sysSignalGetCurrent()
+{
+    return Thread::GetCurrent()->CurrentSignal;
+}
+
 void SysCalls::Initialize()
 {
     Memory::Zero(Handlers, sizeof(Handlers));
@@ -1069,6 +1156,7 @@ void SysCalls::Initialize()
     Handlers[SYS_THREAD_WAIT] = reinterpret_cast<SysCallHandler>(sysThreadWait);
     Handlers[SYS_THREAD_ABORT] = reinterpret_cast<SysCallHandler>(sysThreadAbort);
     Handlers[SYS_THREAD_DAEMONIZE] = reinterpret_cast<SysCallHandler>(sysThreadDaemonize);
+    Handlers[SYS_THREAD_GET_ID] = reinterpret_cast<SysCallHandler>(sysThreadGetId);
 
     Handlers[SYS_PROCESS_CREATE] = reinterpret_cast<SysCallHandler>(sysProcessCreate);
     Handlers[SYS_PROCESS_DELETE] = reinterpret_cast<SysCallHandler>(sysProcessDelete);
@@ -1098,6 +1186,15 @@ void SysCalls::Initialize()
     Handlers[SYS_SYNC_SEMAPHORE_DELETE] = reinterpret_cast<SysCallHandler>(sysSyncSemaphoreDelete);
     Handlers[SYS_SYNC_SEMAPHORE_WAIT] = reinterpret_cast<SysCallHandler>(sysSyncSemaphoreWait);
     Handlers[SYS_SYNC_SEMAPHORE_SIGNAL] = reinterpret_cast<SysCallHandler>(sysSyncSemaphoreSignal);
+
+    Handlers[SYS_SIGNAL_GET_HANDLER] = reinterpret_cast<SysCallHandler>(sysSignalGetHandler);
+    Handlers[SYS_SIGNAL_SET_HANDLER] = reinterpret_cast<SysCallHandler>(sysSignalSetHandler);
+    Handlers[SYS_SIGNAL_IS_ENABLED] = reinterpret_cast<SysCallHandler>(sysSignalIsEnabled);
+    Handlers[SYS_SIGNAL_ENABLE] = reinterpret_cast<SysCallHandler>(sysSignalEnable);
+    Handlers[SYS_SIGNAL_DISABLE] = reinterpret_cast<SysCallHandler>(sysSignalDisable);
+    Handlers[SYS_SIGNAL_RAISE] = reinterpret_cast<SysCallHandler>(sysSignalRaise);
+    Handlers[SYS_SIGNAL_RETURN] = reinterpret_cast<SysCallHandler>(sysSignalReturn);
+    Handlers[SYS_SIGNAL_GET_CURRENT] = reinterpret_cast<SysCallHandler>(sysSignalGetCurrent);
 
     cpuWriteMSR(0xC0000081,
                 static_cast<uintptr_t>(SEG_KERNEL_DATA) << 48 |

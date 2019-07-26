@@ -75,7 +75,7 @@ long sys_dup2(int oldfd, int newfd)
     return __syscall2(SYS_dup2, oldfd, newfd);
 }
 
-long sys_getpid()
+long sys_getpid(void)
 {
     return __syscall0(SYS_getpid);
 }
@@ -130,12 +130,12 @@ long sys_exit_group(long error_code)
     return __syscall1(SYS_exit_group, error_code);
 }
 
-long sysFBGetCount()
+long sysFBGetCount(void)
 {
     return __syscall0(SYS_FB_GET_COUNT);
 }
 
-long sysFBGetDefault()
+long sysFBGetDefault(void)
 {
     return __syscall0(SYS_FB_GET_DEFAULT);
 }
@@ -186,7 +186,7 @@ long sysFBGetCurrentMode(int fd)
     return __syscall1(SYS_FB_GET_CURRENT_MODE, fd);
 }
 
-long sysInDevGetCount()
+long sysInDevGetCount(void)
 {
     return __syscall0(SYS_INDEV_GET_COUNT);
 }
@@ -256,9 +256,14 @@ long sysThreadAbort(int tid, int retVal)
     return __syscall2(SYS_THREAD_ABORT, tid, retVal);
 }
 
-long sysThreadDaemonize()
+long sysThreadDaemonize(void)
 {
     return __syscall0(SYS_THREAD_DAEMONIZE);
+}
+
+long sysThreadGetId(void)
+{
+    return __syscall0(SYS_THREAD_GET_ID);
 }
 
 long sysProcessCreate(const char *cmdline)
@@ -389,4 +394,44 @@ long sysSyncSemaphoreWait(int fd, int timeout)
 long sysSyncSemaphoreSignal(int fd)
 {
     return __syscall1(SYS_SYNC_SEMAPHORE_SIGNAL, fd);
+}
+
+void *sysSignalGetHandler(unsigned signum)
+{
+    return (void *)__syscall1(SYS_SIGNAL_GET_HANDLER, signum);
+}
+
+long sysSignalSetHandler(unsigned signum, void *handler)
+{
+    return __syscall2(SYS_SIGNAL_SET_HANDLER, signum, (long)handler);
+}
+
+long sysSignalIsEnabled(unsigned signum)
+{
+    return __syscall1(SYS_SIGNAL_IS_ENABLED, signum);
+}
+
+long sysSignalEnable(unsigned signum)
+{
+    return __syscall1(SYS_SIGNAL_ENABLE, signum);
+}
+
+long sysSignalDisable(unsigned signum)
+{
+    return __syscall1(SYS_SIGNAL_DISABLE, signum);
+}
+
+long sysSignalRaise(int tid, unsigned signum)
+{
+    return __syscall2(SYS_SIGNAL_RAISE, tid, signum);
+}
+
+long sysSignalReturn(void)
+{
+    return __syscall0(SYS_SIGNAL_RETURN);
+}
+
+long sysSignalGetCurrent(void)
+{
+    return __syscall0(SYS_SIGNAL_GET_CURRENT);
 }

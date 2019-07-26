@@ -10,6 +10,7 @@ OBJS = \
 	rectangle.o \
 	rpc.o \
 	shell.o \
+	signal.o \
 	sync.o \
 	thread.o \
 	timer.o \

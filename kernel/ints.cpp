@@ -69,16 +69,16 @@ void Ints::CommonHandler(Ints::State *state)
 
     bool handled = false;
 
-    /*if(ct)
+    if(ct)
     {
-        //if(state->CS & 3 && ct->CurrentSignal < 0)
-        //    Signal::HandleSignals(ct, state);
-        if(state->InterruptNumber == 0x80 && !state->RAX)
+        if(state->CS & 3 && ct->CurrentSignal < 0)
+            Signal::HandleSignals(ct, state);
+        if(ct->CurrentSignal >= 0 && state->InterruptNumber == 0x80 && !state->RAX)
         {
-            //Signal::ReturnFromSignal(ct, state);
+            Signal::ReturnFromSignal(ct, state);
             handled = true;
         }
-    }*/
+    }
 
     Handler *handler = Handlers[state->InterruptNumber];
     for(; !handled && handler && handler->Callback; handler = handler->Next)

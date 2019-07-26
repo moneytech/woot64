@@ -1,6 +1,7 @@
 editors.cfg
 font.c
 shell.c
+signal.c
 sync.c
 timer.c
 ui.c
@@ -17,6 +18,7 @@ vector.c
 wm.c
 woot/font.h
 woot/shell.h
+woot/signal.h
 woot/sync.h
 woot/timer.h
 woot/ui.h

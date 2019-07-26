@@ -12,6 +12,7 @@
 #include <woot/ipc.h>
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
+#include <woot/signal.h>
 #include <woot/thread.h>
 #include <woot/timer.h>
 #include <woot/ui.h>
@@ -30,6 +31,7 @@
 #include <libunwind.h>
 #include <SDL/SDL.h>
 
+static int mainTId = -1;
 static pmPixMap_t *pm = NULL;
 static wmWindow_t *window = NULL;
 static uiMenu_t *menu = NULL;
@@ -99,6 +101,7 @@ static void sldChange(uiSlider_t *sender)
 static void editAccept(uiLineEdit_t *sender)
 {
     wmSetWindowTitle(window, uiControlGetText((uiControl_t *)sender));
+    signalRaise(THREAD_SELF, 12);
 }
 
 static void menuItemActivate(uiControl_t *sender)
@@ -106,10 +109,35 @@ static void menuItemActivate(uiControl_t *sender)
     wmSetWindowTitle(window, uiControlGetText(sender));
 }
 
+static void signalTest(int signum)
+{
+    fprintf(stderr, "[usertest] signal %d\n", signum);
+}
+
+static int testThread(uintptr_t arg)
+{
+    (void)arg;
+    for(;;)
+    {
+        threadSleep(THREAD_SELF, 3000);
+        signalRaise(mainTId, 11);
+    }
+}
+
 int main(int argc, char *argv[])
 {
     (void)argc, (void)argv;
     setbuf(stdout, NULL);
+
+    mainTId = threadGetId();
+    int testThr = threadCreate("testThread", (void *)testThread, 0, NULL);
+    threadResume(testThr);
+
+    // prepare signal test
+    signalSetHandler(12, (void *)signalTest);
+    signalSetHandler(11, (void *)signalTest);
+    signalEnable(12);
+    signalEnable(11);
 
     // initialize window manager
     int res = wmInitialize(WM_INITIALIZE_NONE);
@@ -223,6 +251,7 @@ int main(int argc, char *argv[])
                 time_t ct = time(NULL);
                 strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gmtime(&ct));
                 uiControlSetText((uiControl_t *)lbl, buf);
+                uiControlRedraw((uiControl_t *)lbl, UI_TRUE);
             }
             else if(tm->Id == timer2)
                 printf("[usertest] timer2\n");

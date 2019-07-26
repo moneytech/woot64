@@ -150,8 +150,9 @@ extern isr0
 ; fine tune some idt entries
     mov rdi, KERNEL_BASE
     add rdi, idt - KERNEL_BASE
-    mov byte [rdi + 16 * 3 + 5], 0xEE ; allow int 3 from user mode
-    mov byte [rdi + 16 * 8 + 4], 0x01 ; double fault handler uses IST1
+    mov byte [rdi + 16 * 3 + 5], 0xEE   ; allow int 3 from user mode
+    mov byte [rdi + 16 * 128 + 5], 0xEE ; allow int 128 from user mode
+    mov byte [rdi + 16 * 8 + 4], 0x01   ; double fault handler uses IST1
 
     lidt [idt_descr - KERNEL_BASE]
 

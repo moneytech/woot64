@@ -45,6 +45,7 @@ OBJS = boot/boot.o boot/boot64.o \
 	random.o \
 	semaphore.o \
 	sharedmem.o \
+	signal.o \
 	stream.o \
 	string.o \
 	stringbuilder.o \

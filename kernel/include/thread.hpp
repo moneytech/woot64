@@ -3,7 +3,7 @@
 #include <ints.hpp>
 #include <queue.hpp>
 #include <sequencer.hpp>
-//#include <signal.hpp>
+#include <signal.hpp>
 #include <types.h>
 
 class Mutex;
@@ -84,7 +84,7 @@ public:
     Ints::State SavedMachineState;
     int CurrentSignal;
     uintptr_t SignalRetAddr;
-    //void *SignalHandlers[SIGNAL_COUNT];
+    void *SignalHandlers[SIGNAL_COUNT];
 
     // finalize stuff
     int *ReturnCodePtr;

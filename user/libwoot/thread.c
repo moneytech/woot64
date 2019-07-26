@@ -36,7 +36,12 @@ int threadAbort(int tid, int retVal)
     return sysThreadAbort(tid, retVal);
 }
 
-int threadDaemonize()
+int threadDaemonize(void)
 {
     return sysThreadDaemonize();
+}
+
+int threadGetId()
+{
+    return sysThreadGetId();
 }

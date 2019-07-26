@@ -15,7 +15,8 @@ int threadSuspend(int tid);
 int threadSleep(int tid, int ms);
 int threadWait(int tid, int timeout);
 int threadAbort(int tid, int retVal);
-int threadDaemonize();
+int threadDaemonize(void);
+int threadGetId(void);
 
 #ifdef __cplusplus
 }

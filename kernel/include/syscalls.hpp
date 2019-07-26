@@ -60,6 +60,7 @@
 #define SYS_THREAD_WAIT                 0x325
 #define SYS_THREAD_ABORT                0x326
 #define SYS_THREAD_DAEMONIZE            0x327
+#define SYS_THREAD_GET_ID               0x328
 
 #define SYS_PROCESS_CREATE              0x330
 #define SYS_PROCESS_DELETE              0x331
@@ -90,12 +91,22 @@
 #define SYS_SYNC_SEMAPHORE_WAIT         0x356
 #define SYS_SYNC_SEMAPHORE_SIGNAL       0x357
 
+#define SYS_SIGNAL_GET_HANDLER          0x360
+#define SYS_SIGNAL_SET_HANDLER          0x361
+#define SYS_SIGNAL_IS_ENABLED           0x362
+#define SYS_SIGNAL_ENABLE               0x363
+#define SYS_SIGNAL_DISABLE              0x364
+#define SYS_SIGNAL_RAISE                0x365
+#define SYS_SIGNAL_RETURN               0x366
+#define SYS_SIGNAL_GET_CURRENT          0x367
+
 class SysCalls
 {
     typedef intn (*SysCallHandler)(...);
 
     static SysCallHandler Handlers[1024];
     static long InvalidHandler();
+    static long SignalHandler();
 
     static long sys_read(int fd, char *buf, size_t count);
     static long sys_write(int fd, const char *buf, size_t count);
@@ -152,6 +163,7 @@ class SysCalls
     static long sysThreadWait(int tid, int timeout);
     static long sysThreadAbort(int tid, int retVal);
     static long sysThreadDaemonize();
+    static long sysThreadGetId();
 
     static long sysProcessCreate(const char *cmdline);
     static long sysProcessDelete(int pid);
@@ -181,6 +193,15 @@ class SysCalls
     static long sysSyncSemaphoreDelete(int fd);
     static long sysSyncSemaphoreWait(int fd, int timeout);
     static long sysSyncSemaphoreSignal(int fd);
+
+    static long sysSignalGetHandler(unsigned signum);
+    static long sysSignalSetHandler(unsigned signum, void *handler);
+    static long sysSignalIsEnabled(unsigned signum);
+    static long sysSignalEnable(unsigned signum);
+    static long sysSignalDisable(unsigned signum);
+    static long sysSignalRaise(pid_t tid, unsigned signum);
+    static long sysSignalReturn();
+    static long sysSignalGetCurrent();
 
 public:
     static void Initialize();
