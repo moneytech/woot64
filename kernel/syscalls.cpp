@@ -615,6 +615,13 @@ long SysCalls::sys_exit_group(intn retVal)
     return ESUCCESS;
 }
 
+long SysCalls::sys_pipe2(int *fds, int flags)
+{
+    BUFFER_CHECK(fds, sizeof(*fds) * 2)
+    if(flags) DEBUG("[syscalls] WARNING: sys_pipe2 with flags != 0 (%.8x) not implemented\n", flags);
+    return sys_pipe(fds);
+}
+
 long SysCalls::sysFBGetCount()
 {
     return FrameBuffer::GetCount();
@@ -1179,6 +1186,7 @@ void SysCalls::Initialize()
     Handlers[SYS_set_tid_address] = reinterpret_cast<SysCallHandler>(sys_set_tid_address);
     Handlers[SYS_clock_get_time] = reinterpret_cast<SysCallHandler>(sys_clock_get_time);
     Handlers[SYS_exit_group] = reinterpret_cast<SysCallHandler>(sys_exit_group);
+    Handlers[SYS_pipe2] = reinterpret_cast<SysCallHandler>(sys_pipe2);
 
     Handlers[SYS_FB_GET_COUNT] = reinterpret_cast<SysCallHandler>(sysFBGetCount);
     Handlers[SYS_FB_GET_DEFAULT] = reinterpret_cast<SysCallHandler>(sysFBGetDefault);

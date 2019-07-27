@@ -140,6 +140,11 @@ long sys_exit_group(long error_code)
     return __syscall1(SYS_exit_group, error_code);
 }
 
+long sys_pipe2(int *fds, int flags)
+{
+    return __syscall2(SYS_pipe2, (long)fds, (long)flags);
+}
+
 long sysFBGetCount(void)
 {
     return __syscall0(SYS_FB_GET_COUNT);

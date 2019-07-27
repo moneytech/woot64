@@ -32,6 +32,7 @@
 #define SYS_set_tid_address             218
 #define SYS_clock_get_time              228
 #define SYS_exit_group                  231
+#define SYS_pipe2                       293
 
 // woot specific syscalls
 #define SYS_FB_GET_COUNT                0x300
@@ -138,6 +139,7 @@ class SysCalls
     static long sys_set_tid_address(int *tidptr);
     static long sys_clock_get_time(int clock, struct timespec *t);
     static long sys_exit_group(intn retVal);
+    static long sys_pipe2(int *fds, int flags);
 
     static long sysFBGetCount();
     static long sysFBGetDefault();

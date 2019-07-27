@@ -29,6 +29,7 @@
 #define SYS_set_tid_address             218
 #define SYS_clock_get_time              228
 #define SYS_exit_group                  231
+#define SYS_pipe2                       293
 
 #define SYS_FB_GET_COUNT                0x300
 #define SYS_FB_GET_DEFAULT              0x301
@@ -189,6 +190,7 @@ long sys_getdents64(int fd, void *de, size_t count);
 int sys_set_tid_address(int *tidptr);
 long sys_clock_get_time(int clock, void *ts);
 long sys_exit_group(long error_code);
+long sys_pipe2(int *fds, int flags);
 
 long sysFBGetCount(void);
 long sysFBGetDefault(void);
