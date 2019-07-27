@@ -1,6 +1,6 @@
 #pragma once
 
-#define SIGNAL_COUNT 64
+#define SIGNAL_COUNT 128
 
 #include <ints.hpp>
 #include <types.h>

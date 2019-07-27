@@ -1047,14 +1047,14 @@ long SysCalls::sysSignalIsEnabled(unsigned signum)
 {
     if(signum >= SIGNAL_COUNT)
         return -EINVAL;
-    return (1ull << signum) & Thread::GetCurrent()->SignalMask ? 1 : 0;
+    return ((decltype(Thread::SignalMask)(1)) << signum) & Thread::GetCurrent()->SignalMask ? 1 : 0;
 }
 
 long SysCalls::sysSignalEnable(unsigned signum)
 {
     if(signum >= SIGNAL_COUNT)
         return -EINVAL;
-    Thread::GetCurrent()->SignalMask |= 1ull << signum;
+    Thread::GetCurrent()->SignalMask |= (decltype(Thread::SignalMask)(1)) << signum;
     return ESUCCESS;
 }
 
@@ -1062,7 +1062,7 @@ long SysCalls::sysSignalDisable(unsigned signum)
 {
     if(signum >= SIGNAL_COUNT)
         return -EINVAL;
-    Thread::GetCurrent()->SignalMask &= ~(1ull << signum);
+    Thread::GetCurrent()->SignalMask &= ~((decltype(Thread::SignalMask)(1)) << signum);
     return ESUCCESS;
 }
 

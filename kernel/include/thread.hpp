@@ -79,7 +79,7 @@ public:
     uint8_t *FXSaveData;
 
     // signals
-    uint64_t SignalMask;
+    uint128_t SignalMask;
     Queue<uint8_t> SignalQueue;
     Ints::State SavedMachineState;
     int CurrentSignal;

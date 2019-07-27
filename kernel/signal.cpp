@@ -96,7 +96,7 @@ void Signal::HandleSignals(Thread *thread, uintptr_t *retAddrAddr)
 void Signal::Raise(Thread *thread, unsigned signum)
 {
     bool ints = cpuDisableInterrupts();
-    if((1ull << signum) & thread->SignalMask)
+    if((decltype(Thread::SignalMask)(1) << signum) & thread->SignalMask)
     {
         thread->SignalQueue.Write(static_cast<uint8_t>(signum));
         thread->Resume(false);
