@@ -24,6 +24,10 @@
 #define ARCH_GET_FS		0x1003
 #define ARCH_GET_GS		0x1004
 
+#define SIG_BLOCK   0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+
 extern "C" void syscallHandler();
 asm(
 INLINE_ASM_SYNTAX
@@ -352,7 +356,7 @@ long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, 
         f->Read((void *)addr, len);
     }
 
-    return addr;
+    return static_cast<long>(addr);
 }
 
 long SysCalls::sys_munmap(uintptr_t addr, size_t len)
@@ -365,18 +369,61 @@ long SysCalls::sys_munmap(uintptr_t addr, size_t len)
 long SysCalls::sys_brk(uintptr_t brk)
 {
     //DEBUG("sys_brk(%p)\n", args[1]);
-    return Process::GetCurrent()->Brk(brk, true);
+    return static_cast<long>(Process::GetCurrent()->Brk(brk, true));
+}
+
+long SysCalls::sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize)
+{
+    BUFFER_CHECK(set, sigsetsize)
+    BUFFER_CHECK(oldset, sigsetsize)
+
+    if(!sigsetsize)
+        return -EINVAL;
+
+    Process *cp = Process::GetCurrent();
+    Thread *t = cp->Threads[0];
+
+    uint128_t oldmask = t->SignalMask;
+
+    if(oldset) Memory::Move(oldset, &oldmask, sigsetsize < sizeof(oldmask) ? sigsetsize : sizeof(oldmask));
+
+    if(set)
+    {
+        uint128_t mask = 0;
+        Memory::Move(&mask, set, sigsetsize < sizeof(mask) ? sigsetsize : sizeof(mask));
+
+        switch(how)
+        {
+        case SIG_BLOCK:
+            mask = oldmask & ~mask;
+            break;
+        case SIG_UNBLOCK:
+            mask = oldmask | mask;
+            break;
+        case SIG_SETMASK:
+            break;
+        default:
+            return -EINVAL;
+        }
+
+        t->SignalMask = mask;
+    }
+    return ESUCCESS;
+}
+
+long SysCalls::sys_rt_sigreturn()
+{
+    return sysSignalReturn();
 }
 
 long SysCalls::sys_readv(int fd, const iovec *vec, size_t vlen)
 {
     BUFFER_CHECK(vec, sizeof(iovec) * vlen)
 
-    if(vlen < 0) return -EINVAL;
     long res = 0;
     Process *cp = Process::GetCurrent();
 
-    for(int i = 0; i < vlen; ++i)
+    for(size_t i = 0; i < vlen; ++i)
     {
         BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len)
         long r = cp->Read(fd, vec[i].iov_base, vec[i].iov_len);
@@ -390,13 +437,12 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
 {
     BUFFER_CHECK(vec, sizeof(iovec) * vlen)
 
-    if(vlen < 0) return -EINVAL;
     long res = 0;
     Process *cp = Process::GetCurrent();
 
-    for(int i = 0; i < vlen; ++i)
+    for(size_t i = 0; i < vlen; ++i)
     {
-        BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len);
+        BUFFER_CHECK(vec[i].iov_base, vec[i].iov_len)
         long r = cp->Write(fd, vec[i].iov_base, vec[i].iov_len);
         if(r < 0) return r;
         res += r;
@@ -1080,6 +1126,10 @@ long SysCalls::sysSignalReturn()
 {
     Thread *ct = Thread::GetCurrent();
 
+    // this call is invalid outside signal handler
+    if(ct->CurrentSignal < 0)
+        return -EINVAL;
+
     // HACKHACK: modifying syscall return address
     uintptr_t *thisStackFrame = reinterpret_cast<uintptr_t *>(__builtin_frame_address(0));
     uintptr_t *prevStackFrame = reinterpret_cast<uintptr_t *>(*thisStackFrame);
@@ -1111,6 +1161,8 @@ void SysCalls::Initialize()
     Handlers[SYS_mmap] = reinterpret_cast<SysCallHandler>(sys_mmap);
     Handlers[SYS_munmap] = reinterpret_cast<SysCallHandler>(sys_munmap);
     Handlers[SYS_brk] = reinterpret_cast<SysCallHandler>(sys_brk);
+    Handlers[SYS_rt_sigprocmask] = reinterpret_cast<SysCallHandler>(sys_rt_sigprocmask);
+    Handlers[SYS_rt_sigreturn] = reinterpret_cast<SysCallHandler>(sys_rt_sigreturn);
     Handlers[SYS_readv] = reinterpret_cast<SysCallHandler>(sys_readv);
     Handlers[SYS_writev] = reinterpret_cast<SysCallHandler>(sys_writev);
     Handlers[SYS_pipe] = reinterpret_cast<SysCallHandler>(sys_pipe);

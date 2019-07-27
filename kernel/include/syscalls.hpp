@@ -14,6 +14,8 @@
 #define SYS_mmap                        9
 #define SYS_munmap                      11
 #define SYS_brk                         12
+#define SYS_rt_sigprocmask              14
+#define SYS_rt_sigreturn                15
 #define SYS_readv                       19
 #define SYS_writev                      20
 #define SYS_pipe                        22
@@ -118,6 +120,8 @@ class SysCalls
     static long sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, int fd, off_t off);
     static long sys_munmap(uintptr_t addr, size_t len);
     static long sys_brk(uintptr_t brk);
+    static long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize);
+    static long sys_rt_sigreturn();
     static long sys_readv(int fd, const struct iovec *vec, size_t vlen);
     static long sys_writev(int fd, const struct iovec *vec, size_t vlen);
     static long sys_pipe(int *fds);

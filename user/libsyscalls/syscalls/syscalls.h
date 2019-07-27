@@ -11,6 +11,8 @@
 #define SYS_mmap                        9
 #define SYS_munmap                      11
 #define SYS_brk                         12
+#define SYS_rt_sigprocmask              14
+#define SYS_rt_sigreturn                15
 #define SYS_readv                       19
 #define SYS_writev                      20
 #define SYS_pipe                        22
@@ -169,6 +171,8 @@ off_t sys_lseek(int fd, off_t offset, unsigned int origin);
 void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off);
 int sys_munmap(void *addr, size_t len);
 void *sys_brk(void *brk);
+long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize);
+long sys_rt_sigreturn(void);
 long sys_readv(int fd, const void *vec, size_t vlen);
 long sys_writev(int fd, const void *vec, size_t vlen);
 long sys_pipe(int *fds);

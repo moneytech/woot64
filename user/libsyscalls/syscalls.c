@@ -50,6 +50,16 @@ void *sys_brk(void *brk)
     return (void *)__syscall1(SYS_brk, (long)brk);
 }
 
+long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize)
+{
+    return __syscall4(SYS_rt_sigprocmask, (long)how, (long)set, (long)oldset, (long)sigsetsize);
+}
+
+long sys_rt_sigreturn(void)
+{
+    return __syscall0(SYS_rt_sigreturn);
+}
+
 long sys_readv(int fd, const void *vec, size_t vlen)
 {
     return __syscall3(SYS_readv, fd, (long)vec, vlen);
