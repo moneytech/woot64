@@ -30,6 +30,11 @@ int sys_fstat(int fd, void *statbuf)
     return __syscall2(SYS_fstat, fd, (long)statbuf);
 }
 
+int sys_lstat(const char *filename, void *statbuf)
+{
+    return __syscall2(SYS_stat, (long)filename, (long)statbuf);
+}
+
 off_t sys_lseek(int fd, off_t offset, unsigned int origin)
 {
     return __syscall3(SYS_lseek, fd, offset, origin);

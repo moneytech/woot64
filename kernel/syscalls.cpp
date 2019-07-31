@@ -304,6 +304,30 @@ long SysCalls::sys_fstat(int fd, stat *statbuf)
     return 0;
 }
 
+long SysCalls::sys_lstat(const char *filename, stat *statbuf)
+{
+    BUFFER_CHECK(filename, String::Size(filename))
+    BUFFER_CHECK(statbuf, sizeof(stat))
+
+    Memory::Zero(statbuf, sizeof(struct stat));
+    File *f = File::Open(filename, 0, 0, false);
+    if(!f) return -EBADF;
+    INode *inode = f->DEntry->INode;
+    statbuf->st_ino = inode->Number;
+    statbuf->st_mode = inode->GetMode();
+    statbuf->st_nlink = inode->GetLinkCount();
+    statbuf->st_uid = inode->GetUID();
+    statbuf->st_gid = inode->GetGID();
+    statbuf->st_size = inode->GetSize();
+    statbuf->st_blksize = 512;
+    statbuf->st_blocks = align(statbuf->st_size, statbuf->st_blksize);
+    statbuf->st_atim.tv_sec = inode->GetAccessTime();
+    statbuf->st_mtim.tv_sec = inode->GetModifyTime();
+    statbuf->st_ctim.tv_sec = inode->GetCreateTime();
+    delete f;
+    return 0;
+}
+
 long SysCalls::sys_lseek(int fd, off_t offset, unsigned int origin)
 {
     File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
@@ -1164,6 +1188,7 @@ void SysCalls::Initialize()
     Handlers[SYS_close] = reinterpret_cast<SysCallHandler>(sys_close);
     Handlers[SYS_stat] = reinterpret_cast<SysCallHandler>(sys_stat);
     Handlers[SYS_fstat] = reinterpret_cast<SysCallHandler>(sys_fstat);
+    Handlers[SYS_lstat] = reinterpret_cast<SysCallHandler>(sys_lstat);
     Handlers[SYS_lseek] = reinterpret_cast<SysCallHandler>(sys_lseek);
     Handlers[SYS_mmap] = reinterpret_cast<SysCallHandler>(sys_mmap);
     Handlers[SYS_munmap] = reinterpret_cast<SysCallHandler>(sys_munmap);

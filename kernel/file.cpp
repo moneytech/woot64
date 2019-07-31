@@ -37,9 +37,11 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
             continue;
         }
         ::DEntry *nextDe = FileSystem::LookupDEntry(dentry, t.String);
-        FileSystem::PutDEntry(dentry);
+        //FileSystem::PutDEntry(dentry);
+        ::DEntry *prevDE = dentry;
         if(!nextDe)
         {
+            FileSystem::PutDEntry(prevDE);
             if(flags & O_CREAT)
             {
                 parent->INode->Create(name, S_IFREG | createMode);
@@ -60,7 +62,7 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
                 delete[] linkPath;
                 return nullptr;
             }
-            File *file = open(parent, linkPath, flags, createMode, followSymLinks);
+            File *file = open(prevDE, linkPath, flags, createMode, followSymLinks);
             if(!file)
             {   // broken symlink
                 delete[] linkPath;
@@ -73,6 +75,7 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
             delete file;
             delete[] linkPath;
         }
+        FileSystem::PutDEntry(prevDE);
     }
     if((flags & O_ACCMODE) != O_RDONLY && flags & O_TRUNC)
     {

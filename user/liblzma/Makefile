@@ -22,7 +22,7 @@ $(CONFIG_STATUS): $(SRC_DIR)/configure
 	$(SRC_DIR)/configure $(CONFIG_OPTS)
 
 install:
-	cp $(WOOT_TOP_DIR)/user/liblzma/lib/*.so* $(WOOT_TOP_DIR)/root/lib/
+	cp -R $(WOOT_TOP_DIR)/user/liblzma/lib/*.so* $(WOOT_TOP_DIR)/root/lib/
 
 clean:
 	cd $(BUILD_DIR) && \

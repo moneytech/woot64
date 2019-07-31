@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <woot/ipc.h>
 #include <woot/process.h>
 #include <woot/thread.h>
 
@@ -34,6 +35,8 @@ int main(int argc, char *argv[])
         processWait(fmProc, -1);
         processDelete(fmProc);
     }
+
+    ipcSendMessage(0, MSG_QUIT, MSG_FLAG_NONE, NULL, 0);
 
     processWait(timeProc, 1000);
     processDelete(timeProc);

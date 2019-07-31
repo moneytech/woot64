@@ -36,15 +36,11 @@ build/config.status:
 	../libpng-1.6.36/configure --prefix="$(WOOT_TOP_DIR)/user/libpng" \
 	--host=x86_64-linux-gnu
 
-install: $(LIB_DIR)/$(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB).16
+install: $(LIB_DIR)/$(SHARED_LIB)
 
 $(LIB_DIR)/$(SHARED_LIB): lib/$(SHARED_LIB)
 	mkdir -p $(LIB_DIR)
-	cp lib/$(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB)
-
-$(LIB_DIR)/$(SHARED_LIB).16: lib/$(SHARED_LIB).16
-	mkdir -p $(LIB_DIR)
-	cp lib/$(SHARED_LIB).16 $(LIB_DIR)/$(SHARED_LIB).16
+	cp -R lib/$(SHARED_LIB)* $(LIB_DIR)/
 
 distclean:
 	-rm -rf build bin lib share include
