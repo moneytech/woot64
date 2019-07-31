@@ -264,7 +264,7 @@ long SysCalls::sys_stat(const char *filename, stat *statbuf)
     BUFFER_CHECK(statbuf, sizeof(stat))
 
     Memory::Zero(statbuf, sizeof(struct stat));
-    File *f = File::Open(filename, 0, 0);
+    File *f = File::Open(filename, 0, 0, true);
     if(!f) return -EBADF;
     INode *inode = f->DEntry->INode;
     statbuf->st_ino = inode->Number;
@@ -488,13 +488,13 @@ long SysCalls::sys_getcwd(char *buf, size_t size)
     DEntry *dentry = Process::GetCurrentDir();
     if(!dentry) return -ENOENT;
     dentry->GetFullPath(buf, size);
-    return (long)buf;
+    return reinterpret_cast<long>(buf);
 }
 
 long SysCalls::sys_chdir(char *pathname)
 {
     BUFFER_CHECK(pathname, String::Size(pathname))
-    File *dir = File::Open(pathname, O_DIRECTORY, 0);
+    File *dir = File::Open(pathname, O_DIRECTORY, 0, true);
     if(!dir) return -ENOENT;
     DEntry *dentry = Process::GetCurrentDir();
     if(dentry) FileSystem::PutDEntry(dentry);
@@ -506,7 +506,7 @@ long SysCalls::sys_chdir(char *pathname)
 long SysCalls::sys_sysinfo(struct sysinfo *info)
 {
     BUFFER_CHECK(info, sizeof(sysinfo))
-    info->uptime = (long)Time::GetSystemUpTime();
+    info->uptime = static_cast<long>(Time::GetSystemUpTime());
     info->loads[0] = 0;
     info->loads[1] = 0;
     info->loads[2] = 0;
@@ -516,7 +516,7 @@ long SysCalls::sys_sysinfo(struct sysinfo *info)
     info->bufferram = 0;
     info->totalswap = 0;
     info->freeswap = 0;
-    info->procs = Process::GetCount();
+    info->procs = static_cast<unsigned short>(Process::GetCount());
     info->totalhigh = 0;
     info->freehigh = 0;
     info->mem_unit = PAGE_SIZE;

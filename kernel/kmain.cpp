@@ -49,7 +49,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Process *kernelProc = Process::GetCurrent();
 
     // initialize current directory for kernel process
-    File *rootDir = File::Open("WOOT_OS~/", O_RDONLY, 0);
+    File *rootDir = File::Open("WOOT_OS~/", O_RDONLY, 0, true);
     if(rootDir)
     {
         kernelProc->CurrentDirectory = FileSystem::GetDEntry(rootDir->DEntry);

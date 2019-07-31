@@ -12,16 +12,16 @@
 #include <volume.hpp>
 
 // these 2 functions were taken from linux ext2 driver (balloc.c)
-static inline int test_root(int a, int b)
+static inline int test_root(uint32_t a, uint32_t b)
 {
-    int num = b;
+    uint32_t num = b;
 
     while (a > num)
         num *= b;
     return num == a;
 }
 
-static int ext2_group_sparse(int group)
+static int ext2_group_sparse(uint32_t group)
 {
     if (group <= 1)
         return 1;
@@ -80,7 +80,7 @@ int EXT2FileSystemType::Detect(Volume *vol)
     }
 
     DEBUG("[ext2] Found valid filesystem on volume '%d'\n", vol->Id);
-    EXT2 *fs = new EXT2(vol, this, sblock, readOnly);
+    /*EXT2 *fs =*/ new EXT2(vol, this, sblock, readOnly);
     delete sblock;
     FileSystem::UnLock();
     return 1;
@@ -113,7 +113,7 @@ uint8_t EXT2::modeToFileType(uint32_t mode)
 
 bool EXT2::isValidFileName(const char *name)
 {
-    int nameLen = String::Length(name);
+    size_t nameLen = String::Length(name);
     if(nameLen > 255)
         return false; // name too long
     if(!String::Compare(name, ".") || !String::Compare(name, ".."))
@@ -123,13 +123,13 @@ bool EXT2::isValidFileName(const char *name)
     return true;
 }
 
-EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bool ro) :
-    FileSystem(vol, type),
+EXT2::EXT2(class Volume *vol, FileSystemType *fsType, EXT2::SuperBlock *sblock, bool ro) :
+    FileSystem(vol, fsType),
     superBlock(new SuperBlock),
     readOnly((Memory::Move(superBlock, sblock, sizeof(SuperBlock)), ro)),
-    blockSize(1024 << superBlock->s_log_block_size),
-    fragSize(superBlock->s_log_frag_size < 0 ? (1024 >> -superBlock->s_log_frag_size) : (1024 << superBlock->s_log_frag_size)),
-    totalSize((uint64_t)blockSize * superBlock->s_blocks_count),
+    blockSize(1024u << superBlock->s_log_block_size),
+    fragSize(superBlock->s_log_frag_size < 0 ? (1024u >> -superBlock->s_log_frag_size) : (1024u << superBlock->s_log_frag_size)),
+    totalSize(static_cast<uint64_t>(blockSize * superBlock->s_blocks_count)),
     blockGroupCount((superBlock->s_blocks_count - 1) / superBlock->s_blocks_per_group + 1),
     BGDT(new BlockGroupDescriptor[blockGroupCount]),
     BGDTSize(blockGroupCount * sizeof(BlockGroupDescriptor)),
@@ -154,7 +154,7 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
     if(sblock->s_volume_name[0])
         fsLabel = String::Duplicate(sblock->s_volume_name);
     SetRoot(new DEntry("/", nullptr, rootINode));
-    superBlock->s_mtime = Time::GetTime();
+    superBlock->s_mtime = static_cast<uint32_t>(Time::GetTime());
     ++superBlock->s_mnt_count;
     superDirty = true;
     initialized = true;
@@ -162,9 +162,9 @@ EXT2::EXT2(class Volume *vol, FileSystemType *type, EXT2::SuperBlock *sblock, bo
 
 uint64_t EXT2::getINodeOffset(ino_t n)
 {
-    uint32_t bg = (n - 1) / superBlock->s_inodes_per_group;
+    int64_t bg = (n - 1) / superBlock->s_inodes_per_group;
     uint64_t idx = (n - 1) % superBlock->s_inodes_per_group;
-    return (uint64_t)BGDT[bg].bg_inode_table * blockSize + superBlock->s_inode_size * idx;
+    return static_cast<uint64_t>(BGDT[bg].bg_inode_table) * blockSize + superBlock->s_inode_size * idx;
 }
 
 uint64_t EXT2::blockGroupOffset(uint bg)
@@ -184,9 +184,9 @@ uint64_t EXT2::bgdtOffset(uint bg)
     return blockGroupOffset(bg) + blockSize;
 }
 
-bool EXT2::updateBGDT(uint bg, off_t startOffs, size_t n)
+bool EXT2::updateBGDT(uint bg, uint64_t startOffs, size_t n)
 {
-    uint8_t *bgdData = startOffs + (uint8_t *)(BGDT + bg);
+    uint8_t *bgdData = startOffs + reinterpret_cast<uint8_t *>(BGDT + bg);
     for(uint i = 0; i < blockGroupCount; ++i)
     {
         if(!hasSuperBlock(i))
@@ -283,7 +283,7 @@ uint32_t EXT2::allocBlockInGroup(uint g)
     BlockGroupDescriptor *bgd = BGDT + g;
     if(!bgd->bg_free_blocks_count)
         return 0;
-    for(int j = 0; j < (superBlock->s_blocks_per_group / 8); ++j)
+    for(uint j = 0; j < (superBlock->s_blocks_per_group / 8); ++j)
     {
         uint64_t byteOffs = blockSize * bgd->bg_block_bitmap + j;
         uint8_t b;
@@ -291,7 +291,7 @@ uint32_t EXT2::allocBlockInGroup(uint g)
             return 0;
         if(b == 0xFF) continue; // no free block in this byte
         // find lowest clear bit
-        int bit = 0;
+        uint bit = 0;
         for(bit = 0; bit < 8; ++bit)
         {
             if(!(b & (1 << bit)))
@@ -316,13 +316,13 @@ uint32_t EXT2::allocBlockInGroup(uint g)
 
 uint32_t EXT2::allocBlock(uint preferredGroup, uint *group)
 {
-    if(preferredGroup != ~0)
+    if(preferredGroup != ~0u)
     {
         uint32_t blk = allocBlockInGroup(preferredGroup);
         if(group) *group = preferredGroup;
         if(blk) return blk;
     }
-    for(int i = 0; i < blockGroupCount; ++i)
+    for(uint i = 0; i < blockGroupCount; ++i)
     {
         if(i == preferredGroup)
             continue; // we have already checked in that group
@@ -338,9 +338,9 @@ bool EXT2::freeBlock(uint32_t block)
     if(!block) return false;
     --block;
 
-    int bGroup = block / superBlock->s_blocks_per_group;
-    int bOffs = (block % superBlock->s_blocks_per_group) / 8;
-    int bBit = (block % superBlock->s_blocks_per_group) % 8;
+    uint bGroup = block / superBlock->s_blocks_per_group;
+    uint bOffs = (block % superBlock->s_blocks_per_group) / 8;
+    uint bBit = (block % superBlock->s_blocks_per_group) % 8;
 
     BlockGroupDescriptor *bgd = BGDT + bGroup;
 
@@ -364,7 +364,7 @@ bool EXT2::freeBlock(uint32_t block)
     return true;
 }
 
-int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
+int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, uint64_t n)
 {
     uint64_t size = inode->GetSize();
     if((position + n) > size)
@@ -373,9 +373,9 @@ int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
 
     time_t curTime = Time::GetTime();
 
-    int64_t bytesLeft = n;
-    uint8_t *buf = (uint8_t *)buffer;
-    while(bytesLeft > 0)
+    uint64_t bytesLeft = n;
+    uint8_t *buf = reinterpret_cast<uint8_t *>(buffer);
+    while(bytesLeft)
     {
         int64_t blockIdx = getINodeBlock(inode, position / blockSize);
         if(!blockIdx)
@@ -397,7 +397,7 @@ int64_t EXT2::read(FSINode *inode, void *buffer, uint64_t position, int64_t n)
     return n - bytesLeft;
 }
 
-int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position, int64_t n)
+int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position, uint64_t n)
 {
     uint64_t size = inode->GetSize();
 
@@ -410,15 +410,15 @@ int64_t EXT2::write(EXT2::FSINode *inode, const void *buffer, uint64_t position,
 
     time_t curTime = Time::GetTime();
 
-    int64_t bytesLeft = n;
-    uint8_t *buf = (uint8_t *)buffer;
-    while(bytesLeft > 0)
+    uint64_t bytesLeft = n;
+    uint8_t *buf = reinterpret_cast<uint8_t *>(const_cast<void *>(buffer));
+    while(bytesLeft)
     {
-        int64_t blockNum = position / blockSize;
-        int64_t blockIdx = getINodeBlock(inode, blockNum);
+        uint64_t blockNum = position / blockSize;
+        uint64_t blockIdx = getINodeBlock(inode, blockNum);
         if(!blockIdx)
         {
-            blockIdx = allocBlock(~0, nullptr); // TODO: add preferred block group to reduce head seek times
+            blockIdx = allocBlock(~0u, nullptr); // TODO: add preferred block group to reduce head seek times
             if(!blockIdx)
                 break;
             if(!setINodeBlock(inode, blockNum, blockIdx))
@@ -692,7 +692,7 @@ bool EXT2::setINodeBlock(FSINode *inode, uint32_t n, uint32_t block)
 
 bool EXT2::zeroBlock(uint32_t block)
 {
-    if(volume->Write(blockOfZeros, (int64_t)blockSize * block, blockSize) != blockSize)
+    if(volume->Write(blockOfZeros, static_cast<uint64_t>(blockSize) * block, blockSize) != blockSize)
         return false;
     return true;
 }
@@ -732,8 +732,8 @@ UUID EXT2::GetUUID()
     if(!initialized)
         return nullptr;
     FSINode *inode = new FSINode(number, this);
-    int64_t btr = min(sizeof(EXT2::INode), superBlock->s_inode_size);
-    int64_t br = volume->Read(&inode->Data, getINodeOffset(number), btr);
+    uint64_t btr = min(sizeof(EXT2::INode), superBlock->s_inode_size);
+    uint64_t br = volume->Read(&inode->Data, getINodeOffset(number), btr);
     if(br != btr)
     {
         delete inode;
@@ -746,9 +746,9 @@ bool EXT2::WriteINode(::INode *inode)
 {
     if(!initialized)
         return false;
-    FSINode *i = (FSINode *)inode;
-    int64_t btw = min(sizeof(EXT2::INode), superBlock->s_inode_size);
-    int64_t bw = volume->Write(&i->Data, getINodeOffset(inode->Number), btw);
+    FSINode *i = reinterpret_cast<FSINode *>(inode);
+    uint64_t btw = min(sizeof(EXT2::INode), superBlock->s_inode_size);
+    size_t bw = volume->Write(&i->Data, getINodeOffset(inode->Number), btw);
     return bw == btw;
 }
 
@@ -758,7 +758,7 @@ bool EXT2::WriteSuperBlock()
         return false;
     if(!superDirty)
         return true;
-    int64_t bw = volume->Write(superBlock, 1024, sizeof(SuperBlock));
+    size_t bw = volume->Write(superBlock, 1024, sizeof(SuperBlock));
     if(bw != sizeof(SuperBlock))
     {
         DEBUG("[ext2] ext2SuperBlockWriteSuper: couldn't write main\n"
@@ -790,8 +790,8 @@ EXT2::FSINode::FSINode(ino_t number, FileSystem *fs) :
 
 void EXT2::FSINode::setSize(uint64_t size)
 {
-    if(((EXT2 *)FS)->superBlock->s_rev_level < 1)
-        Data.i_size = size;
+    if((reinterpret_cast<EXT2 *>(FS))->superBlock->s_rev_level < 1)
+        Data.i_size = static_cast<uint32_t>(size);
     else
     {
         if(EXT2_S_ISREG(Data.i_mode))
@@ -803,7 +803,7 @@ void EXT2::FSINode::setSize(uint64_t size)
 
 bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode)
 {
-    EXT2 *fs = (EXT2 *)newINode->FS;
+    EXT2 *fs = reinterpret_cast<EXT2 *>(newINode->FS);
     size_t blockSize = fs->blockSize;
 
     if(!newINode->Resize(blockSize))
@@ -811,14 +811,14 @@ bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode
 
     struct DirInitializer
     {
-        DirectoryEntry dotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dot), 1, EXT2_FT_DIR};
+        DirectoryEntry dotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dot), 1, { EXT2_FT_DIR }, {} };
         char dot[4] = { '.' };
-        DirectoryEntry dotDotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dotDot), 2, EXT2_FT_DIR};
+        DirectoryEntry dotDotDE = { 0, sizeof(EXT2::DirectoryEntry) + sizeof(DirInitializer::dotDot), 2, { EXT2_FT_DIR}, {} };
         char dotDot[4] = { '.', '.' };
     } dirInitializer;
-    dirInitializer.dotDE.inode = newINode->Number;
-    dirInitializer.dotDotDE.inode = parentINode->Number;
-    dirInitializer.dotDotDE.rec_len = blockSize - offsetof(DirInitializer, dotDotDE);
+    dirInitializer.dotDE.inode = static_cast<uint32_t>(newINode->Number);
+    dirInitializer.dotDotDE.inode = static_cast<uint32_t>(parentINode->Number);
+    dirInitializer.dotDotDE.rec_len = static_cast<uint16_t>(blockSize - offsetof(DirInitializer, dotDotDE));
 
     if(newINode->Write(&dirInitializer, 0, sizeof(dirInitializer)) != sizeof(dirInitializer))
         return false;
@@ -832,14 +832,14 @@ bool EXT2::FSINode::buildDirectory(EXT2::FSINode *parentINode, FSINode *newINode
 
 uint64_t EXT2::FSINode::GetSize()
 {
-    FSINode *inode = (FSINode *)this;
-    uint64_t size = ((EXT2 *)FS)->superBlock->s_rev_level < 1 ? inode->Data.i_size : (inode->Data.i_size | ((inode->Data.i_mode & 0xF000) == EXT2_S_IFREG ? ((uint64_t)inode->Data.i_dir_acl << 32) : 0));
+    FSINode *inode = reinterpret_cast<FSINode *>(this);
+    uint64_t size = (reinterpret_cast<EXT2 *>(FS))->superBlock->s_rev_level < 1 ? inode->Data.i_size : (inode->Data.i_size | ((inode->Data.i_mode & 0xF000) == EXT2_S_IFREG ? ((uint64_t)inode->Data.i_dir_acl << 32) : 0));
     return size;
 }
 
 mode_t EXT2::FSINode::GetMode()
 {
-    time_t res = Data.i_mode;
+    mode_t res = Data.i_mode;
     return res;
 }
 
@@ -881,21 +881,21 @@ gid_t EXT2::FSINode::GetGID()
 
 bool EXT2::FSINode::SetCreateTime(time_t t)
 {
-    Data.i_ctime = t;
+    Data.i_ctime = static_cast<uint32_t>(t);
     Dirty = true;
     return true;
 }
 
 bool EXT2::FSINode::SetModifyTime(time_t t)
 {
-    Data.i_mtime = t;
+    Data.i_mtime = static_cast<uint32_t>(t);
     Dirty = true;
     return true;
 }
 
 bool EXT2::FSINode::SetAccessTime(time_t t)
 {
-    Data.i_atime = t;
+    Data.i_atime = static_cast<uint32_t>(t);
     Dirty = true;
     return true;
 }
@@ -904,9 +904,9 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
 {
     if(!isValidFileName(name))
         return false;
-    int nameLen = String::Length(name);
-    DirectoryEntry de = { 0, (uint16_t)align(sizeof(DirectoryEntry) + nameLen, 4),
-                          (uint8_t)nameLen, 0 };
+    size_t nameLen = String::Length(name);
+    DirectoryEntry de = { 0, static_cast<uint16_t>(align(sizeof(DirectoryEntry) + nameLen, 4)),
+                          static_cast<uint8_t>(nameLen), { 0 }, {} };
     DirectoryEntry cde;
     int64_t readRes = 0, position = 0;
 
@@ -920,7 +920,7 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
         return false;
 
     // get fs revision, new inode, upd, gid and block size
-    EXT2 *fs = (EXT2 *)FS;
+    EXT2 *fs = reinterpret_cast<EXT2 *>(FS);
     size_t blockSize = fs->blockSize;
     uint32_t fsRev = fs->superBlock->s_rev_level;
     uint32_t bg = 0;
@@ -933,15 +933,15 @@ bool EXT2::FSINode::Create(const char *name, mode_t mode)
     uid_t uid = ct->Process->UID;
     gid_t gid = ct->Process->GID;
 
-    FSINode *inode = (FSINode *)fs->GetINode(ino);
+    FSINode *inode = reinterpret_cast<FSINode *>(fs->GetINode(ino));
     if(!inode)
         return false;
-    inode->Data.i_mode = mode;
-    inode->Data.i_uid = uid;
-    inode->Data.i_ctime = Time::GetTime();
+    inode->Data.i_mode = static_cast<uint16_t>(mode);
+    inode->Data.i_uid = static_cast<uint16_t>(uid);
+    inode->Data.i_ctime = static_cast<uint32_t>(Time::GetTime());
     inode->Data.i_mtime = inode->Data.i_ctime;
     inode->Data.i_dtime = 0;
-    inode->Data.i_gid = gid;
+    inode->Data.i_gid = static_cast<uint16_t>(gid);
     inode->Data.i_links_count = 1;
     inode->Dirty = true;
 
@@ -1061,7 +1061,7 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
     return res;
 }
 
-::DirectoryEntry *EXT2::FSINode::ReadDir(int64_t position, int64_t *newPosition)
+::DirectoryEntry *EXT2::FSINode::ReadDir(uint64_t position, uint64_t *newPosition)
 {
     if(!(Data.i_mode & EXT2_S_IFDIR))
     { // we can't do ReadDir for non-directory
@@ -1112,9 +1112,9 @@ int64_t EXT2::FSINode::Write(const void *buffer, int64_t position, int64_t n)
     return res;
 }
 
-int64_t EXT2::FSINode::Resize(int64_t size)
+int64_t EXT2::FSINode::Resize(uint64_t size)
 {
-    EXT2 *fs = (EXT2 *)FS;
+    EXT2 *fs = reinterpret_cast<EXT2 *>(FS);
     time_t curTime = Time::GetTime();
 
     size_t currentSize = GetSize();
@@ -1167,7 +1167,7 @@ int64_t EXT2::FSINode::Resize(int64_t size)
                 return bytesWritten;
             curPos += bytesWritten;
             SetModifyTime(curTime);
-            fs->superBlock->s_wtime = curTime;
+            fs->superBlock->s_wtime = static_cast<uint32_t>(curTime);
             fs->superDirty = true;
             setSize(max(curPos, GetSize()));
             Dirty = true;
@@ -1180,6 +1180,27 @@ int64_t EXT2::FSINode::Resize(int64_t size)
     return currentSize;
 }
 
+int EXT2::FSINode::GetLink(char *buf, size_t bufSize)
+{
+    if(!buf || !bufSize)
+        return -EINVAL;
+    if(!EXT2_S_ISLINK(Data.i_mode))
+        return -EINVAL;
+    uint64_t size = GetSize();
+    if(size < 60)
+    {   // short symlink (data in the inode itself)
+        Memory::Move(buf, Data.i_link, bufSize < size ? bufSize : size);
+        buf[bufSize] = 0;
+        return static_cast<int>(size);
+    }
+
+    // long symlink (data in regular blocks)
+    int64_t res = reinterpret_cast<EXT2 *>(FS)->read(this, buf, 0, bufSize);
+    if(res >= 0) buf[res] = 0;
+
+    return static_cast<int>(res);
+}
+
 int EXT2::FSINode::Remove(const char *name)
 {
     if(!(Data.i_mode & EXT2_S_IFDIR))
@@ -1190,7 +1211,7 @@ int EXT2::FSINode::Remove(const char *name)
     EXT2::DirectoryEntry de, prevDe;
     char nameBuf[256];
     uint64_t size = GetSize();
-    int64_t position = 0, prevPos = 0;
+    uint64_t position = 0, prevPos = 0;
     while(position < size)
     {
         if(Read(&de, position, sizeof(de)) != sizeof(de) || de.rec_len < sizeof(de))

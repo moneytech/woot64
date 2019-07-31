@@ -677,7 +677,7 @@ int Process::Open(const char *filename, int flags, mode_t mode)
 {
     if(!filename) return -EINVAL;
     if(!Lock()) return -EBUSY;
-    File *f = File::Open(filename, flags, mode);
+    File *f = File::Open(filename, flags, mode, true);
     if(!f)
     {
         UnLock();

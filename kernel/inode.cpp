@@ -52,27 +52,31 @@ gid_t INode::GetGID()
 
 bool INode::SetCreateTime(time_t t)
 {
+    (void)t;
     return false;
 }
 
 bool INode::SetModifyTime(time_t t)
 {
+    (void)t;
     return false;
 }
 
 bool INode::SetAccessTime(time_t t)
 {
+    (void)t;
     return false;
 }
 
 bool INode::Create(const char *name, mode_t mode)
 {
+    (void)name, (void)mode;
     return false;
 }
 
 ino_t INode::Lookup(const char *name)
 {   // generic implementation
-    int64_t position = 0;
+    uint64_t position = 0;
     uint64_t size = GetSize();
     ino_t res = -1;
     while(position < size)
@@ -92,26 +96,37 @@ ino_t INode::Lookup(const char *name)
 
 int64_t INode::Read(void *buffer, int64_t position, int64_t n)
 {
+    (void)buffer, (void)position, (void)n;
     return -ENOSYS;
 }
 
 int64_t INode::Write(const void *buffer, int64_t position, int64_t n)
 {
+    (void)buffer, (void)position, (void)n;
     return -ENOSYS;
 }
 
-DirectoryEntry *INode::ReadDir(int64_t position, int64_t *newPosition)
+DirectoryEntry *INode::ReadDir(uint64_t position, uint64_t *newPosition)
 {
+    (void)position, (void)newPosition;
     return nullptr;
 }
 
-int64_t INode::Resize(int64_t size)
+int64_t INode::Resize(uint64_t size)
 {
+    (void)size;
     return -ENOSYS;
 }
 
 int INode::Remove(const char *name)
 {
+    (void)name;
+    return -ENOSYS;
+}
+
+int INode::GetLink(char *buf, size_t bufSize)
+{
+    (void)buf, (void)bufSize;
     return -ENOSYS;
 }
 

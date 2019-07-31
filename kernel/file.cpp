@@ -12,7 +12,7 @@
 #include <tokenizer.hpp>
 #include <volume.hpp>
 
-File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMode)
+File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMode, bool followSymLinks)
 {
     //printf("open %s\n", name);
     if(!parent || !parent->INode || !name)
@@ -43,11 +43,36 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
             if(flags & O_CREAT)
             {
                 parent->INode->Create(name, S_IFREG | createMode);
-                return open(parent, name, flags & ~O_CREAT, 0);
+                return open(parent, name, flags & ~O_CREAT, 0, followSymLinks);
             }
             return nullptr;
         }
         dentry = nextDe;
+
+        mode_t mode = dentry->INode->GetMode();
+        if(S_ISLINK(mode) && followSymLinks)
+        {
+            char *linkPath = new char[MAX_PATH_LENGTH];
+            int res = dentry->INode->GetLink(linkPath, MAX_PATH_LENGTH);
+            FileSystem::PutDEntry(dentry);
+            if(res < 0)
+            {
+                delete[] linkPath;
+                return nullptr;
+            }
+            File *file = open(parent, linkPath, flags, createMode, followSymLinks);
+            if(!file)
+            {   // broken symlink
+                delete[] linkPath;
+                return nullptr;
+            }
+            dentry = FileSystem::GetDEntry(file->DEntry);
+            if(dentry->Name) delete[] dentry->Name;
+            dentry->Name = String::Duplicate(t.String);
+            dentry->Parent = FileSystem::GetDEntry(parent);
+            delete file;
+            delete[] linkPath;
+        }
     }
     if((flags & O_ACCMODE) != O_RDONLY && flags & O_TRUNC)
     {
@@ -63,6 +88,7 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
         FileSystem::PutDEntry(dentry);
         return nullptr;
     }
+
     File *file = new File(dentry, flags, mode);
     if(flags & O_APPEND)
         file->Position = file->GetSize();
@@ -82,17 +108,17 @@ int64_t File::getSize()
     return DEntry && DEntry->INode ? static_cast<int64_t>(DEntry->INode->GetSize()) : -EINVAL;
 }
 
-File *File::Open(::DEntry *parent, const char *name, int flags, mode_t mode)
+File *File::Open(::DEntry *parent, const char *name, int flags, mode_t mode, bool followSymLinks)
 {
     //printf("open %s\n", name);
     if(!FileSystem::Lock())
         return nullptr;
-    File *file = open(parent, name, flags, mode);
+    File *file = open(parent, name, flags, mode, followSymLinks);
     FileSystem::UnLock();
     return file;
 }
 
-File *File::Open(const char *name, int flags, mode_t mode)
+File *File::Open(const char *name, int flags, mode_t mode, bool followSymLinks)
 {
     if(!name || !String::Length(name))
         name = ".";
@@ -134,7 +160,7 @@ File *File::Open(const char *name, int flags, mode_t mode)
         return nullptr;
     }
 
-    File *file = open(dentry, name + (hasFs ? path.Tokens[1].Offset : 0), flags, mode);
+    File *file = open(dentry, name + (hasFs ? path.Tokens[1].Offset : 0), flags, mode, followSymLinks);
     FileSystem::UnLock();
     return file;
 }
@@ -254,7 +280,7 @@ DirectoryEntry *File::ReadDir()
         return nullptr;
     if(!FileSystem::Lock())
         return nullptr;
-    int64_t newPos = Position;
+    uint64_t newPos = Position;
     DirectoryEntry *res = DEntry->INode ? DEntry->INode->ReadDir(Position, &newPos) : nullptr;
     if(res) Position = newPos;
     FileSystem::UnLock();

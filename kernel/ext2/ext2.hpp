@@ -203,7 +203,11 @@ public:
         uint32_t i_blocks;
         uint32_t i_flags;
         uint32_t i_osd1;
-        uint32_t i_block[15];
+        union
+        {
+            uint32_t i_block[15];
+            char i_link[60];
+        };
         uint32_t i_generation;
         uint32_t i_file_acl;
         uint32_t i_dir_acl;
@@ -253,8 +257,9 @@ private:
         virtual bool Create(const char *name, mode_t mode);
         virtual int64_t Read(void *buffer, int64_t position, int64_t n);
         virtual int64_t Write(const void *buffer, int64_t position, int64_t n);
-        virtual ::DirectoryEntry *ReadDir(int64_t position, int64_t *newPosition);
-        virtual int64_t Resize(int64_t size);
+        virtual ::DirectoryEntry *ReadDir(uint64_t position, uint64_t *newPosition);
+        virtual int64_t Resize(uint64_t size);
+        virtual int GetLink(char *buf, size_t bufSize);
         virtual int Remove(const char *name);
         virtual int Release();
     };
@@ -269,7 +274,7 @@ private:
     size_t blockGroupCount;
     BlockGroupDescriptor *BGDT;
     size_t BGDTSize;
-    int64_t BGDTOffset;
+    uint64_t BGDTOffset;
     bool initialized;
     bool superDirty;
     uint8_t *blockOfZeros;
@@ -278,20 +283,20 @@ private:
     static uint8_t modeToFileType(uint32_t mode);
     static bool isValidFileName(const char *name);
 
-    EXT2(class Volume *vol, FileSystemType *type, SuperBlock *sblock, bool ro);
+    EXT2(class Volume *vol, FileSystemType *fsTtype, SuperBlock *sblock, bool ro);
     uint64_t getINodeOffset(ino_t n);
     uint64_t blockGroupOffset(uint bg);
     bool hasSuperBlock(uint bg);
     uint64_t bgdtOffset(uint bg);
-    bool updateBGDT(uint bg, off_t startOffs, size_t n);
+    bool updateBGDT(uint bg, uint64_t startOffs, size_t n);
     uint getINodeBlockGroup(uint32_t ino);
     uint32_t allocINode(uint *group);
     bool freeINode(uint32_t inode);
     uint32_t allocBlockInGroup(uint g);
     uint32_t allocBlock(uint preferredGroup, uint *group);
     bool freeBlock(uint32_t block);
-    int64_t read(FSINode *inode, void *buffer, uint64_t position, int64_t n);
-    int64_t write(FSINode *inode, const void *buffer, uint64_t position, int64_t n);
+    int64_t read(FSINode *inode, void *buffer, uint64_t position, uint64_t n);
+    int64_t write(FSINode *inode, const void *buffer, uint64_t position, uint64_t n);
     uint32_t getINodeBlock(FSINode *inode, uint32_t n);
     bool isBlockZeroed(uint32_t block);
     bool setINodeBlock(FSINode *inode, uint32_t n, uint32_t block);
