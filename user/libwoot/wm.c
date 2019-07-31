@@ -94,6 +94,8 @@ int wmInitialize(int flags)
     colors[WM_COLOR_TITLE_TEXT] = pmColorWhite;
     colors[WM_COLOR_INACTIVE_TITLE_TEXT] = pmColorSilver;
     colors[WM_COLOR_FOCUS_HIGHLIGHT] = pmColorBlack;
+    colors[WM_COLOR_DEFAULT_TEXT] = pmColorBlack;
+    colors[WM_COLOR_LINK] = pmColorNavy;
     memset(fonts, 0, sizeof(fonts));
     memset(icons, 0, sizeof(icons));
     return res;

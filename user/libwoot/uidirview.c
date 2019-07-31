@@ -61,6 +61,7 @@ static int readDir(uiDirView_t *view)
     {
         snprintf(fi.Name, sizeof(fi.Name), "%s", de->d_name);
         stat(de->d_name, &fi.Stat);
+        lstat(de->d_name, &fi.LStat);
         fi.OrigIdx = i;
         vecAppend(view->Infos, &fi);
     }
@@ -80,6 +81,9 @@ static void updateTiles(uiDirView_t *view)
     int fiCount = vecSize(view->Infos);
     int tiCount = vecSize(view->Tiles);
 
+    pmColor_t defColor = wmGetColor(WM_COLOR_DEFAULT_TEXT);
+    pmColor_t lnkColor = wmGetColor(WM_COLOR_LINK);
+
     int i = uiScrollbarGetPosition(view->Scroll), j = 0;
     for(; i < fiCount && j < tiCount; ++i, ++j)
     {
@@ -87,13 +91,15 @@ static void updateTiles(uiDirView_t *view)
         if(!fi) break;
         fileTile_t *ti = *(fileTile_t **)vecGet(view->Tiles, j);
         if(!ti) break;
-        uiControlSetVisibility((uiControl_t *)ti, UI_VISIBLE);
+        int isLink = fi->Stat.st_ino != fi->LStat.st_ino;
+        uiControlSetTextColor((uiControl_t *)ti, isLink ? lnkColor : defColor);
         uiControlSetText((uiControl_t *)ti, fi->Name);
         uiControlSetContext((uiControl_t *)ti, fi);
         uiControlSetTextHAlign((uiControl_t *)ti, UI_HALIGN_LEFT);
         uiControlSetIconPosition((uiControl_t *)ti, UI_LEFT);
         uiControlSetTextIconSeparation((uiControl_t *)ti, 4);
         uiControlSetIcon((uiControl_t *)ti,wmGetIcon(S_ISDIR(fi->Stat.st_mode) ? WM_ICON_DIRECTORY : (fi->Stat.st_mode & 0111 ? WM_ICON_PROGRAM : WM_ICON_FILE)));
+        uiControlSetVisibility((uiControl_t *)ti, UI_VISIBLE);
     }
 
     for(; j < tiCount; ++j)

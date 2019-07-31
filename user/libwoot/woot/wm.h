@@ -37,6 +37,8 @@ typedef enum
     WM_COLOR_TITLE_TEXT,
     WM_COLOR_INACTIVE_TITLE_TEXT,
     WM_COLOR_FOCUS_HIGHLIGHT,
+    WM_COLOR_DEFAULT_TEXT,
+    WM_COLOR_LINK,
     WM_COLOR_ID_COUNT // ALWAYS keep this entry last
 } wmColorId_t;
 

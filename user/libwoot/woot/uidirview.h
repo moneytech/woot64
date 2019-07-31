@@ -12,6 +12,7 @@ typedef struct uiDirViewFileInfo
 {
     char Name[FILENAME_MAX];
     struct stat Stat;
+    struct stat LStat;
     int OrigIdx;
 } uiDirViewFileInfo_t;
 
