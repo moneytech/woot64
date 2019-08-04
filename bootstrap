@@ -1,0 +1,14 @@
+#!/bin/sh
+
+THREADS=`nproc`
+
+WOOT_TOP_DIR=`pwd`
+BINUTILS_DIR=$WOOT_TOP_DIR/user/binutils
+GCC_DIR=$WOOT_TOP_DIR/user/gcc
+
+echo "Building binutils for cross compilation"
+cd $BINUTILS_DIR && ./configure-cross && make -j$THREADS -C build-cross  && make -C build-cross install
+
+echo "Building GCC cross compiler"
+cd $GCC_DIR && ./configure-cross && make -j$THREADS -C build-cross all-gcc all-target-libgcc && make -C build-cross install-gcc install-target-libgcc
+
