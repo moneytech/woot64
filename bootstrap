@@ -8,9 +8,15 @@ GCC_DIR=$WOOT_TOP_DIR/user/gcc
 
 echo "Building binutils for cross compilation"
 rm -rf $BINUTILS_DIR/build-cross
-cd $BINUTILS_DIR && ./configure-cross && make -j$THREADS -C build-cross  && make -C build-cross install
+cd $BINUTILS_DIR && \
+./configure-cross && \
+make -j$THREADS -C build-cross && \
+make -C build-cross install
 
 echo "Building GCC cross compiler"
 rm -rf $GCC_DIR/build-cross
-cd $GCC_DIR && ./configure-cross && make -j$THREADS -C build-cross all-gcc all-target-libgcc && make -C build-cross install-gcc install-target-libgcc
+cd $GCC_DIR && \
+./configure-cross && \
+make -j$THREADS -C build-cross all-gcc all-target-libgcc all-target-libstdc++-v3 && \
+make -C build-cross install-gcc install-target-libgcc install-target-libstdc++-v3
 
