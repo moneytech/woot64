@@ -5,12 +5,14 @@ WOOT_TOP_DIR=`realpath $THIS_DIR/../..`
 BUILD_DIR="$WOOT_TOP_DIR/user/binutils/build-cross"
 INSTALL_DIR="$WOOT_TOP_DIR/cross-root"
 CONFIG_SCRIPT="../binutils-2.32/configure"
-TARGET_ARCH="x86_64-elf"
+TARGET_ARCH="x86_64-woot"
 CONFIG_ARGS="\
 --prefix=$INSTALL_DIR \
 --with-sysroot=$INSTALL_DIR \
 --target=$TARGET_ARCH \
 --disable-nls \
+--enable-shared \
+--disable-multilib \
 --disable-werror"
 
 echo Using WOOT root directory $WOOT_TOP_DIR

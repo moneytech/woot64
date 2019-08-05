@@ -290,6 +290,7 @@ ALL_EMULATION_SOURCES = \
 	eelf_i386_nacl.c \
 	eelf_i386_sol2.c \
 	eelf_i386_vxworks.c \
+	eelf_i386_woot.c \
 	eelf_iamcu.c \
 	eelf_s390.c \
 	eh8300elf.c \
@@ -458,6 +459,7 @@ ALL_64_EMULATION_SOURCES = \
 	eelf_x86_64_fbsd.c \
 	eelf_x86_64_nacl.c \
 	eelf_x86_64_sol2.c \
+	eelf_x86_64_woot.c \
 	ehppa64linux.c \
 	ei386pep.c \
 	emmo.c
@@ -1316,6 +1318,9 @@ eelf_i386_vxworks.c: $(srcdir)/emulparams/elf_i386_vxworks.sh \
   $(srcdir)/emulparams/vxworks.sh $(srcdir)/emultempl/vxworks.em \
   $(ELF_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 
+eelf_i386_woot.c: $(srcdir)/emulparams/elf_i386_woot.sh \
+  $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+
 eelf_iamcu.c: $(srcdir)/emulparams/elf_iamcu.sh \
   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 
@@ -1866,6 +1871,9 @@ eelf_x86_64_sol2.c: $(srcdir)/emulparams/elf_x86_64_sol2.sh \
   $(srcdir)/emulparams/elf_x86_64.sh \
   $(srcdir)/emulparams/solaris2.sh \
   $(srcdir)/emultempl/solaris2.em \
+  $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
+
+eelf_x86_64_woot.c: $(srcdir)/emulparams/elf_x86_64_woot.sh \
   $(ELF_X86_DEPS) $(srcdir)/scripttempl/elf.sc ${GEN_DEPENDS}
 
 ehppa64linux.c: $(srcdir)/emulparams/hppa64linux.sh \
