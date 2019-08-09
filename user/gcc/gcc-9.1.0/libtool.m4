@@ -1556,6 +1556,9 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
       lt_cv_sys_max_cmd_len=32768
     fi
     ;;
+  woot*)
+    lt_cv_sys_max_cmd_len=-1;
+    ;;
   *)
     lt_cv_sys_max_cmd_len=`(getconf ARG_MAX) 2> /dev/null`
     if test -n "$lt_cv_sys_max_cmd_len"; then
@@ -2678,6 +2681,15 @@ uts4*)
   shlibpath_var=LD_LIBRARY_PATH
   ;;
 
+woot*)
+  version_type=linux
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}${major} ${libname}${shared_ext}'
+  soname_spec='${libname}${release}${shared_ext}$major'
+  shlibpath_var=LD_LIBRARY_PATH
+  hardcode_into_libs=yes
+  ;;
 *)
   dynamic_linker=no
   ;;
@@ -3163,6 +3175,9 @@ sysv4 | sysv4.3*)
   ;;
 
 tpf*)
+  lt_cv_deplibs_check_method=pass_all
+  ;;
+woot*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 esac
@@ -4449,7 +4464,7 @@ _LT_EOF
       _LT_TAGVAR(archive_expsym_cmds, $1)='sed "s,^,_," $export_symbols >$output_objdir/$soname.expsym~$CC -shared $pic_flag $libobjs $deplibs $compiler_flags ${wl}-h,$soname ${wl}--retain-symbols-file,$output_objdir/$soname.expsym ${wl}--image-base,`expr ${RANDOM-$$} % 4096 / 2 \* 262144 + 1342177280` -o $lib'
       ;;
 
-    gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu)
+    gnu* | linux* | tpf* | k*bsd*-gnu | kopensolaris*-gnu | woot*)
       tmp_diet=no
       if test "$host_os" = linux-dietlibc; then
 	case $cc_basename in
@@ -5783,6 +5798,9 @@ if test "$_lt_caught_CXX_error" != yes; then
         ;;
 
       gnu*)
+        ;;
+
+      woot*)
         ;;
 
       haiku*)

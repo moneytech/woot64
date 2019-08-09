@@ -4,7 +4,6 @@ THIS_DIR=`pwd`
 WOOT_TOP_DIR=`realpath $THIS_DIR/../..`
 BUILD_DIR="$WOOT_TOP_DIR/user/gcc/build-cross"
 INSTALL_DIR="$WOOT_TOP_DIR/cross-root"
-#CONFIG_SCRIPT="../gcc-7.1.0/configure"
 CONFIG_SCRIPT="../gcc-9.1.0/configure"
 TARGET_ARCH="x86_64-woot"
 CONFIG_ARGS="\
@@ -17,7 +16,6 @@ CONFIG_ARGS="\
 --disable-werror \
 --enable-threads \
 --enable-shared \
---enable-host-shared \
 --disable-tm-clone-registry"
 
 echo "Using WOOT root directory $WOOT_TOP_DIR"

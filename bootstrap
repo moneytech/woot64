@@ -1,6 +1,7 @@
 #!/bin/sh
 
-THREADS=`nproc`
+NPROC=`nproc`
+THREADS=${THREADS:-$NPROC}
 
 WOOT_TOP_DIR=`pwd`
 BINUTILS_DIR=$WOOT_TOP_DIR/user/binutils
