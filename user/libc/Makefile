@@ -1,15 +1,19 @@
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
-CC = clang
-AR = ar
-RANLIB = ranlib
+PREFIX = $(WOOT_TOP_DIR)/cross-root
+TOOLS_PREFIX = # we use native gcc to build libc
+CC = $(TOOLS_PREFIX)gcc
+AR = $(TOOLS_PREFIX)ar
+AS = $(TOOLS_PREFIX)as
+LD = $(TOOLS_PREFIX)ld
+RANLIB = $(TOOLS_PREFIX)ranlib
 
 SHARED_LIB = libc.so
 STATIC_LIB = libc.a
-SHARED_LIB_PATH = lib/$(SHARED_LIB)
-STATIC_LIB_PATH = lib/$(STATIC_LIB)
+SHARED_LIB_PATH = $(PREFIX)/lib/$(SHARED_LIB)
+STATIC_LIB_PATH = $(PREFIX)/lib/$(STATIC_LIB)
 
-export WOOT_TOP_DIR CC AR RANLIB
+export WOOT_TOP_DIR CC AR AS LD RANLIB
 
 all: $(SHARED_LIB_PATH)
 
@@ -24,10 +28,9 @@ configure: build/config.mak
 build/config.mak:
 	mkdir -p build
 	cd build && \
-	CFLAGS='-D__WOOT__ -nostdinc -fno-omit-frame-pointer -O0 -ggdb' \
-	LDFLAGS="-Wl,-z,max-page-size=4096" \
-	../musl-1.1.21/configure --prefix=$(WOOT_TOP_DIR)/user/libc --host=x86_64-linux-gnu
-
+	CFLAGS='-D__WOOT__ -Dlinux -D__linux__ -nostdinc -fno-omit-frame-pointer -O0 -ggdb' \
+	LDFLAGS="-Wl,--no-gc-sections" \
+	../musl-1.1.21/configure --prefix=$(PREFIX)
 
 reconfigure:
 	rm -rf build
@@ -40,11 +43,10 @@ $(LIB_DIR)/$(SHARED_LIB): $(SHARED_LIB_PATH)
 	cp $(SHARED_LIB_PATH) $(LIB_DIR)/$(SHARED_LIB)
 
 distclean:
-	rm -rf build include lib
+	rm -rf build
 
 clean:
 	$(MAKE) -C build clean
-	rm -rf include lib
 
 .PHONY: clean distclean install reconfigure $(SHARED_LIB_PATH) $(STATIC_LIB_PATH)
 

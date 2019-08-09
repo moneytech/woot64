@@ -2,35 +2,35 @@
 
 size_t sys_read(int fd, char *buf, size_t count)
 {
-    return __syscall3(SYS_read, fd, (long)buf, count);
+    return (size_t)__syscall3(SYS_read, fd, (long)buf, (long)count);
 }
 
 size_t sys_write(int fd, const char *buf, size_t count)
 {
-    return __syscall3(SYS_write, fd, (long)buf, count);
+    return (size_t)__syscall3(SYS_write, fd, (long)buf, (long)count);
 }
 
-int sys_open(const char *filename, int flags, int mode)
+long sys_open(const char *filename, int flags, int mode)
 {
     return __syscall3(SYS_open, (long)filename, flags, mode);
 }
 
-int sys_close(int fd)
+long sys_close(int fd)
 {
     return __syscall1(SYS_open, fd);
 }
 
-int sys_stat(const char *filename, void *statbuf)
+long sys_stat(const char *filename, void *statbuf)
 {
     return __syscall2(SYS_stat, (long)filename, (long)statbuf);
 }
 
-int sys_fstat(int fd, void *statbuf)
+long sys_fstat(int fd, void *statbuf)
 {
     return __syscall2(SYS_fstat, fd, (long)statbuf);
 }
 
-int sys_lstat(const char *filename, void *statbuf)
+long sys_lstat(const char *filename, void *statbuf)
 {
     return __syscall2(SYS_stat, (long)filename, (long)statbuf);
 }
@@ -42,17 +42,22 @@ off_t sys_lseek(int fd, off_t offset, unsigned int origin)
 
 void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off)
 {
-    return (void *)__syscall6(SYS_mmap, (long)addr, len, prot, flags, fd, off);
+    return (void *)(__UINTPTR_TYPE__)__syscall6(SYS_mmap, (long)addr, (long)len, prot, flags, fd, off);
 }
 
-int sys_munmap(void *addr, size_t len)
+long sys_mprotect(uintptr_t addr, size_t len, unsigned long prot)
 {
-    return __syscall2(SYS_mmap, (long)addr, len);
+    return __syscall3(SYS_mprotect, (long)addr, (long)len, (long)prot);
+}
+
+long sys_munmap(void *addr, size_t len)
+{
+    return __syscall2(SYS_mmap, (long)addr, (long)len);
 }
 
 void *sys_brk(void *brk)
 {
-    return (void *)__syscall1(SYS_brk, (long)brk);
+    return (void *)(__UINTPTR_TYPE__)__syscall1(SYS_brk, (long)brk);
 }
 
 long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize)
@@ -67,17 +72,27 @@ long sys_rt_sigreturn(void)
 
 long sys_readv(int fd, const void *vec, size_t vlen)
 {
-    return __syscall3(SYS_readv, fd, (long)vec, vlen);
+    return __syscall3(SYS_readv, fd, (long)vec, (long)vlen);
 }
 
 long sys_writev(int fd, const void *vec, size_t vlen)
 {
-    return __syscall3(SYS_writev, fd, (long)vec, vlen);
+    return __syscall3(SYS_writev, fd, (long)vec, (long)vlen);
 }
 
 long sys_pipe(int *fds)
 {
     return __syscall1(SYS_pipe, (long)fds);
+}
+
+long sys_msync(unsigned long addr, size_t len, int flags)
+{
+    return __syscall3(SYS_msync, (long)addr, (long)len, (long)flags);
+}
+
+long sys_mincore(unsigned long addr, size_t len, unsigned char *vec)
+{
+    return __syscall3(SYS_mincore, (long)addr, (long)len, (long)vec);
 }
 
 long sys_dup(int fd)
@@ -102,12 +117,12 @@ long sys_exit(long error_code)
 
 long sys_getdents(int fd, void *de, size_t count)
 {
-    return __syscall3(SYS_getdents, fd, (long)de, count);
+    return __syscall3(SYS_getdents, fd, (long)de, (long)count);
 }
 
 long sys_getcwd(char *buf, size_t size)
 {
-    return __syscall2(SYS_getcwd, (long)buf, size);
+    return __syscall2(SYS_getcwd, (long)buf, (long)size);
 }
 
 long sys_chdir(char *pathname)
@@ -120,17 +135,17 @@ long sys_sysinfo(void *info)
     return __syscall1(SYS_sysinfo, (long)info);
 }
 
-int sys_arch_prctl(int code, uintptr_t addr)
+long sys_arch_prctl(int code, uintptr_t addr)
 {
-    return __syscall2(SYS_arch_prctl, code, addr);
+    return __syscall2(SYS_arch_prctl, code, (long)addr);
 }
 
 long sys_getdents64(int fd, void *de, size_t count)
 {
-    return __syscall3(SYS_getdents64, fd, (long)de, count);
+    return __syscall3(SYS_getdents64, fd, (long)de, (long)count);
 }
 
-int sys_set_tid_address(int *tidptr)
+long sys_set_tid_address(int *tidptr)
 {
     return __syscall1(SYS_set_tid_address, (long)tidptr);
 }
@@ -198,7 +213,7 @@ long sysFBSetMode(int fd, int mode)
 
 void *sysFBMapPixels(int fd, void *hint)
 {
-    return (void *)__syscall2(SYS_FB_MAP_PIXELS, fd, (long)hint);
+    return (void *)(__UINTPTR_TYPE__)__syscall2(SYS_FB_MAP_PIXELS, fd, (long)hint);
 }
 
 long sysFBGetCurrentMode(int fd)
@@ -243,7 +258,7 @@ long sysInDevGetEvent(int fd, int timeout, void *buf)
 
 long sysThreadCreate(const char *name, void *entry, uintptr_t arg, int *retVal)
 {
-    return __syscall4(SYS_THREAD_CREATE, (long)name, (long)entry, arg, (long)retVal);
+    return __syscall4(SYS_THREAD_CREATE, (long)name, (long)entry, (long)arg, (long)retVal);
 }
 
 long sysThreadDelete(int tid)
@@ -326,6 +341,16 @@ long sysProcessGetUsedMemory(int pid)
     return __syscall1(SYS_PROCESS_GET_USED_MEMORY, pid);
 }
 
+long sysProcessGetExecPath(int pid, char *buf, size_t bufSize)
+{
+    return __syscall3(SYS_PROCESS_GET_EXEC_PATH, pid, (long)buf, (long)bufSize);
+}
+
+long sysProcessGetMap(int pid, void *buf, size_t bufSize)
+{
+    return __syscall3(SYS_PROCESS_GET_MAP, pid, (long)buf, (long)bufSize);
+}
+
 long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
 {
     return __syscall5(SYS_IPC_SEND_MESSAGE, dst, num, flags, (long)payload, payloadSize);
@@ -358,7 +383,7 @@ long sysIPCGetSharedMemSize(int fd)
 
 void *sysIPCMapSharedMem(int fd, void *hint, unsigned flags)
 {
-    return (void *)__syscall3(SYS_IPC_MAP_SHMEM, fd, (long)hint, flags);
+    return (void *)(__UINTPTR_TYPE__)__syscall3(SYS_IPC_MAP_SHMEM, fd, (long)hint, flags);
 }
 
 long sysIPCUnMapSharedMem(int fd, void *addr)
@@ -418,7 +443,7 @@ long sysSyncSemaphoreSignal(int fd)
 
 void *sysSignalGetHandler(unsigned signum)
 {
-    return (void *)__syscall1(SYS_SIGNAL_GET_HANDLER, signum);
+    return (void *)(__UINTPTR_TYPE__)__syscall1(SYS_SIGNAL_GET_HANDLER, signum);
 }
 
 long sysSignalSetHandler(unsigned signum, void *handler)

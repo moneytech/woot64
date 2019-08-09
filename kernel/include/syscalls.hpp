@@ -13,6 +13,7 @@
 #define SYS_lstat                       6
 #define SYS_lseek                       8
 #define SYS_mmap                        9
+#define SYS_mprotect                    10
 #define SYS_munmap                      11
 #define SYS_brk                         12
 #define SYS_rt_sigprocmask              14
@@ -20,6 +21,8 @@
 #define SYS_readv                       19
 #define SYS_writev                      20
 #define SYS_pipe                        22
+#define SYS_msync                       26
+#define SYS_mincore                     27
 #define SYS_dup                         32
 #define SYS_dup2                        33
 #define SYS_getpid                      39
@@ -74,6 +77,8 @@
 #define SYS_PROCESS_GET_NAME            0x335
 #define SYS_PROCESS_GET_THREAD_COUNT    0x336
 #define SYS_PROCESS_GET_USED_MEMORY     0x337
+#define SYS_PROCESS_GET_EXEC_PATH       0x338
+#define SYS_PROCESS_GET_MAP             0x339
 
 #define SYS_IPC_SEND_MESSAGE            0x340
 #define SYS_IPC_GET_MESSAGE             0x341
@@ -121,6 +126,7 @@ class SysCalls
     static long sys_lstat(const char *filename, struct stat *statbuf);
     static long sys_lseek(int fd, off_t offset, unsigned int origin);
     static long sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, int fd, off_t off);
+    static long sys_mprotect(uintptr_t addr, size_t len, unsigned long prot);
     static long sys_munmap(uintptr_t addr, size_t len);
     static long sys_brk(uintptr_t brk);
     static long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize);
@@ -128,6 +134,8 @@ class SysCalls
     static long sys_readv(int fd, const struct iovec *vec, size_t vlen);
     static long sys_writev(int fd, const struct iovec *vec, size_t vlen);
     static long sys_pipe(int *fds);
+    static long sys_msync(uintptr_t addr, size_t len, int flags);
+    static long sys_mincore(uintptr_t addr, size_t len, unsigned char *vec);
     static long sys_dup(int fd);
     static long sys_dup2(int oldfd, int newfd);
     static long sys_getpid();
@@ -181,6 +189,8 @@ class SysCalls
     static long sysProcessGetName(int pid, char *buf, size_t bufSize);
     static long sysProcessGetThreadCount(int pid);
     static long sysProcessGetUsedMemory(int pid);
+    static long sysProcessGetExecPath(int pid, char *buf, size_t bufSize);
+    static long sysProcessGetMap(int pid, struct processMapEntry *buf, size_t bufSize);
 
     static long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
     static long sysIPCGetMessage(void *msg, int timeout);

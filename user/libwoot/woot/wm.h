@@ -93,33 +93,33 @@ typedef struct wmEvent
     union
     {
         wmEventType_t Type;
-        int TypeInt; // to make sure sizeof(Type) == sizeof(int)
+        unsigned TypeInt; // to make sure sizeof(Type) == sizeof(int)
     };
-    int WindowId;
-    int Handled;
+    unsigned WindowId;
+    unsigned Handled;
     union
     {
         struct
         {
-            int Data[13];
+            unsigned Data[13];
         } Other;
         struct
         {
-            int Key;
-            int Flags;
-            int Character;
+            unsigned Key;
+            unsigned Flags;
+            unsigned Character;
         } Keyboard;
         struct
         {
-            int Coords[WM_EVT_MOUSE_AXES];
-            int Delta[WM_EVT_MOUSE_AXES];
-            int ButtonsPressed;
-            int ButtonsReleased;
-            int ButtonsHeld;
+            unsigned Coords[WM_EVT_MOUSE_AXES];
+            unsigned Delta[WM_EVT_MOUSE_AXES];
+            unsigned ButtonsPressed;
+            unsigned ButtonsReleased;
+            unsigned ButtonsHeld;
         } Mouse;
         struct
         {
-            int Visible;
+            unsigned Visible;
         } CaretTick;
     };
 } wmEvent_t;

@@ -3,40 +3,51 @@
 
 int processCreate(const char *cmdline)
 {
-    return sysProcessCreate(cmdline);
+    return (int)sysProcessCreate(cmdline);
 }
 
 int processDelete(int handle)
 {
-    return sysProcessDelete(handle);
+    return (int)sysProcessDelete(handle);
 }
 
 int processWait(int handle, int timeout)
 {
-    return sysProcessWait(handle, timeout);
+    return (int)sysProcessWait(handle, timeout);
 }
 
 int processAbort(int handle, int result)
 {
-    return sysProcessAbort(handle, result);
+    return (int)sysProcessAbort(handle, result);
 }
 
 int processListIds(int *buf, unsigned bufSize)
 {
-    return sysProcessListIds(buf, bufSize);
+    return (int)sysProcessListIds(buf, bufSize);
 }
 
 int processGetName(int pid, char *buf, unsigned bufSize)
 {
-    return sysProcessGetName(pid, buf, bufSize);
+    return (int)sysProcessGetName(pid, buf, bufSize);
 }
 
 int processGetThreadCount(int pid)
 {
-    return sysProcessGetThreadCount(pid);
+    return (int)sysProcessGetThreadCount(pid);
 }
 
 unsigned long processGetUsedMemory(int pid)
 {
-    return sysProcessGetUsedMemory(pid);
+    return (unsigned long)sysProcessGetUsedMemory(pid);
 }
+
+int processGetExecPath(int pid, char *buf, unsigned bufSize)
+{
+    return (int)sysProcessGetExecPath(pid, buf, bufSize);
+}
+
+int processGetMap(int pid, processMapEntry_t *buf, unsigned bufSize)
+{
+    return (int)sysProcessGetMap(pid, buf, bufSize);
+}
+

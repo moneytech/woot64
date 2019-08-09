@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <woot/thread.h>
@@ -24,7 +25,7 @@ extern "C" int main(int argc, char *argv[])
     if(argc > 2) screenHeight = atoi(argv[2]);
     if(argc > 3) screenDepth = atoi(argv[3]);
 
-    setbuf(stdout, NULL);
+    setbuf(stdout, nullptr);
 
     printf("[windowmanager] Started window manager (pid: %d)\n", getpid());
 
@@ -62,8 +63,8 @@ extern "C" int main(int argc, char *argv[])
         return -errno;
     }
 
-    void *pixels = vidMapPixels(display, NULL);
-    if(pixels == (void *)-1)
+    void *pixels = vidMapPixels(display, nullptr);
+    if(pixels == reinterpret_cast<void *>(-1))
     {
         printf("[windowmanager] Couldn't get frame buffer data\n");
         return -errno;
@@ -74,8 +75,8 @@ extern "C" int main(int argc, char *argv[])
     pmPixMap_t *fbPixMap = pmFromMemory(mi.Width, mi.Height, mi.Pitch, &fbFormat, pixels, 0);
     pmPixMap_t *bbPixMap = pmFromPixMap(fbPixMap, &fbFormat); // create back buffer
 
-    ipcSendMessage(0, MSG_ACQUIRE_KEYBOARD, MSG_FLAG_NONE, NULL, 0);
-    ipcSendMessage(0, MSG_ACQUIRE_MOUSE, MSG_FLAG_NONE, NULL, 0);
+    ipcSendMessage(0, MSG_ACQUIRE_KEYBOARD, MSG_FLAG_NONE, nullptr, 0);
+    ipcSendMessage(0, MSG_ACQUIRE_MOUSE, MSG_FLAG_NONE, nullptr, 0);
 
     threadDaemonize();
 
@@ -102,8 +103,8 @@ extern "C" int main(int argc, char *argv[])
     }
 
     printf("[windowmanager] Closing window manager\n");
-    ipcSendMessage(0, MSG_RELEASE_KEYBOARD, MSG_FLAG_NONE, NULL, 0);
-    ipcSendMessage(0, MSG_RELEASE_MOUSE, MSG_FLAG_NONE, NULL, 0);
+    ipcSendMessage(0, MSG_RELEASE_KEYBOARD, MSG_FLAG_NONE, nullptr, 0);
+    ipcSendMessage(0, MSG_RELEASE_MOUSE, MSG_FLAG_NONE, nullptr, 0);
 
     if(wm) delete wm;
     if(bbPixMap) pmDelete(bbPixMap);
@@ -117,7 +118,7 @@ void WindowManager::taskButtonActivate(uiControl_t *control)
 {
     uiControlClearFocus(control);
 
-    Window *wnd = (Window *)control->Context;
+    Window *wnd = reinterpret_cast<Window *>(control->Context);
     if(!wnd) return;
 
     WindowManager *wm = wnd->WM;
@@ -155,11 +156,11 @@ void WindowManager::moveWindow(rcRectangle_t *dirtyRect, Window *window, int x, 
 
 int WindowManager::getWindowIdx(Window *wnd)
 {
-    size_t wndCnt = windows->Size();
+    size_t wndCnt = windows->size();
     for(size_t i = 0; i < wndCnt; ++i)
     {
-        if(windows->Get(i) == wnd)
-            return i;
+        if(windows->at(i) == wnd)
+            return static_cast<int>(i);
     }
     return -1;
 }
@@ -170,8 +171,8 @@ void WindowManager::bringToFront(Window *wnd)
     int topWndIdx = getWindowIdx(findFrontWindow());
     if(wndIdx >= 0 && topWndIdx >= 0 && topWndIdx > wndIdx)
     {
-        windows->RemoveAt(wndIdx);
-        windows->InsertBefore(topWndIdx, wnd);
+        windows->erase(windows->begin() + wndIdx);
+        windows->insert(windows->begin() + topWndIdx, 1, wnd);
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         UpdateRect(&wndRect);
     }
@@ -184,8 +185,8 @@ void WindowManager::sendToBack(Window *wnd)
     int backWndIdx = getWindowIdx(findBackWindow());
     if(wndIdx >= 0 && backWndIdx >= 0 && backWndIdx < wndIdx)
     {
-        windows->RemoveAt(wndIdx);
-        windows->InsertBefore(backWndIdx, wnd);
+        windows->erase(windows->begin() + wndIdx);
+        windows->insert(windows->begin() + backWndIdx, 1, wnd);
         rcRectangle_t wndRect = wnd->GetDecoratedRect();
         UpdateRect(&wndRect);
     }
@@ -195,10 +196,10 @@ void WindowManager::sendToBack(Window *wnd)
 Window *WindowManager::findFrontWindow()
 {
     Window *prevWnd = nullptr;
-    int wndCnt = windows->Size();
-    for(int i = 0; i < wndCnt; ++i)
+    size_t wndCnt = windows->size();
+    for(size_t i = 0; i < wndCnt; ++i)
     {
-        Window *wnd = windows->Get(i);
+        Window *wnd = windows->at(i);
         if(!wnd->Visible) continue;
         if(wnd == taskWnd || wnd == mouseWnd) break;
         prevWnd = wnd;
@@ -208,10 +209,10 @@ Window *WindowManager::findFrontWindow()
 
 Window *WindowManager::findBackWindow()
 {
-    int wndCnt = windows->Size();
-    for(int i = 0; i < wndCnt; ++i)
+    size_t wndCnt = windows->size();
+    for(size_t i = 0; i < wndCnt; ++i)
     {
-        Window *wnd = windows->Get(i);
+        Window *wnd = windows->at(i);
         if(wnd == desktopWnd || !wnd->Visible) continue;
         if(wnd == taskWnd || wnd == mouseWnd) break;
         return wnd;
@@ -222,10 +223,10 @@ Window *WindowManager::findBackWindow()
 Window *WindowManager::findByCoords(int x, int y)
 {
     Window *prevWnd = nullptr;
-    int wndCnt = windows->Size();
-    for(int i = 0; i < wndCnt; ++i)
+    size_t wndCnt = windows->size();
+    for(size_t i = 0; i < wndCnt; ++i)
     {
-        Window *wnd = windows->Get(i);
+        Window *wnd = windows->at(i);
         rcRectangle_t rect = wnd->GetDecoratedRect();
         if(!wnd->Visible || !rcContainsPointP(&rect, x, y))
             continue;
@@ -341,6 +342,19 @@ void WindowManager::caretTick(int visible)
     ipcSendMessage(activeWindow->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
 }
 
+void WindowManager::windowsRemove(Window *wnd)
+{
+    size_t size = windows->size();
+    for(size_t i = 0; i < size; ++i)
+    {
+        if(wnd == windows->at(i))
+        {
+            windows->erase(windows->begin() + static_cast<int>(i));
+            return;
+        }
+    }
+}
+
 WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
     windows(new Windows),
     fbPixMap(fbPixMap),
@@ -356,7 +370,7 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
 
     // create desktop
     desktopWnd = new Window(this, currentPId, 0, 0, deskRect.Width, deskRect.Height, WM_CWF_NONE, bbPixMap, nullptr);
-    windows->Prepend(desktopWnd);
+    windows->insert(windows->begin(), desktopWnd);
     pmPixMap_t *logo = pmLoadPNG("/logo.png");
     if(logo && desktopWnd)
     {
@@ -371,7 +385,7 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
 
     // create taskbar
     taskWnd = new Window(this, currentPId, 0, deskRect.Height - 28, deskRect.Width, 28, WM_CWF_NONE, bbPixMap, nullptr);
-    windows->Append(taskWnd);
+    windows->push_back(taskWnd);
     taskRect = taskWnd->GetRect();
     taskRoot = uiControlCreate(nullptr, 0, taskWnd->GetPixMap(), 0, 0, taskRect.Width, taskRect.Height, nullptr);
     uiControlSetBorderStyle(taskRoot, UI_BORDER_RAISED);
@@ -388,7 +402,7 @@ WindowManager::WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap) :
                               WM_CWF_USEALPHA, bbPixMap, &cursor->Format);
         pmBlit(mouseWnd->GetPixMap(), cursor, 0, 0, 0, 0, -1, -1);
         pmDelete(cursor);
-        windows->Append(mouseWnd);
+        windows->push_back(mouseWnd);
     }
 
     UpdateRect(&bbPixMap->Contents);
@@ -403,13 +417,13 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
     }
     else if(msg->Number == MSG_TIMER)
     {
-        timerMsg_t *tmsg = (timerMsg_t *)msg->Data;
+        timerMsg_t *tmsg = reinterpret_cast<timerMsg_t *>(msg->Data);
         if(tmsg->Id == caretTimer)
             caretTick(-1);
     }
     else if(msg->Number == MSG_WM_EVENT)
     {
-        wmEvent_t *event = (wmEvent_t *)msg->Data;
+        wmEvent_t *event = reinterpret_cast<wmEvent_t *>(msg->Data);
         if(event->WindowId == taskWnd->GetId())
         {
             uiControlProcessEvent((uiControl_t *)taskBar, event);
@@ -484,9 +498,9 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         if(mouseWnd)
             moveWindow(dirtyRect, mouseWnd, mouseX - cursorHotX, mouseY - cursorHotY);
 
-        for(int i = windows->Size() - 1; i >= 0; --i)
+        for(int i = windows->size() - 1; i >= 0; --i)
         {
-            Window *wnd = windows->Get(i);
+            Window *wnd = windows->at(i);
             if(!wnd->Visible) continue;
             int wndId = wnd->GetId();
 
@@ -602,7 +616,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             // add new window on top
             Window *frontWnd = findFrontWindow();
             int frontIdx = getWindowIdx(frontWnd);
-            windows->InsertAfter(frontIdx, wnd);
+            windows->insert(windows->begin() + frontIdx + 1, wnd);
 
             wmCreateWindowResp response;
 
@@ -637,8 +651,8 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             if(wnd)
             {
                 rcRectangle_t rect = wnd->GetDecoratedRect();
-                *dirtyRect = rcAddP(dirtyRect, &rect);
-                windows->RemoveOne(wnd);
+                *dirtyRect = rcAddP(dirtyRect, &rect);                
+                windowsRemove(wnd);
                 if(dragWindow == wnd)
                     dragWindow = nullptr;
                 topWindow = findFrontWindow();
@@ -649,26 +663,26 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
                 if(wnd->TaskButton)
                 {
                     uiButtonDelete(wnd->TaskButton);
-                    uiControlRecalcRects((uiControl_t *)taskBar);
-                    uiControlRedraw((uiControl_t *)taskRoot, UI_FALSE);
+                    uiControlRecalcRects(reinterpret_cast<uiControl_t *>(taskBar));
+                    uiControlRedraw(reinterpret_cast<uiControl_t *>(taskRoot), UI_FALSE);
                     *dirtyRect = rcAddP(dirtyRect, &taskRect);
                 }
 
                 delete wnd;
             }
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmRedrawWindow"))
         {
-            int window = *(int *)(args);
+            int window = *reinterpret_cast<int *>(args);
             Window *wnd = getWindowById(window);
             rcRectangle rect = wnd ? wnd->GetDecoratedRect() : rcRectangleEmpty;
             *dirtyRect = rcAddP(dirtyRect, &rect);
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmRedrawRect"))
         {
-            wmRedrawRectArgs *rra = (decltype(rra))args;
+            wmRedrawRectArgs *rra = reinterpret_cast<wmRedrawRectArgs *>(args);
             //printf("rra %d %d %d %d\n", rra->rect.X, rra->rect.Y, rra->rect.Width, rra->rect.Height);
             Window *wnd = getWindowById(rra->windowId);
             rcRectangle_t wndRect = wnd->GetRect();
@@ -676,19 +690,19 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             rra->rect.Y += wndRect.Y;
             rra->rect = rcIntersectP(&wndRect, &rra->rect);
             *dirtyRect = rcAddP(dirtyRect, &rra->rect);
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmSetWindowPos"))
         {
-            wmSetWindowPosArgs *swpa = (decltype(swpa))(args);
+            wmSetWindowPosArgs *swpa = reinterpret_cast<wmSetWindowPosArgs *>(args);
             Window *wnd = getWindowById(swpa->windowId);
             if(wnd) moveWindow(dirtyRect, wnd, swpa->x, swpa->y);
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmSetWindowTitle"))
         {
-            wmSetWindowTitleArgs *swta = (decltype(swta))(args);
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            wmSetWindowTitleArgs *swta = reinterpret_cast<wmSetWindowTitleArgs *>(args);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
 
             Window *wnd = getWindowById(swta->windowId);
             if(wnd)
@@ -700,7 +714,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
             // modify taskbar button
             if(wnd->TaskButton)
             {
-                uiControlSetText((uiControl_t *)wnd->TaskButton, swta->title);
+                uiControlSetText(reinterpret_cast<uiControl_t *>(wnd->TaskButton), swta->title);
                 *dirtyRect = rcAddP(dirtyRect, &taskRect);
             }
         }
@@ -713,37 +727,37 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         }
         else if(!strcmp(req, "wmShowWindow"))
         {
-            int id = *(int *)args;
+            int id = *reinterpret_cast<int *>(args);
             Window *wnd = getWindowById(id);
             if(wnd)
             {
                 showWindow(wnd);
                 *dirtyRect = rcAdd(*dirtyRect, wnd->GetDecoratedRect());
             }
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmHideWindow"))
         {
-            int id = *(int *)args;
+            int id = *reinterpret_cast<int *>(args);
             Window *wnd = getWindowById(id);
             if(wnd && wnd->Visible)
             {
                 hideWindow(wnd);
                 *dirtyRect = rcAdd(*dirtyRect, wnd->GetDecoratedRect());
             }
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else if(!strcmp(req, "wmActivateWindow"))
         {
-            int id = *(int *)args;
+            int id = *reinterpret_cast<int *>(args);
             Window *wnd = getWindowById(id);
             if(wnd && wnd->Visible)
                 setActiveWindow(wnd);
-            rpcIPCReturn(msg->Source, msg->ID, NULL, 0);
+            rpcIPCReturn(msg->Source, msg->ID, nullptr, 0);
         }
         else printf("[windowmanager] Unknown RPC request '%s' from process %d\n", req, msg->Source);
     }
-    else if(msg->Number == MSG_RPC_FIND_SERVER && !strcmp("windowmanager", (const char *)msg->Data))
+    else if(msg->Number == MSG_RPC_FIND_SERVER && !strcmp("windowmanager", reinterpret_cast<const char *>(msg->Data)))
         rpcIPCFindServerRespond(msg->Source, msg->ID);
     return 0;
 }
@@ -787,17 +801,17 @@ WindowManager::~WindowManager()
 
     if(taskWnd)
     {
-        windows->RemoveOne(taskWnd);
+        windowsRemove(taskWnd);
         delete taskWnd;
     }
     if(mouseWnd)
     {
-        windows->RemoveOne(mouseWnd);
+        windowsRemove(mouseWnd);
         delete mouseWnd;
     }
     if(desktopWnd)
     {
-        windows->RemoveOne(desktopWnd);
+        windowsRemove(desktopWnd);
         delete desktopWnd;
     }
     wmCleanup();

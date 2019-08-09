@@ -10,6 +10,7 @@
 #define SYS_lstat                       6
 #define SYS_lseek                       8
 #define SYS_mmap                        9
+#define SYS_mprotect                    10
 #define SYS_munmap                      11
 #define SYS_brk                         12
 #define SYS_rt_sigprocmask              14
@@ -17,6 +18,8 @@
 #define SYS_readv                       19
 #define SYS_writev                      20
 #define SYS_pipe                        22
+#define SYS_msync                       26
+#define SYS_mincore                     27
 #define SYS_dup                         32
 #define SYS_dup2                        33
 #define SYS_getpid                      39
@@ -70,6 +73,8 @@
 #define SYS_PROCESS_GET_NAME            0x335
 #define SYS_PROCESS_GET_THREAD_COUNT    0x336
 #define SYS_PROCESS_GET_USED_MEMORY     0x337
+#define SYS_PROCESS_GET_EXEC_PATH       0x338
+#define SYS_PROCESS_GET_MAP             0x339
 
 #define SYS_IPC_SEND_MESSAGE            0x340
 #define SYS_IPC_GET_MESSAGE             0x341
@@ -110,75 +115,85 @@ extern "C" {
 
 static __inline long __syscall0(long n)
 {
-	unsigned long ret;
-    asm volatile("syscall": "=a"(ret) :"a"(n) :"rcx", "r11", "memory");
+    (void)n;
+    long ret;
+    __asm volatile("syscall": "=a"(ret) :"a"(n) :"rcx", "r11", "memory");
     return ret;
 }
 
 static __inline long __syscall1(long n, long a1)
 {
-	unsigned long ret;
-	asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1): "rcx", "r11", "memory");
+    (void)n, (void)a1;
+    long ret;
+    __asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1): "rcx", "r11", "memory");
 	return ret;
 }
 
 static __inline long __syscall2(long n, long a1, long a2)
 {
-	unsigned long ret;
-	asm volatile("syscall": "=a"(ret) :"a"(n), "D"(a1), "S"(a2): "rcx", "r11", "memory");
+    (void)n, (void)a1, (void)a2;
+    long ret;
+    __asm volatile("syscall": "=a"(ret) :"a"(n), "D"(a1), "S"(a2): "rcx", "r11", "memory");
 	return ret;
 }
 
 static __inline long __syscall3(long n, long a1, long a2, long a3)
 {
-	unsigned long ret;
-	asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3): "rcx", "r11", "memory");
+    (void)n, (void)a1, (void)a2, (void)a3;
+    long ret;
+    __asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3): "rcx", "r11", "memory");
 	return ret;
 }
 
 static __inline long __syscall4(long n, long a1, long a2, long a3, long a4)
 {
-	unsigned long ret;
+    (void)n, (void)a1, (void)a2, (void)a3, (void)a4;
+    long ret;
 	register long r10 __asm__("r10") = a4;
-	asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10):"rcx", "r11", "memory");
+    __asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10):"rcx", "r11", "memory");
 	return ret;
 }
 
 static __inline long __syscall5(long n, long a1, long a2, long a3, long a4, long a5)
 {
-	unsigned long ret;
+    (void)n, (void)a1, (void)a2, (void)a3, (void)a4, (void)a5;
+    long ret;
 	register long r10 __asm__("r10") = a4;
 	register long r8 __asm__("r8") = a5;
-	asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8): "rcx", "r11", "memory");
+    __asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8): "rcx", "r11", "memory");
 	return ret;
 }
 
 static __inline long __syscall6(long n, long a1, long a2, long a3, long a4, long a5, long a6)
 {
-	unsigned long ret;
+    (void)n, (void)a1, (void)a2, (void)a3, (void)a4, (void)a5, (void)a6;
+    long ret;
 	register long r10 __asm__("r10") = a4;
 	register long r8 __asm__("r8") = a5;
 	register long r9 __asm__("r9") = a6;
-	asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8), "r"(r9): "rcx", "r11", "memory");
+    __asm volatile("syscall": "=a"(ret): "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8), "r"(r9): "rcx", "r11", "memory");
 	return ret;
 }
 
 size_t sys_read(int fd, char *buf, size_t count);
 size_t sys_write(int fd, const char *buf, size_t count);
-int sys_open(const char *filename, int flags, int mode);
-int sys_close(int fd);
-int sys_stat(const char *filename, void *statbuf);
-int sys_fstat(int fd, void *statbuf);
-int sys_lstat(const char *filename, void *statbuf);
+long sys_open(const char *filename, int flags, int mode);
+long sys_close(int fd);
+long sys_stat(const char *filename, void *statbuf);
+long sys_fstat(int fd, void *statbuf);
+long sys_lstat(const char *filename, void *statbuf);
 off_t sys_lseek(int fd, off_t offset, unsigned int origin);
 void *sys_mmap(void *addr, size_t len, int prot, int flags, int fd, off_t off);
-int sys_munmap(void *addr, size_t len);
+long sys_mprotect(uintptr_t addr, size_t len, unsigned long prot);
+long sys_munmap(void *addr, size_t len);
 void *sys_brk(void *brk);
 long sys_rt_sigprocmask(int how, void *set, void *oldset, size_t sigsetsize);
 long sys_rt_sigreturn(void);
 long sys_readv(int fd, const void *vec, size_t vlen);
 long sys_writev(int fd, const void *vec, size_t vlen);
 long sys_pipe(int *fds);
+long sys_msync(unsigned long addr, size_t len, int flags);
+long sys_mincore(unsigned long addr, size_t len, unsigned char *vec);
 long sys_dup(int fd);
 long sys_dup2(int oldfd, int newfd);
 long sys_getpid(void);
@@ -187,9 +202,9 @@ long sys_getdents(int fd, void *de, size_t count);
 long sys_getcwd(char *buf, size_t size);
 long sys_chdir(char *pathname);
 long sys_sysinfo(void *info);
-int sys_arch_prctl(int code, uintptr_t addr);
+long sys_arch_prctl(int code, uintptr_t addr);
 long sys_getdents64(int fd, void *de, size_t count);
-int sys_set_tid_address(int *tidptr);
+long sys_set_tid_address(int *tidptr);
 long sys_clock_get_time(int clock, void *ts);
 long sys_exit_group(long error_code);
 long sys_pipe2(int *fds, int flags);
@@ -232,6 +247,8 @@ long sysProcessListIds(int *buf, unsigned size);
 long sysProcessGetName(int pid, char *buf, unsigned size);
 long sysProcessGetThreadCount(int pid);
 long sysProcessGetUsedMemory(int pid);
+long sysProcessGetExecPath(int pid, char *buf, size_t bufSize);
+long sysProcessGetMap(int pid, void *buf, size_t bufSize);
 
 long sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize);
 long sysIPCGetMessage(void *msg, int timeout);

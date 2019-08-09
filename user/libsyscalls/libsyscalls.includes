@@ -1,1 +1,3 @@
-.
+../libc/include
+../libsyscalls
+../libwoot

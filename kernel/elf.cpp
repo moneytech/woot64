@@ -101,7 +101,14 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
         return nullptr;
     }
 
+    // create ELF object itself
     ELF *elf = new ELF(filename, ehdr, phdrData, shdrData, user);
+
+    // get full pathname of the file
+    elf->FullPath = new char[MAX_PATH_LENGTH + 1];
+    f->GetFullPath(elf->FullPath, MAX_PATH_LENGTH + 1);
+
+    // attach it to the process
     Process *proc = Process::GetCurrent();
     proc->AddELF(elf);
 
@@ -110,7 +117,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
     uintptr_t highest_vaddr = 0;
     for(int i = 0; i < ehdr->e_phnum; ++i)
     {
-        Elf_Phdr *phdr = (Elf_Phdr *)(phdrData + ehdr->e_phentsize * i);
+        Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
         if(phdr->p_type != PT_LOAD)
             continue;
         if(phdr->p_vaddr < lowest_vaddr)
@@ -177,7 +184,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
         // load the data
         for(uint i = 0; i < ehdr->e_phnum; ++i)
         {
-            Elf_Phdr *phdr = (Elf_Phdr *)(phdrData + ehdr->e_phentsize * i);
+            Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
             if(phdr->p_type != PT_LOAD)
                 continue;
             if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
@@ -235,7 +242,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                 }
                 elf->endPtr = max(elf->endPtr, va + PAGE_SIZE);
             }
-            uint8_t *buffer = (uint8_t *)(phdr->p_vaddr + elf->baseDelta);
+            uint8_t *buffer = reinterpret_cast<uint8_t *>(phdr->p_vaddr + elf->baseDelta);
             Memory::Zero(buffer, phdr->p_memsz);
             if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
             {
@@ -258,11 +265,11 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                 Elf_Shdr *shdr = elf->getShdr(i);
                 if(shdr->sh_type != SHT_DYNAMIC)
                     continue;
-                uint8_t *dyntab = (uint8_t *)(shdr->sh_addr + elf->baseDelta);
-                char *_strtab = (char *)(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
+                uint8_t *dyntab = reinterpret_cast<uint8_t *>(shdr->sh_addr + elf->baseDelta);
+                char *_strtab = reinterpret_cast<char *>(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
                 for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
                 {
-                    Elf_Dyn *dyn = (Elf_Dyn *)(dyntab + coffs);
+                    Elf_Dyn *dyn = reinterpret_cast<Elf_Dyn *>(dyntab + coffs);
                     if(dyn->d_tag != DT_SONAME)
                         continue;
                     if(elf->Name) delete[] elf->Name;
@@ -276,11 +283,11 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                 Elf_Shdr *shdr = elf->getShdr(i);
                 if(shdr->sh_type != SHT_DYNAMIC)
                     continue;
-                uint8_t *dyntab = (uint8_t *)(shdr->sh_addr + elf->baseDelta);
-                char *_strtab = (char *)(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
+                uint8_t *dyntab = reinterpret_cast<uint8_t *>(shdr->sh_addr + elf->baseDelta);
+                char *_strtab = reinterpret_cast<char *>(elf->getShdr(shdr->sh_link)->sh_addr + elf->baseDelta);
                 for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
                 {
-                    Elf_Dyn *dyn = (Elf_Dyn *)(dyntab + coffs);
+                    Elf_Dyn *dyn = reinterpret_cast<Elf_Dyn *>(dyntab + coffs);
                     if(dyn->d_tag != DT_NEEDED)
                         continue;
                     char *soname = _strtab + dyn->d_un.d_val;
@@ -290,6 +297,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                     StringBuilder sb(MAX_PATH_LENGTH);
                     sb.WriteFmt("%s/%s", libDir, soname);
                     ELF *soELF = Load(sb.String(), user, false, applyRelocs);
+                    (void)soELF;
                 }
             }
         }
@@ -298,8 +306,8 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
     delete[] phdrData;
     delete ehdr;
 
-    elf->ehdr = (Elf_Ehdr *)elf->base;
-    elf->phdrData = (uint8_t *)(elf->base + elf->ehdr->e_phoff);
+    elf->ehdr = reinterpret_cast<Elf_Ehdr *>(elf->base);
+    elf->phdrData = reinterpret_cast<uint8_t *>(elf->base + elf->ehdr->e_phoff);
 
     if(applyRelocs && !elf->ApplyRelocations())
     {
@@ -309,11 +317,11 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
 
     // adjust entry point
     if(elf->baseDelta)
-        elf->EntryPoint = (int (*)())((uint8_t *)elf->EntryPoint + elf->baseDelta);
+        elf->EntryPoint = reinterpret_cast<int (*)()>(reinterpret_cast<uintptr_t>(elf->EntryPoint) + elf->baseDelta);
 
     Elf_Sym *_module_fini_sym = elf->FindSymbol("_module_fini");
     if(_module_fini_sym)
-        elf->_module_fini = (decltype(_module_fini))(_module_fini_sym->st_value + elf->baseDelta);
+        elf->_module_fini = reinterpret_cast<decltype(_module_fini)>(_module_fini_sym->st_value + elf->baseDelta);
 
     return elf;
 }
@@ -327,11 +335,11 @@ Elf_Sym *ELF::FindSymbol(const char *name)
             continue;
         if(!shdr->sh_addr)
             continue;
-        char *strtab = (char *)(getShdr(shdr->sh_link)->sh_addr + baseDelta);
-        uint8_t *symtab = (uint8_t *)(shdr->sh_addr + baseDelta);
+        char *strtab = reinterpret_cast<char *>(getShdr(shdr->sh_link)->sh_addr + baseDelta);
+        uint8_t *symtab = reinterpret_cast<uint8_t *>(shdr->sh_addr + baseDelta);
         for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
         {
-            Elf_Sym *sym = (Elf_Sym *)(symtab + coffs);
+            Elf_Sym *sym = reinterpret_cast<Elf_Sym *>(symtab + coffs);
             //int type = ELF_ST_TYPE(sym->st_info);
             if(!sym->st_shndx || !sym->st_name)
                 continue;
@@ -356,11 +364,11 @@ const char *ELF::GetSymbolName(uintptr_t addr, ptrdiff_t *delta)
             continue;
         if(!shdr->sh_addr)
             continue;
-        char *strtab = (char *)(getShdr(shdr->sh_link)->sh_addr + baseDelta);
-        uint8_t *symtab = (uint8_t *)(shdr->sh_addr + baseDelta);
+        char *strtab = reinterpret_cast<char *>(getShdr(shdr->sh_link)->sh_addr + baseDelta);
+        uint8_t *symtab = reinterpret_cast<uint8_t *>(shdr->sh_addr + baseDelta);
         for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
         {
-            Elf_Sym *sym = (Elf_Sym *)(symtab + coffs);
+            Elf_Sym *sym = reinterpret_cast<Elf_Sym *>(symtab + coffs);
             if(!sym->st_shndx || !sym->st_name)
                 continue;
             const char *symName = strtab + sym->st_name;
@@ -387,14 +395,14 @@ bool ELF::ApplyRelocations()
             continue;
         bool isRela = shdr->sh_type == SHT_RELA;
 
-        uint8_t *reltab = (uint8_t *)(shdr->sh_addr + baseDelta);
-        Elf_Sym *_symtab = (Elf_Sym *)(getShdr(shdr->sh_link)->sh_addr + baseDelta);
-        char *_strtab = (char *)(getShdr(getShdr(shdr->sh_link)->sh_link)->sh_addr + baseDelta);
+        uint8_t *reltab = reinterpret_cast<uint8_t *>(shdr->sh_addr + baseDelta);
+        Elf_Sym *_symtab = reinterpret_cast<Elf_Sym *>(getShdr(shdr->sh_link)->sh_addr + baseDelta);
+        char *_strtab = reinterpret_cast<char *>(getShdr(getShdr(shdr->sh_link)->sh_link)->sh_addr + baseDelta);
 
         for(uint coffs = 0; coffs < shdr->sh_size; coffs += shdr->sh_entsize)
         {
-            Elf_Rel *rel = (Elf_Rel *)(reltab + coffs);
-            Elf_Rela *rela = (Elf_Rela *)(reltab + coffs);
+            Elf_Rel *rel = reinterpret_cast<Elf_Rel *>(reltab + coffs);
+            Elf_Rela *rela = reinterpret_cast<Elf_Rela *>(reltab + coffs);
             uint symIdx = isRela ? ELF_R_SYM(rela->r_info) : ELF_R_SYM(rel->r_info);
             uint rType = isRela ? ELF_R_TYPE(rela->r_info) : ELF_R_TYPE(rel->r_info);
             Elf_Sym *symbol = _symtab + symIdx;
@@ -414,15 +422,15 @@ bool ELF::ApplyRelocations()
                 }
                 if(fSymbol)
                     symAddr = fSymbol->st_value + (fElf ? fElf->baseDelta : 0);
-                else
+                else if(ELF_ST_BIND(symbol->st_info) != STB_WEAK) // weak symbols don't have to be defined
                 {
-                    DEBUG("[elf] Couldn't find symbol '%s' for '%s'\n", name, Name);
+                    DEBUG("[elf] Couldn't find symbol '%s' for '%s'\n", name, Name);                    
                     return false;
                 }
             }
             else symAddr = symbol->st_value;
 
-            uintptr_t *val = (uintptr_t *)((isRela ? rela->r_offset : rel->r_offset) + baseDelta);
+            uintptr_t *val = reinterpret_cast<uintptr_t *>((isRela ? rela->r_offset : rel->r_offset) + baseDelta);
 
             //printf("%s: rel: %d ", Name, rType);
             //printf("sym: %s S: %.8x A: %.8x P: %.8x\n", symbol->st_name ? name : "<no symbol>", S, A, P);
@@ -463,7 +471,7 @@ bool ELF::ApplyRelocations()
                 *val = symAddr + A;
                 break;
             case R_X86_64_COPY:
-                Memory::Move(val, (void *)symAddr, symbol->st_size);
+                Memory::Move(val, reinterpret_cast<void *>(symAddr), symbol->st_size);
                 break;
             case R_X86_64_GLOB_DAT:
             case R_X86_64_JUMP_SLOT:
@@ -483,19 +491,30 @@ bool ELF::ApplyRelocations()
     return true;
 }
 
-uintptr_t ELF::GetBase()
+uintptr_t ELF::GetBase() const
 {
     return base;
 }
 
-uintptr_t ELF::GetEndPtr()
+uintptr_t ELF::GetEndPtr() const
 {
     return endPtr;
+}
+
+void *ELF::GetPHdr() const
+{
+    return phdrData;
+}
+
+Elf_Ehdr *ELF::GetEHdr() const
+{
+    return ehdr;
 }
 
 ELF::~ELF()
 {
     if(Name) delete[] Name;
+    if(FullPath) delete[] FullPath;
     if(process)
     {
         AddressSpace as = process->AddressSpace;

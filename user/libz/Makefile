@@ -3,15 +3,15 @@ STATIC_LIB = libz.a
 
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
+PREFIX = $(WOOT_TOP_DIR)/cross-root
+TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
-CC = $(WOOT_TOP_DIR)/user/cc
+CC = $(TOOLS_PREFIX)gcc
 
-export CC CFLAGS LDFLAGS
+CFLAGS = -fPIC -Wno-undefined-internal -lc
+LDFLAGS = -Wl,-soname=$(SHARED_LIB)
 
-CFLAGS += -fPIC -Wno-undefined-internal -lc
-LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB)
-
-export WOOT_TOP_DIR
+export WOOT_TOP_DIR CC CFLAGS LDFLAGS
 
 all: configure
 	$(MAKE) lib/$(SHARED_LIB)
@@ -33,8 +33,7 @@ build/configure.log:
 	cd build && \
 	rm -rf ./* && \
 	SONAME=libz.so \
-	LDSHAREDLIBC="-nostdlib -Wl,-L$(WOOT_TOP_DIR)/user/lib -lc -lgcc" \
-	../zlib-1.2.11/configure --prefix="$(WOOT_TOP_DIR)/user/libz"
+	../zlib-1.2.11/configure --prefix=$(PREFIX)
 
 install: $(LIB_DIR)/$(SHARED_LIB)
 

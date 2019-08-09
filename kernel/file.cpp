@@ -168,6 +168,11 @@ File *File::Open(const char *name, int flags, mode_t mode, bool followSymLinks)
     return file;
 }
 
+size_t File::GetFullPath(char *buf, size_t bufSize)
+{
+    return DEntry->GetFullPath(buf, bufSize);
+}
+
 int64_t File::GetSize()
 {
     if(!FileSystem::Lock())

@@ -186,6 +186,26 @@ struct dirent
     char d_name[0];
 };
 
+// USER_MATCH: libwoot/woot/process.h
+#define PROC_MAP_READ   (1 << 0)
+#define PROC_MAP_WRITE  (1 << 1)
+#define PROC_MAP_EXEC   (1 << 2)
+#define PROC_MAP_NAME   (1 << 3)
+#define PROC_MAP_STACK  (1 << 4)
+#define PROC_MAP_HEAP   (1 << 5)
+#define PROC_MAP_LAST   (1 << 30)
+
+// USER_MATCH: libwoot/woot/process.h
+typedef struct processMapEntry
+{
+    unsigned long EntrySize;    // Size of this entry
+    unsigned long Address;      // Start of the mapping
+    unsigned long Size;         // Size of the mapping
+    unsigned long Offset;       // File offset of the mapping
+    unsigned long Flags;        // Flags
+    char Name[];                // Optional NULL terminated filename
+} processMapEntry_t;
+
 SysCalls::SysCallHandler SysCalls::Handlers[1024];
 
 // check if buffer is completely contained in userspace
@@ -383,6 +403,13 @@ long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, 
     return static_cast<long>(addr);
 }
 
+long SysCalls::sys_mprotect(uintptr_t addr, size_t len, unsigned long prot)
+{
+    (void)addr, (void)len, (void)prot;
+    DEBUG("[syscalls] dummy mprotect called\n");
+    return ESUCCESS;
+}
+
 long SysCalls::sys_munmap(uintptr_t addr, size_t len)
 {
     //DEBUG("sys_munmap(%p, %p)\n", addr, len);
@@ -477,7 +504,42 @@ long SysCalls::sys_writev(int fd, const iovec *vec, size_t vlen)
 long SysCalls::sys_pipe(int *fds)
 {
     BUFFER_CHECK(fds, 2 * sizeof(*fds))
-    return Process::GetCurrent()->CreatePipe(fds);
+            return Process::GetCurrent()->CreatePipe(fds);
+}
+
+long SysCalls::sys_msync(uintptr_t addr, size_t len, int flags)
+{
+    DEBUG("[syscalls] dummy msync called\n");
+    return (len + PAGE_SIZE - 1) / PAGE_SIZE;
+}
+
+long SysCalls::sys_mincore(uintptr_t addr, size_t len, unsigned char *vec)
+{
+    DEBUG("sys_mincore(%p, %p, %p)\n", addr, len, vec);
+
+    size_t pageCount = (len + PAGE_SIZE - 1) / PAGE_SIZE;
+
+    BUFFER_CHECK(vec, pageCount)
+
+    Memory::Set(vec, 0, pageCount);
+
+    long pg = 0;
+    for(uintptr_t endAddr = addr + len; addr < endAddr; addr += PAGE_SIZE, ++pg)
+    {
+        if(addr < USER_BASE)
+            continue;
+
+        if(addr >= USER_END)
+            break;
+
+        uintptr_t pa = Paging::GetPhysicalAddress(PG_CURRENT_ADDR_SPC, addr);
+        if(pa == PG_INVALID_ADDRESS)
+            continue;
+
+        vec[pg] = 1;
+    }
+
+    return pg;
 }
 
 long SysCalls::sys_dup(int fd)
@@ -964,6 +1026,63 @@ long SysCalls::sysProcessGetUsedMemory(int pid)
     return Paging::CountPresentPages(p->AddressSpace, 0, USER_END) << PAGE_SHIFT;
 }
 
+long SysCalls::sysProcessGetExecPath(int pid, char *buf, size_t bufSize)
+{
+    BUFFER_CHECK(buf, bufSize)
+
+    Process *p = Process::GetByID(pid);
+    if(!p) return -ESRCH;
+
+    char *execName = p->GetExecName();
+    String::Copy(buf, execName, bufSize);
+    return ESUCCESS;
+}
+
+long SysCalls::sysProcessGetMap(int pid, struct processMapEntry *buf, size_t bufSize)
+{
+    BUFFER_CHECK(buf, bufSize)
+
+    Process *p = Process::GetByID(pid);
+    if(!p) return -ESRCH;
+
+    static const size_t sizeOfEntryStruct = offsetof(processMapEntry_t, Name);
+
+    uintptr_t bufAddr = reinterpret_cast<uintptr_t>(buf);
+    size_t currEntryOffs = 0;
+    processMapEntry_t *entry = nullptr;
+    for(ELF *elf : p->Images)
+    {
+        char *elfName = elf->FullPath;
+        size_t nameLen = String::Length(elfName);
+        size_t thisEntrySize = sizeOfEntryStruct + (elfName ? nameLen + 1 : 0);
+
+        Elf_Ehdr *ehdr = elf->GetEHdr();
+        uintptr_t phdrAddr = reinterpret_cast<uintptr_t>(elf->GetPHdr());
+        for(int i = 0; i < ehdr->e_phnum; ++i, phdrAddr += ehdr->e_phentsize)
+        {
+            Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrAddr);
+            if(phdr->p_type != PT_LOAD)
+                continue;
+
+            entry = reinterpret_cast<processMapEntry_t *>(bufAddr + currEntryOffs);
+            currEntryOffs += thisEntrySize;
+
+            if(currEntryOffs > bufSize)
+                return -ENOMEM; // buffer too small
+
+            entry->EntrySize = thisEntrySize;
+            entry->Address = elf->GetBase() + phdr->p_vaddr;
+            entry->Size = phdr->p_memsz;
+            entry->Offset = phdr->p_offset;
+            entry->Flags = PROC_MAP_READ | PROC_MAP_WRITE | PROC_MAP_EXEC | (elfName ? PROC_MAP_NAME : 0);
+            if(elfName) Memory::Move(entry->Name, elfName, nameLen + 1);
+        }
+    }
+    if(entry) entry->Flags |= PROC_MAP_LAST;
+
+    return ESUCCESS;
+}
+
 long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
 {
     BUFFER_CHECK(payload, payloadSize);
@@ -1191,6 +1310,7 @@ void SysCalls::Initialize()
     Handlers[SYS_lstat] = reinterpret_cast<SysCallHandler>(sys_lstat);
     Handlers[SYS_lseek] = reinterpret_cast<SysCallHandler>(sys_lseek);
     Handlers[SYS_mmap] = reinterpret_cast<SysCallHandler>(sys_mmap);
+    Handlers[SYS_mprotect] = reinterpret_cast<SysCallHandler>(sys_mprotect);
     Handlers[SYS_munmap] = reinterpret_cast<SysCallHandler>(sys_munmap);
     Handlers[SYS_brk] = reinterpret_cast<SysCallHandler>(sys_brk);
     Handlers[SYS_rt_sigprocmask] = reinterpret_cast<SysCallHandler>(sys_rt_sigprocmask);
@@ -1198,6 +1318,8 @@ void SysCalls::Initialize()
     Handlers[SYS_readv] = reinterpret_cast<SysCallHandler>(sys_readv);
     Handlers[SYS_writev] = reinterpret_cast<SysCallHandler>(sys_writev);
     Handlers[SYS_pipe] = reinterpret_cast<SysCallHandler>(sys_pipe);
+    Handlers[SYS_msync] = reinterpret_cast<SysCallHandler>(sys_msync);
+    Handlers[SYS_mincore] = reinterpret_cast<SysCallHandler>(sys_mincore);
     Handlers[SYS_dup] = reinterpret_cast<SysCallHandler>(sys_dup);
     Handlers[SYS_dup2] = reinterpret_cast<SysCallHandler>(sys_dup2);
     Handlers[SYS_getpid] = reinterpret_cast<SysCallHandler>(sys_getpid);
@@ -1251,6 +1373,8 @@ void SysCalls::Initialize()
     Handlers[SYS_PROCESS_GET_NAME] = reinterpret_cast<SysCallHandler>(sysProcessGetName);
     Handlers[SYS_PROCESS_GET_THREAD_COUNT] = reinterpret_cast<SysCallHandler>(sysProcessGetThreadCount);
     Handlers[SYS_PROCESS_GET_USED_MEMORY] = reinterpret_cast<SysCallHandler>(sysProcessGetUsedMemory);
+    Handlers[SYS_PROCESS_GET_EXEC_PATH] = reinterpret_cast<SysCallHandler>(sysProcessGetExecPath);
+    Handlers[SYS_PROCESS_GET_MAP] = reinterpret_cast<SysCallHandler>(sysProcessGetMap);
 
     Handlers[SYS_IPC_SEND_MESSAGE] = reinterpret_cast<SysCallHandler>(sysIPCSendMessage);
     Handlers[SYS_IPC_GET_MESSAGE] = reinterpret_cast<SysCallHandler>(sysIPCGetMessage);

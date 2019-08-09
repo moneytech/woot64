@@ -1,6 +1,7 @@
-#include <errno.h>
-#include <fcntl.h>
+/*#include <errno.h>
+#include <fcntl.h>*/
 #include <stdio.h>
+#if 0
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -45,13 +46,19 @@ void backtrace()
     unw_init_local(&cursor, &context);
 
     fprintf(stderr, "backtrace:\n");
-    while(unw_step(&cursor))
+    for(;;)
     {
+        if(unw_step(&cursor) < 0)
+        {
+            fprintf(stderr, "error generating backtrace\n");
+            break;
+        }
+
         unw_word_t ip, off;
         unw_get_reg(&cursor, UNW_REG_IP, &ip);
         char symbol[256] = "<unknown>";
         unw_get_proc_name(&cursor, symbol, sizeof(symbol), &off);
-        fprintf(stderr, "%p: %s + %zd", (void *)ip, symbol, off);
+        fprintf(stderr, "%p: %s + %zd\n", (void *)ip, symbol, off);
     }
 }
 
@@ -287,5 +294,13 @@ int main(int argc, char *argv[])
     timerCleanup();
     wmCleanup();
 
+    return 0;
+}
+#endif
+
+int main(int argc, char *argv[])
+{
+    (void)argc, (void)argv;
+    printf("trolololo\n");
     return 0;
 }

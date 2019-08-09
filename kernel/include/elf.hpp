@@ -255,6 +255,17 @@ typedef struct
 #define ELF32_ST_TYPE(i)    ((i) & 0xf)
 #define ELF32_ST_INFO(b, t) (((b) << 4) + ((t) & 0xf)
 
+#define ELF64_ST_BIND(i)    ((i) >> 4)
+#define ELF64_ST_TYPE(i)    ((i) & 0xf)
+
+#if(__SIZE_WIDTH__ == 64)
+#define ELF_ST_BIND ELF64_ST_BIND
+#define ELF_ST_TYPE ELF64_ST_TYPE
+#elif(__SIZE_WIDTH__ == 32)
+#define ELF_ST_BIND ELF32_ST_BIND
+#define ELF_ST_TYPE ELF32_ST_TYPE
+#endif // __SIZE_WIDTH__
+
 #define STT_NOTYPE  0
 #define STT_OBJECT  1
 #define STT_FUNC    2
@@ -431,6 +442,7 @@ class ELF
     Elf_Shdr *getShdr(int i);
 public:
     char *Name;
+    char *FullPath;
     int (*EntryPoint)();
     void (*_module_fini)();
 
@@ -439,7 +451,9 @@ public:
     Elf_Sym *FindSymbol(const char *Name);
     const char *GetSymbolName(uintptr_t addr, ptrdiff_t *delta);
     bool ApplyRelocations();
-    uintptr_t GetBase();
-    uintptr_t GetEndPtr();
+    uintptr_t GetBase() const;
+    uintptr_t GetEndPtr() const;
+    void *GetPHdr() const;
+    Elf_Ehdr *GetEHdr() const;
     ~ELF();
 };

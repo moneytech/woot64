@@ -1,5 +1,5 @@
 #include <errno.h>
-#include <ft2build.h>
+#include <freetype2/ft2build.h>
 #include <woot/font.h>
 #include <woot/pixmap.h>
 #include <woot/vector.h>

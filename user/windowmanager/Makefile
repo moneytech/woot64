@@ -5,28 +5,26 @@ OBJS = cxx.o window.o wm.o
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 CUR_FILE = $(WOOT_TOP_DIR)/root/normal.cur
+TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
-CC = $(WOOT_TOP_DIR)/user/cc
-CXX = $(WOOT_TOP_DIR)/user/cxx
+CC = $(TOOLS_PREFIX)gcc
+CXX = $(TOOLS_PREFIX)g++
+LIBS = -Wl,--start-group,-lgcc,-lstdc++,-lwoot,-lsyscalls,-lpng,-lz,-lfreetype,--end-group
+
 CFLAGS = -ggdb
 CXXFLAGS = -ggdb
-LIBS = \
-	$(WOOT_TOP_DIR)/user/libc/lib/crt1.o \
-	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
-	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
-	-Wl,--start-group,-lc,-lwoot,-lsyscalls,-lpng,-lz,-lfreetype,--end-group
 
-export WOOT_TOP_DIR
+export WOOT_TOP_DIR CC CXX CFLAGS CXXFLAGS
 
 all: $(OUTFILE)
 
 static: $(OUTFILE_STATIC)
 
 $(OUTFILE_STATIC): $(OBJS)
-	$(CC) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 $(OUTFILE): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 install: $(BIN_DIR)/$(OUTFILE) $(CUR_FILE)
 

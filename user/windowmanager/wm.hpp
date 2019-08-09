@@ -4,6 +4,7 @@
 #include <woot/pixmap.h>
 #include <woot/rpc.h>
 #include <woot/ui.h>
+#include <vector>
 
 #include "vector.hpp"
 #include "window.hpp"
@@ -13,9 +14,11 @@ typedef struct ipcMessage ipcMessage_t;
 typedef struct uiToolbar uiToolbar_t;
 typedef struct wmEvent wmEvent_t;
 
+using namespace std;
+
 class WindowManager
 {
-    typedef Vector<Window *> Windows;
+    typedef vector<Window *> Windows;
 
     union wmCreateWindowResp
     {
@@ -90,6 +93,7 @@ class WindowManager
     void setActiveWindow(Window *window);
     void wmEventMouse(rcRectangle_t *rect, int wndId, int mouseX, int mouseY, wmEvent_t *event, inpMouseEvent_t *mouseEv);
     void caretTick(int visible);
+    void windowsRemove(Window *wnd);
 
 public:
     WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap);

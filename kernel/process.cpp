@@ -126,7 +126,7 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
         { AT_EUID, 0 },
         { AT_EGID, 0 },
         { AT_ENTRY, (uintptr_t)elf->EntryPoint },
-        { AT_BASE, elf->base },
+        { AT_BASE, elf->GetBase() },
         { AT_PAGESZ, PAGE_SIZE },
         { AT_PHNUM, (uintptr_t)elf->ehdr->e_phnum },
         { AT_PHENT, (uintptr_t)elf->ehdr->e_phentsize },
@@ -165,7 +165,7 @@ int Process::processEntryPoint(const char *cmdline)
         proc->MinBrk = max(proc->MinBrk, align(elf->GetEndPtr(), (64 << 10)));
     proc->CurrentBrk = proc->MinBrk;
     proc->MappedBrk = proc->CurrentBrk;
-    proc->MaxBrk = 0x0000780000000000ull;
+    proc->MaxBrk = USER_MAX_BRK;
     proc->MemoryLock.Release();
 
     Thread *ct = Thread::GetCurrent();
@@ -673,6 +673,13 @@ uintptr_t Process::MMapSBrk(intptr_t incr, bool allocPages)
     return oEBrk;
 }
 
+char *Process::GetExecName()
+{
+    ELF *execELF = Images.Get(0);
+    if(!execELF) return nullptr;
+    return execELF->FullPath;
+}
+
 int Process::Open(const char *filename, int flags, mode_t mode)
 {
     if(!filename) return -EINVAL;
@@ -973,9 +980,8 @@ Process::~Process()
 {
     Lock();
 
-    int i = 0;
-    for(Handle h : Handles)
-        Close(i++);
+    for(size_t i = 0; i < Handles.Size(); ++i)
+        Close(static_cast<int>(i));
 
     bool lockAcquired = listLock.Acquire(0, true);
     for(ELF *elf : Images)
@@ -985,7 +991,7 @@ Process::~Process()
     if(CurrentDirectory) FileSystem::PutDEntry(CurrentDirectory);
     processList.Remove(this, nullptr, false);
     if(lockAcquired) listLock.Release();
-    if(Name && Name) delete[] Name;
+    if(Name) delete[] Name;
     if(DeleteFinished && Finished) delete Finished;
     if(CommandLine) delete[] CommandLine;
 }

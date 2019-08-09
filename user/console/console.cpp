@@ -16,6 +16,8 @@
 
 #include "font.hpp"
 
+extern "C" char **environ;
+
 static pmPixMap *conPixMap = nullptr;
 static unsigned conX = 0;
 static unsigned conY = 0;
@@ -125,7 +127,7 @@ static void updateConsole()
     conLastUpdate = 512;
 }
 
-void *operator new(unsigned long size)
+/*void *operator new(unsigned long size)
 {
     return calloc(1, size);
 }
@@ -143,7 +145,7 @@ void operator delete(void *ptr)
 void operator delete[](void *ptr)
 {
     free(ptr);
-}
+}*/
 
 int stdListener(uintptr_t arg)
 {
@@ -444,6 +446,42 @@ extern "C" int main(int argc, char *argv[])
                 printf("totalhigh: %lu\n", si.totalhigh * si.mem_unit);
                 printf("freehigh: %lu\n", si.freehigh * si.mem_unit);
             } else puts("sysinfo() failed");
+        }
+        else if(!strcmp(conCmdArgs[0], "pmap"))
+        {
+            union
+            {
+                processMapEntry_t *map;
+                uint8_t *mapData;
+            };
+
+            int pid = conCmdArgs[1] ? strtol(conCmdArgs[1], nullptr, 0) : getpid();
+            static const int bufSize = 16 << 10;
+            uint8_t *origData = mapData = new uint8_t[bufSize];
+            processGetMap(pid, map, bufSize);
+            for(;;)
+            {
+                printf("%p %p %p %x %s\n", map->Address, map->Size, map->Offset, map->Flags, map->Flags & PROC_MAP_NAME ? map->Name : "<no name>");
+                if(map->Flags & PROC_MAP_LAST)
+                    break;
+                mapData += map->EntrySize;
+            }
+            delete[] origData;
+        }
+        else if(!strcmp(conCmdArgs[0], "except"))
+        {
+            try
+            {
+                throw("exception test\n");
+            }
+            catch(const char *msg)
+            {
+                printf("exceptions work: %s\n", msg);
+            }
+            catch(...)
+            {
+                printf("exceptions work\n");
+            }
         }
         else
         {

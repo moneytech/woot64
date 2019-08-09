@@ -9,7 +9,9 @@ CC = $(WOOT_TOP_DIR)/user/cc
 CXX = $(WOOT_TOP_DIR)/user/cxx
 LIBS = -lc
 
-export WOOT_TOP_DIR CC CXX LDFLAGS LIBS
+CFLAGS = -ggdb -O0
+
+export WOOT_TOP_DIR CC CXX LDFLAGS LIBS CFLAGS
 
 all: configure
 	$(MAKE) -C build

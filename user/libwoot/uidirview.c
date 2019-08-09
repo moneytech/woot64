@@ -214,7 +214,7 @@ char *uiDirViewGetPath(uiDirView_t *view)
     {
         errno = EINVAL;
         return NULL;
-    };
+    }
     return view->Path;
 }
 

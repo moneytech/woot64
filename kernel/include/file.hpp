@@ -81,6 +81,7 @@ public:
     static File *Open(::DEntry *parent, const char *name, int flags, mode_t mode, bool followSymLinks);
     static File *Open(const char *name, int flags, mode_t mode, bool followSymLinks);
 
+    size_t GetFullPath(char *buf, size_t bufSize);
     int64_t GetSize();
     bool SetAccessTime(time_t time);
     bool SetModifyTime(time_t time);

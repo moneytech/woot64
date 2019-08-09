@@ -196,7 +196,9 @@ public:
     uintptr_t Brk(uintptr_t brk, bool allocPages);
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
+    char *GetExecName();
 
+    // files and handles
     int Open(const char *filename, int flags, mode_t mode);
     int Close(int handle);
     long Read(int handle, void *buffer, size_t size);
@@ -220,6 +222,7 @@ public:
     int CreateNamedObjectHandle(NamedObject *no);
     NamedObject *GetNamedObject(int handle);
 
+    // synchronization
     int NewMutex(bool recursive);
     Mutex *GetMutex(int fd);
     int NewSemaphore(int initVal);
