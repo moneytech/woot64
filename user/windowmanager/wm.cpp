@@ -10,7 +10,6 @@
 #include <woot/wm.h>
 
 #include "wm.hpp"
-#include "vector.hpp"
 #include "window.hpp"
 
 #define MOUSE_ACCELERATION 0

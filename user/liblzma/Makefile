@@ -2,11 +2,12 @@ WOOT_TOP_DIR ?= $(shell realpath ../..)
 SRC_DIR = $(WOOT_TOP_DIR)/user/liblzma/xz-5.2.4
 BUILD_DIR = $(WOOT_TOP_DIR)/user/liblzma/build
 CONFIG_STATUS = $(BUILD_DIR)/config.status
-CONFIG_OPTS = --prefix=$(WOOT_TOP_DIR)/user/liblzma --host=x86_64-none-linux
+PREFIX = $(WOOT_TOP_DIR)/cross-root
+TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
+CONFIG_OPTS = --prefix=$(PREFIX) --host=x86_64-woot
 
-CC = $(WOOT_TOP_DIR)/user/cc
-CXX = $(WOOT_TOP_DIR)/user/cxx
-LIBS = -lc
+CC = $(TOOLS_PREFIX)gcc
+CXX = $(TOOLS_PREFIX)g++
 
 export WOOT_TOP_DIR CC CXX LDFLAGS LIBS
 
@@ -22,14 +23,14 @@ $(CONFIG_STATUS): $(SRC_DIR)/configure
 	$(SRC_DIR)/configure $(CONFIG_OPTS)
 
 install:
-	cp -R $(WOOT_TOP_DIR)/user/liblzma/lib/*.so* $(WOOT_TOP_DIR)/root/lib/
+	cp -R $(PREFIX)/lib/*.so* $(WOOT_TOP_DIR)/root/lib/
 
 clean:
-	cd $(BUILD_DIR) && \
 	$(MAKE) -C build clean
 
 distclean:
-	rm -rf build bin include lib share
+	-$(MAKE) -C build uninstall
+	rm -rf build
 
 .PHONY: configure clean distclean install
 

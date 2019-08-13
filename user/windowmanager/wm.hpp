@@ -6,7 +6,6 @@
 #include <woot/ui.h>
 #include <vector>
 
-#include "vector.hpp"
 #include "window.hpp"
 
 typedef struct inpMouseEvent inpMouseEvent_t;

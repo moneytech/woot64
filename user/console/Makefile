@@ -11,19 +11,20 @@ CXX = $(TOOLS_PREFIX)g++
 
 CFLAGS = -ggdb
 CXXFLAGS = -ggdb
-LIBS = -Wl,--start-group,-lstdc++,-lwoot,-lsyscalls,--end-group
+LDFLAGS =
+LIBS = -Wl,--start-group,-lgcc_eh,-lwoot,-lsyscalls,--end-group
 
-export WOOT_TOP_DIR
+export WOOT_TOP_DIR CC CXX
 
 all: $(OUTFILE)
 
 static: $(OUTFILE_STATIC)
 
 $(OUTFILE_STATIC): $(OBJS)
-	$(CC) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 $(OUTFILE): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 install: $(BIN_DIR)/$(OUTFILE)
 

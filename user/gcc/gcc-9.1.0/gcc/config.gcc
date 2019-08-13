@@ -1977,6 +1977,7 @@ x86_64-*-fuchsia*)
 	;;
 i[34567]86-*-woot*)
     tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h woot.h"
+	tmake_file="${tmake_file} t-libunwind"
     ;;
 x86_64-*-woot*)
     tm_file="${tm_file} i386/unix.h i386/att.h dbxelf.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h woot.h"

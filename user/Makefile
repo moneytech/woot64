@@ -9,7 +9,6 @@ SUBDIRS = \
 	libmpfr \
 	libsdl \
 	liblzma \
-	libunwind \
 	console \
 	filemanager \
 	init \

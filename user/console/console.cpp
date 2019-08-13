@@ -127,26 +127,6 @@ static void updateConsole()
     conLastUpdate = 512;
 }
 
-/*void *operator new(unsigned long size)
-{
-    return calloc(1, size);
-}
-
-void *operator new[](unsigned long size)
-{
-    return calloc(1, size);
-}
-
-void operator delete(void *ptr)
-{
-    free(ptr);
-}
-
-void operator delete[](void *ptr)
-{
-    free(ptr);
-}*/
-
 int stdListener(uintptr_t arg)
 {
     int fd = (int)arg;

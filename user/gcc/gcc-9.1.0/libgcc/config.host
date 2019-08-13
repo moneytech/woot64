@@ -1483,5 +1483,6 @@ case ${host} in
 x86_64-*-woot*)
   tmake_file="${tmake_file} t-slibgcc t-slibgcc-libgcc"
   extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
+  md_unwind_header=i386/linux-unwind.h
 esac
 

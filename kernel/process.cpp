@@ -308,7 +308,7 @@ Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoR
     char *cmdLine = String::Duplicate(filename);
     Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)cmdLine,
                                 DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, finished);
-    Process *proc = new Process(filename, thread, 0, finished);
+    Process *proc = new Process(filename, thread, 0, deleteFinished);
     proc->noAutoRelocs = noAutoRelocs;
     proc->Finished = finished;
     proc->DeleteFinished = deleteFinished;

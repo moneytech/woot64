@@ -2,15 +2,12 @@ WOOT_TOP_DIR ?= $(shell realpath ../..)
 BIN_DIR ?= $(WOOT_TOP_DIR)/root/bin
 OUTFILE = yasm
 BUILDFILE = build/$(OUTFILE)
+PREFIX = $(WOOT_TOP_DIR)/cross-root
+TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
-CC = $(WOOT_TOP_DIR)/user/cc
-LDFLAGS = \
-	$(WOOT_TOP_DIR)/user/libc/lib/crt1.o \
-	$(WOOT_TOP_DIR)/user/libc/lib/crti.o \
-	$(WOOT_TOP_DIR)/user/libc/lib/crtn.o \
-	-lc
+CC = $(TOOLS_PREFIX)gcc
 
-export CC CFLAGS LDFLAGS WOOT_TOP_DIR
+export WOOT_TOP_DIR CC CFLAGS LDFLAGS
 
 all: $(BUILDFILE)
 
@@ -31,7 +28,7 @@ build/config.status:
 	mkdir -p build
 	cd build && \
 	rm -rf ./* && \
-	../yasm-1.3.0/configure --prefix="$(WOOT_TOP_DIR)/user/yasm" \
+	../yasm-1.3.0/configure --prefix=$(PREFIX) \
 	--host=x86_64-linux-gnu
 
 install: $(BIN_DIR)/$(OUTFILE)
@@ -41,10 +38,9 @@ $(BIN_DIR)/$(OUTFILE): $(BUILDFILE)
 	cp $(BUILDFILE) $(BIN_DIR)/$(OUTFILE)
 
 distclean:
-	rm -rf build bin lib share include
+	rm -rf build
 	
 clean:
-	rm -rf bin lib share include
 	$(MAKE) -C build clean
 
 .PHONY: clean install reconfigure distclean
