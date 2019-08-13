@@ -12,11 +12,10 @@ CONFIG_ARGS="\
 --with-sysroot=$INSTALL_DIR \
 --disable-nls \
 --enable-languages=c,c++ \
---disable-multilib \
 --disable-werror \
 --enable-threads \
---enable-shared \
---disable-tm-clone-registry"
+--enable-host-shared \
+--enable-shared"
 
 echo "Using WOOT root directory $WOOT_TOP_DIR"
 echo "Build directory $BUILD_DIR"
