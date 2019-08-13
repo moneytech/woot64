@@ -645,7 +645,7 @@ int WindowManager::ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect)
         }
         else if(!strcmp(req, "wmDeleteWindow"))
         {
-            int id = *(int *)args;
+            int id = *reinterpret_cast<int *>(args);
             Window *wnd = getWindowById(id);
             if(wnd)
             {
@@ -771,6 +771,12 @@ void WindowManager::UpdateRect(rcRectangle_t *rect)
     }
     pmBlit(fbPixMap, bbPixMap, rect->X, rect->Y, rect->X, rect->Y, rect->Width, rect->Height);
     //pmRectangleRect(fbPixMap, rect, pmColorFromRGB(rand(), rand(), rand()));
+}
+
+void WindowManager::GetMousePos(int *x, int *y)
+{
+    if(x) *x = mouseX;
+    if(y) *y = mouseY;
 }
 
 void WindowManager::MinimizeWindow(Window *window)

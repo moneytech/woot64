@@ -9,6 +9,7 @@ typedef struct rcRectangle rcRectangle_t;
 typedef struct uiButton uiButton_t;
 typedef struct uiControl uiControl_t;
 typedef struct uiLabel uiLabel_t;
+typedef struct uiMenu uiMenu_t;
 
 class WindowManager;
 
@@ -34,6 +35,7 @@ class Window
     uiButton_t *maxButton;
     uiButton_t *minButton;
     uiButton_t *progButton;
+    uiMenu_t *progMenu;
 
     static void titleBarButtonActivate(uiControl_t *sender);
     static int getNewId();

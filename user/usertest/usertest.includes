@@ -1,3 +1,2 @@
-../libc/include
-../libsyscalls
 ../libwoot
+../../cross-root/include

@@ -9,6 +9,7 @@
 #include <woot/ui.h>
 #include <woot/uibutton.h>
 #include <woot/uilabel.h>
+#include <woot/uimenu.h>
 #include <woot/wm.h>
 
 #include "window.hpp"
@@ -22,8 +23,8 @@ int Window::TitleBarHeight = 24;
 
 void Window::titleBarButtonActivate(uiControl_t *sender)
 {
-    Window *wnd = (Window *)uiControlGetContext(sender);
-    uiButton_t *btn = (uiButton_t *)sender;
+    Window *wnd = reinterpret_cast<Window *>(uiControlGetContext(sender));
+    uiButton_t *btn = reinterpret_cast<uiButton_t *>(sender);
 
     if(btn == wnd->closeButton)
     {
@@ -34,6 +35,14 @@ void Window::titleBarButtonActivate(uiControl_t *sender)
     }
     else if(btn == wnd->minButton)
         WindowManager::MinimizeWindow(wnd);
+    else if(btn == wnd->progButton)
+    {
+        wmEvent_t event;
+        event.Type = WM_EVT_PROG_MENU;
+        event.WindowId = wnd->id;
+        wnd->WM->GetMousePos(&event.ProgMenu.X, &event.ProgMenu.Y);
+        ipcSendMessage(wnd->GetOwner(), MSG_WM_EVENT, MSG_FLAG_NONE, &event, sizeof(event));
+    }
 }
 
 int Window::getNewId()
@@ -42,10 +51,12 @@ int Window::getNewId()
 }
 
 Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned h, unsigned flags, pmPixMap_t *dstPixMap, pmPixelFormat *pfOverride) :
-    WM(wm), Visible(!(flags & WM_CWF_HIDDEN)), id(getNewId()), owner(owner),
-    rect({ x, y, (int)w, (int)h }), flags(flags), shMemName(nullptr),
+    id(getNewId()), owner(owner),
+    rect({ x, y, static_cast<int>(w), static_cast<int>(h) }), flags(flags), shMemName(nullptr),
     pixels(nullptr), pixelsShMem(-ENOMEM), pixMap(nullptr), title(nullptr),
-    active(true), dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr)
+    active(true), dstPixMap(dstPixMap), titleBarPixMap(nullptr), titleBar(nullptr),
+    progMenu(uiMenuCreate()), WM(wm),
+    Visible(!(flags & WM_CWF_HIDDEN))
 {
     char nameBuf[64];
     snprintf(nameBuf, sizeof(nameBuf), "window_%d_pixels", id);
@@ -53,7 +64,7 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
     pixelsShMem = ipcCreateSharedMem(nameBuf, pmPitch * rect.Height);
     if(pixelsShMem >= 0)
     {
-        pixels = ipcMapSharedMem(pixelsShMem, NULL, IPC_SHMEM_WRITE);
+        pixels = ipcMapSharedMem(pixelsShMem, nullptr, IPC_SHMEM_WRITE);
         if(pixels)
             pixMap = pmFromMemory(rect.Width, rect.Height, pmPitch, pfOverride ? pfOverride : &dstPixMap->Format, pixels, 0);
     }
@@ -75,7 +86,7 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
         fntFont_t *symFont = wmGetFont(WM_FONT_UI_SYMBOLS);
 
         titleBarText = uiLabelCreate(titleBar, 1, 1, w - 2, TitleBarHeight - 2, "Window");
-        rcRectangle_t lblRect = uiControlGetSize((uiControl_t *)titleBarText);
+        rcRectangle_t lblRect = uiControlGetSize(reinterpret_cast<uiControl_t *>(titleBarText));
         int btnMargin = 4;
         int btnSize = lblRect.Height - btnMargin;
 
@@ -83,49 +94,51 @@ Window::Window(WindowManager *wm, int owner, int x, int y, unsigned w, unsigned 
         int closeX = lblRect.Width - btnSize - btnMargin / 2;
         if(flags & WM_CWF_CLOSEBUTTON)
         {
-            closeButton = uiButtonCreate((uiControl_t *)titleBarText, closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X");
-            uiControlSetBackColor((uiControl_t *)closeButton, defBg);
-            uiControlSetFont((uiControl_t *)closeButton, symFont);
-            uiControlSetContext((uiControl_t *)closeButton, this);
-            uiControlSetOnActivate((uiControl_t *)closeButton, titleBarButtonActivate);
-            uiControlSetCanHaveFocus((uiControl_t *)closeButton, UI_FALSE);
+            closeButton = uiButtonCreate(reinterpret_cast<uiControl_t *>(titleBarText), closeX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "X");
+            uiControlSetBackColor(reinterpret_cast<uiControl_t *>(closeButton), defBg);
+            uiControlSetFont(reinterpret_cast<uiControl_t *>(closeButton), symFont);
+            uiControlSetContext(reinterpret_cast<uiControl_t *>(closeButton), this);
+            uiControlSetOnActivate(reinterpret_cast<uiControl_t *>(closeButton), titleBarButtonActivate);
+            uiControlSetCanHaveFocus(reinterpret_cast<uiControl_t *>(closeButton), UI_FALSE);
         }
         else closeX = lblRect.Width + 1 - btnMargin / 2;
 
         int maxX = closeX - btnSize - 1;
         if(flags & WM_CWF_MAXIMIZEBUTTON)
         {
-            maxButton = uiButtonCreate((uiControl_t *)titleBarText, maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#");
-            uiControlSetBackColor((uiControl_t *)maxButton, defBg);
-            uiControlSetFont((uiControl_t *)maxButton, symFont);
-            uiControlSetContext((uiControl_t *)maxButton, this);
-            uiControlSetOnActivate((uiControl_t *)maxButton, titleBarButtonActivate);
-            uiControlSetCanHaveFocus((uiControl_t *)maxButton, UI_FALSE);
+            maxButton = uiButtonCreate(reinterpret_cast<uiControl_t *>(titleBarText), maxX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "#");
+            uiControlSetBackColor(reinterpret_cast<uiControl_t *>(maxButton), defBg);
+            uiControlSetFont(reinterpret_cast<uiControl_t *>(maxButton), symFont);
+            uiControlSetContext(reinterpret_cast<uiControl_t *>(maxButton), this);
+            uiControlSetOnActivate(reinterpret_cast<uiControl_t *>(maxButton), titleBarButtonActivate);
+            uiControlSetCanHaveFocus(reinterpret_cast<uiControl_t *>(maxButton), UI_FALSE);
         } else maxX = closeX - 1;
 
         int minX = maxX - btnSize;
         if(flags & WM_CWF_MINIMIZEBUTTON)
         {
-            minButton = uiButtonCreate((uiControl_t *)titleBarText, minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_");
-            uiControlSetBackColor((uiControl_t *)minButton, defBg);
-            uiControlSetFont((uiControl_t *)minButton, symFont);
-            uiControlSetContext((uiControl_t *)minButton, this);
-            uiControlSetOnActivate((uiControl_t *)minButton, titleBarButtonActivate);
-            uiControlSetCanHaveFocus((uiControl_t *)minButton, UI_FALSE);
+            minButton = uiButtonCreate(reinterpret_cast<uiControl_t *>(titleBarText), minX, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "_");
+            uiControlSetBackColor(reinterpret_cast<uiControl_t *>(minButton), defBg);
+            uiControlSetFont(reinterpret_cast<uiControl_t *>(minButton), symFont);
+            uiControlSetContext(reinterpret_cast<uiControl_t *>(minButton), this);
+            uiControlSetOnActivate(reinterpret_cast<uiControl_t *>(minButton), titleBarButtonActivate);
+            uiControlSetCanHaveFocus(reinterpret_cast<uiControl_t *>(minButton), UI_FALSE);
         } else minX = maxX;
 
         if(flags & WM_CWF_SHOWICON)
         {
-            progButton = uiButtonCreate((uiControl_t *)titleBarText, btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=");
-            uiControlSetFont((uiControl_t *)progButton, symFont);
+            progButton = uiButtonCreate(reinterpret_cast<uiControl_t *>(titleBarText), btnMargin / 2, (lblRect.Height - btnSize) / 2, btnSize, btnSize, "=");
+            uiControlSetFont(reinterpret_cast<uiControl_t *>(progButton), symFont);
+            uiControlSetContext(reinterpret_cast<uiControl_t *>(progButton), this);
+            uiControlSetOnActivate(reinterpret_cast<uiControl_t *>(progButton), titleBarButtonActivate);
         }
 
         uiControlSetBackColor(titleBar, bg);
         uiControlSetBorderStyle(titleBar, UI_BORDER_RAISED);
 
-        uiControlSetTextColor((uiControl_t *)titleBarText, fg);
-        uiControlSetBackColor((uiControl_t *)titleBarText, bg);
-        uiControlSetFont((uiControl_t *)titleBarText, titleFont);
+        uiControlSetTextColor(reinterpret_cast<uiControl_t *>(titleBarText), fg);
+        uiControlSetBackColor(reinterpret_cast<uiControl_t *>(titleBarText), bg);
+        uiControlSetFont(reinterpret_cast<uiControl_t *>(titleBarText), titleFont);
 
         uiControlRedraw(titleBar, UI_FALSE);
     }
@@ -240,14 +253,14 @@ void Window::SetTitle(const char *title)
     this->title = strdup(title);
     if(titleBarText)
     {
-        uiControlSetText((uiControl_t *)titleBarText, this->title);
+        uiControlSetText(reinterpret_cast<uiControl_t *>(titleBarText), this->title);
         uiControlRedraw(titleBar, UI_FALSE);
     }
 }
 
 const char *Window::GetTitle() const
 {
-    return (const char *)title;
+    return const_cast<const char *>(title);
 }
 
 void Window::UpdateWindowGraphics(rcRectangle_t *dstDirtyRect)
@@ -289,9 +302,9 @@ rcRectangle_t Window::SetActive(bool active)
         pmColor_t bg = wmGetColor(active ? WM_COLOR_TITLE_BAR : WM_COLOR_INACTIVE_TITLE_BAR);
         pmColor_t fg = wmGetColor(active ? WM_COLOR_TITLE_TEXT : WM_COLOR_INACTIVE_TITLE_TEXT);
         uiControlSetBackColor(titleBar, bg);
-        uiControlSetBackColor((uiControl_t *)titleBarText, bg);
-        uiControlSetTextColor((uiControl_t *)titleBarText, fg);
-        uiControlRedraw((uiControl_t *)titleBar, UI_FALSE);
+        uiControlSetBackColor(reinterpret_cast<uiControl_t *>(titleBarText), bg);
+        uiControlSetTextColor(reinterpret_cast<uiControl_t *>(titleBarText), fg);
+        uiControlRedraw(reinterpret_cast<uiControl_t *>(titleBar), UI_FALSE);
     }
     rcRectangle_t titleBar = { rect.X, rect.Y - TitleBarHeight, rect.Width, TitleBarHeight };
     return titleBar;
@@ -309,6 +322,7 @@ uiControl_t *Window::GetTitleControl() const
 
 Window::~Window()
 {
+    if(progMenu) uiMenuDelete(progMenu);
     if(titleBar) uiControlDelete(titleBar);
     if(titleBarPixMap) pmDelete(titleBarPixMap);
     if(shMemName) free(shMemName);

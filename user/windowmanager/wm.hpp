@@ -98,7 +98,8 @@ public:
     WindowManager(pmPixMap_t *fbPixMap, pmPixMap_t *bbPixMap);
     int ProcessMessage(ipcMessage_t *msg, rcRectangle_t *dirtyRect);
     void UpdateRect(rcRectangle_t *rect);
+    void GetMousePos(int *x, int *y);
     static void MinimizeWindow(Window *window);
-    static void RestoreWindow(Window *window);
+    static void RestoreWindow(Window *window);    
     ~WindowManager();
 };
