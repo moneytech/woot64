@@ -3,9 +3,16 @@
 NPROC=`nproc`
 THREADS=${THREADS:-$NPROC}
 
+echo "Building using $THREADS threads"
+
+MAKE=${MAKE:-make}
+
 WOOT_TOP_DIR=`pwd`
 BINUTILS_DIR=$WOOT_TOP_DIR/user/binutils
 GCC_DIR=$WOOT_TOP_DIR/user/gcc
+
+echo "Building libc"
+$MAKE -j$THREADS -C user/libc
 
 echo "Building binutils for cross compilation"
 rm -rf $BINUTILS_DIR/build-cross
