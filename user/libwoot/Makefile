@@ -38,20 +38,18 @@ CC = $(TOOLS_PREFIX)gcc
 AR = $(TOOLS_PREFIX)ar
 LD = $(TOOLS_PREFIX)ld
 
-CFLAGS = -fPIC -I. -I$(WOOT_TOP_DIR)/cross-root/include/freetype2
-#LDFLAGS = -shared -Wl,-soname=$(SHARED_LIB),--no-undefined
-#LIBS = -Wl,--start-group,-lsyscalls,-lpng,-lfreetype,--end-group 
-LDFLAGS = -shared -soname=$(SHARED_LIB) --no-undefined
-LIBS = --start-group -lc -lsyscalls -lpng -lfreetype --end-group 
+CFLAGS = -shared -fPIC -I. -I$(WOOT_TOP_DIR)/cross-root/include/freetype2
+LDFLAGS = -shared -Wl,-shared,--no-undefined
+LIBS = -Wl,--start-group,-lgcc_eh,-lsyscalls,-lpng,-lfreetype,--end-group 
 
-export WOOT_TOP_DIR CC AR LD
+export WOOT_TOP_DIR CC CFLAG LDFLAGS LIBS
 
 HEADER_FILES = $(wildcard woot/*.h)
 HEADERS = $(patsubst %, $(PREFIX)/include/%, $(HEADER_FILES))
 
-$(HEADERS): $(HEADER_FILES)
-
 all: $(SHARED_LIB) $(STATIC_LIB) $(HEADERS) $(PREFIX)/lib/$(STATIC_LIB) $(PREFIX)/lib/$(SHARED_LIB)
+
+$(HEADERS): $(HEADER_FILES)
 
 $(PREFIX)/include/%:
 	mkdir -p $(PREFIX)/include/woot
@@ -63,7 +61,7 @@ $(STATIC_LIB): $(OBJS)
 	$(AR) rc $@ $(OBJS)
 
 $(SHARED_LIB): $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB) $(LIBS)
+	$(CC) $(LDFLAGS) $(OBJS) -o $(SHARED_LIB) $(LIBS)
 
 install: $(LIB_DIR)/$(SHARED_LIB) $(CFG_DIR)/editors.cfg
 

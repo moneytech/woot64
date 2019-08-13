@@ -4,7 +4,7 @@ OBJS = syscalls.o
 
 WOOT_TOP_DIR ?= $(shell realpath ../..)
 LIB_DIR ?= $(WOOT_TOP_DIR)/root/lib
-INSTALL_DIR = $(WOOT_TOP_DIR)/cross-root
+PREFIX = $(WOOT_TOP_DIR)/cross-root
 TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
 CC = $(TOOLS_PREFIX)gcc
@@ -12,18 +12,18 @@ LD = $(TOOLS_PREFIX)ld
 AR = $(TOOLS_PREFIX)ar
 
 CFLAGS = -I.
-LDFLAGS = -shared -nostdlib -Wl,--no-undefined
+LDFLAGS = -shared -Wl,-shared,--no-undefined
 
-export WOOT_TOP_DIR CC LD AR CFLAGS LDFLAGS
+export WOOT_TOP_DIR
 
-HEADERS = $(INSTALL_DIR)/include/syscalls/syscalls.h
+HEADERS = $(PREFIX)/include/syscalls/syscalls.h
 
-$(INSTALL_DIR)/include/syscalls/syscalls.h: syscalls/syscalls.h
+all: $(SHARED_LIB) $(STATIC_LIB) $(PREFIX)/lib/$(STATIC_LIB) $(PREFIX)/lib/$(SHARED_LIB) $(HEADERS)
 
-all: $(SHARED_LIB) $(STATIC_LIB) $(INSTALL_DIR)/lib/$(STATIC_LIB) $(INSTALL_DIR)/lib/$(SHARED_LIB) $(HEADERS)
+$(PREFIX)/include/syscalls/syscalls.h: syscalls/syscalls.h
 
-$(INSTALL_DIR)/include/syscalls/%:
-	mkdir -p $(INSTALL_DIR)/include/syscalls
+$(PREFIX)/include/syscalls/%:
+	mkdir -p $(PREFIX)/include/syscalls
 	cp -f $< $@
 
 static: $(STATIC_LIB)
@@ -40,11 +40,11 @@ $(LIB_DIR)/$(SHARED_LIB): $(SHARED_LIB)
 	mkdir -p $(LIB_DIR)
 	cp $(SHARED_LIB) $(LIB_DIR)/$(SHARED_LIB)
 
-$(INSTALL_DIR)/lib/$(STATIC_LIB) $(INSTALL_DIR)/lib/$(SHARED_LIB): $(STATIC_LIB) $(SHARED_LIB)
-	mkdir -p $(INSTALL_DIR)/lib
-	cp $(STATIC_LIB) $(SHARED_LIB) $(INSTALL_DIR)/lib/
+$(PREFIX)/lib/$(STATIC_LIB) $(PREFIX)/lib/$(SHARED_LIB): $(STATIC_LIB) $(SHARED_LIB)
+	mkdir -p $(PREFIX)/lib
+	cp $(STATIC_LIB) $(SHARED_LIB) $(PREFIX)/lib/
 
 clean:
-	rm -f $(OBJS) $(STATIC_LIB) $(SHARED_LIB)
+	rm -rf $(OBJS) $(STATIC_LIB) $(SHARED_LIB) $(PREFIX)/lib/$(SHARED_LIB) $(PREFIX)/lib/$(STATIC_LIB) $(HEADERS)
 
 .PHONY: clean install

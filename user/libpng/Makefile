@@ -8,10 +8,7 @@ TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
 CC = $(TOOLS_PREFIX)gcc
 
-CFLAGS += -fPIC -Wl,-soname=$(SHARED_LIB)
-LDFLAGS = -Wl,-soname=$(SHARED_LIB)
-
-export WOOT_TOP_DIR CC CFLAGS LDFLAGS
+export WOOT_TOP_DIR CC
 
 all:
 	$(MAKE) configure
@@ -33,9 +30,9 @@ build/config.status:
 	mkdir -p build
 	cd build && \
 	rm -rf ./* && \
-	LIBS="-lc" \
-	SONAME=$(SHARED_LIB) \
-	../libpng-1.6.36/configure --prefix=$(PREFIX) \
+	CFLAGS="-fPIC" \
+	../libpng-1.6.36/configure \
+	--prefix=$(PREFIX) \
 	--host=x86_64-linux-gnu
 
 install: $(LIB_DIR)/$(SHARED_LIB)
@@ -46,10 +43,9 @@ $(LIB_DIR)/$(SHARED_LIB): $(PREFIX)/lib/$(SHARED_LIB)
 
 distclean:
 	-$(MAKE) -C build uninstall
-	-rm -rf build bin lib share include
+	-rm -rf build
 	
 clean:
-	-rm -rf bin lib share include
 	$(MAKE) -C build clean
 
 .PHONY: clean install reconfigure distclean

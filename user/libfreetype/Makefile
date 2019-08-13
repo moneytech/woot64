@@ -7,9 +7,8 @@ PREFIX = $(WOOT_TOP_DIR)/cross-root
 TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
 CC = $(TOOLS_PREFIX)gcc
-CXX = $(TOOLS_PREFIX)g++
 
-export WOOT_TOP_DIR CC CFLAGS LDFLAGS
+export WOOT_TOP_DIR CC
 
 all:
 	$(MAKE) configure
@@ -35,6 +34,7 @@ build/config.status:
 	SONAME="$(SHARED_LIB)" \
 	LIBPNG_CFLAGS="-I$(PREFIX)/include" \
 	LIBPNG_LIBS="-L$(PREFIX)/lib -lpng16" \
+	CFLAGS="-fPIC" \
 	../freetype-2.10.0/configure \
 	--prefix=$(PREFIX) \
 	--host=x86_64-woot
