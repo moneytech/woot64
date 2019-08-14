@@ -19,7 +19,8 @@ SUBDIRS = \
 	windowmanager \
 	yasm \
 	icons \
-	fonts
+	fonts \
+	make
 
 all:
 	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done
