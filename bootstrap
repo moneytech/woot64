@@ -1,5 +1,19 @@
 #!/bin/sh
 
+NO_LIBC=false
+NO_BINUTILS=false
+NO_GCC=false
+
+for ARG in $*
+do
+	case $ARG in
+		--no-libc) NO_LIBC=true ;;
+		--no-binutils) NO_BINUTILS=true ;;
+		--no-gcc) NO_GCC=true ;;
+		*) echo "Unknown option $ARG" ;;
+	esac
+done
+
 NPROC=`nproc`
 THREADS=${THREADS:-$NPROC}
 
@@ -11,20 +25,34 @@ WOOT_TOP_DIR=`pwd`
 BINUTILS_DIR=$WOOT_TOP_DIR/user/binutils
 GCC_DIR=$WOOT_TOP_DIR/user/gcc
 
-echo "Building libc"
-$MAKE -j$THREADS -C user/libc
+if [ $NO_LIBC != true ]
+then
+	echo "Building libc"
+	$MAKE -j$THREADS -C user/libc
+else
+	echo "Skipping libc"
+fi
 
-echo "Building binutils for cross compilation"
-rm -rf $BINUTILS_DIR/build-cross
-cd $BINUTILS_DIR && \
-./configure-cross && \
-make -j$THREADS -C build-cross && \
-make -C build-cross install
+if [ $NO_BINUTILS != true ]
+then
+	echo "Building binutils for cross compilation"
+	rm -rf $BINUTILS_DIR/build-cross
+	cd $BINUTILS_DIR && \
+	./configure-cross && \
+	make -j$THREADS -C build-cross && \
+	make -C build-cross install
+else
+	echo "Skipping binutils"
+fi
 
-echo "Building GCC cross compiler"
-rm -rf $GCC_DIR/build-cross
-cd $GCC_DIR && \
-./configure-cross && \
-make -j$THREADS -C build-cross all-gcc all-target-libgcc all-target-libstdc++-v3 && \
-make -C build-cross install-gcc install-target-libgcc install-target-libstdc++-v3
-
+if [ $NO_GCC != true ]
+then
+	echo "Building GCC cross compiler"
+	rm -rf $GCC_DIR/build-cross
+	cd $GCC_DIR && \
+	./configure-cross && \
+	make -j$THREADS -C build-cross all-gcc all-target-libgcc all-target-libstdc++-v3 && \
+	make -C build-cross install-gcc install-target-libgcc install-target-libstdc++-v3
+else
+	echo "Skipping GCC"
+fi
