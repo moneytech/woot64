@@ -96,11 +96,9 @@ public:
     Semaphore *WaitingSemaphore;
     int WakeCount; // used to avoid lost wakeup problem
 
-    // pthread
-    struct pthread *PThread;
+    // threads
     int *tidPtr;
-    Semaphore *Initialized; // signaled when thread initialized its
-                            // usermode stuff (like pthread structure)
+    Semaphore *Initialized; // signaled when thread initialized its usermode stuff
 
     static void Initialize();
     static Thread *GetIdleThread();

@@ -18,6 +18,7 @@
 #include <thread.hpp>
 #include <tokenizer.hpp>
 
+
 extern "C" void userThreadReturn(int retVal);
 
 #define MAKE_STR(s) #s
@@ -181,15 +182,6 @@ int Process::processEntryPoint(const char *cmdline)
     };
     stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
 
-    ct->AllocStack((uint8_t **)&ct->PThread, PAGE_SIZE);
-    Memory::Zero(ct->PThread, sizeof(pthread));
-    ct->PThread->self = ct->PThread;
-    ct->PThread->detach_state = 1; // DT_JOINABLE
-    ct->PThread->tid = ct->Id;
-    ct->PThread->robust_list.head = &ct->PThread->robust_list.head;
-    ct->PThread->next = ct->PThread;
-
-    ct->FS = (uintptr_t)ct->PThread;
     cpuWriteMSR(0xC0000100, ct->FS);
     cpuWriteMSR(0xC0000101, ct->GS);
 
@@ -892,21 +884,15 @@ int Process::CreatePipe(int fds[2])
 int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal)
 {
     if(!Lock()) return -EBUSY;
-    Thread *t = new Thread(name, this, (void *)userThreadEntryPoint, 0, DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, nullptr);
+    Thread *t = new Thread(name, this, reinterpret_cast<void *>(userThreadEntryPoint), 0, DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, nullptr);
     t->UserEntryPoint = entry;
     t->UserArgument = arg;
 
-    t->PThread = (struct pthread *)SBrk(PAGE_SIZE, true);
-    Memory::Zero(t->PThread, sizeof(pthread));
-    t->PThread->self = t->PThread;
-    t->PThread->detach_state = 1; // DT_JOINABLE
-    t->PThread->tid = t->Id;
-    t->PThread->robust_list.head = &t->PThread->robust_list.head;
-    t->PThread->next = t->PThread;
-
-    t->FS = (uintptr_t)t->PThread;
-    cpuWriteMSR(0xC0000100, t->FS);
-    cpuWriteMSR(0xC0000101, t->GS);
+    // allocate and initialize new TLS area for new thread
+    t->FS = SBrk(PAGE_SIZE, true);
+    Memory::Move(reinterpret_cast<void *>(t->FS),
+                 reinterpret_cast<void *>(Thread::GetCurrent()->FS),
+                 PAGE_SIZE);
 
     pid_t res = t->Id;
     t->Enable();
