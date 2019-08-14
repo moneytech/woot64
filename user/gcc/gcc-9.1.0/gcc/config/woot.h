@@ -4,19 +4,24 @@
 #undef STANDARD_STARTFILE_PREFIX
 #define STANDARD_STARTFILE_PREFIX "/lib/"
 
+#undef CPP_SPEC
+#define CPP_SPEC "%{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT}"
+
 #undef LIB_SPEC
-#define LIB_SPEC "-lc"
+#define LIB_SPEC \
+	"%{pthread:-lpthread} " \
+	"-lc "
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC \
-	" %{shared:; static:crt1.o%s; static-pie:rcrt1.o%s; PIE:Scrt1.o%s; :crt1.o%s} \
-	crti.o%s \
-	%{static:crtbeginT.o%s; shared|static-pie|PIE:crtbeginS.o%s; :crtbegin.o%s} "
+	"%{shared:; static:crt1.o%s; static-pie:rcrt1.o%s; PIE:Scrt1.o%s; :crt1.o%s} " \
+	"crti.o%s " \
+	"%{static:crtbeginT.o%s; shared|static-pie|PIE:crtbeginS.o%s; :crtbegin.o%s} "
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
-	" %{static:crtend.o%s; shared|static-pie|PIE:crtendS.o%s; :crtend.o%s} \
-	crtn.o%s "
+	"%{static:crtend.o%s; shared|static-pie|PIE:crtendS.o%s; :crtend.o%s} " \
+	"crtn.o%s "
 
 #undef LINK_SPEC
 #define LINK_SPEC " %{shared:-shared} %{static:-static} %{!shared: %{!static: %{rdynamic:-export-dynamic}}} -z max-page-size=4096 "
