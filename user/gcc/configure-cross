@@ -13,9 +13,10 @@ CONFIG_ARGS="\
 --disable-nls \
 --enable-languages=c,c++ \
 --disable-werror \
---enable-threads \
+--enable-threads=posix \
 --enable-host-shared \
---enable-shared"
+--enable-shared \
+$*"
 
 echo "Using WOOT root directory $WOOT_TOP_DIR"
 echo "Build directory $BUILD_DIR"

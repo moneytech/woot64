@@ -10,6 +10,23 @@ do
 		--no-libc) NO_LIBC=true ;;
 		--no-binutils) NO_BINUTILS=true ;;
 		--no-gcc) NO_GCC=true ;;
+		--help)
+			echo "Builds standard C library, binutils and GCC cross compiler"
+			echo "Options:"
+			echo "    --no-libc"
+			echo "        skips building of C library"
+			echo "    --no-binutils"
+			echo "        skips building of binutils"
+			echo "    --no-gcc"
+			echo "        skips building of GCC"
+			echo "Environment variables:"
+			echo "    THREADS"
+			echo "        overrides nummber of threads used for"
+			echo "        compilation (default is the number of"
+			echo "        threads available on the CPU)"
+			echo "    EXTRA_GCC_CONFIG_OPTS"
+			echo "        extra options passed to GCC configure script"
+			exit ;;
 		*) echo "Unknown option $ARG" ;;
 	esac
 done
@@ -50,7 +67,7 @@ then
 	echo "Building GCC cross compiler"
 	rm -rf $GCC_DIR/build-cross
 	cd $GCC_DIR && \
-	./configure-cross && \
+	./configure-cross $EXTRA_GCC_CONFIG_OPTS && \
 	make -j$THREADS -C build-cross all-gcc all-target-libgcc all-target-libstdc++-v3 && \
 	make -C build-cross install-gcc install-target-libgcc install-target-libstdc++-v3
 else
