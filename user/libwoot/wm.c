@@ -173,7 +173,7 @@ pmPixMap_t *wmGetIcon(wmIconId_t iconId)
     return icons[iconId];
 }
 
-wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags)
+wmWindow_t *wmCreateWindow(unsigned x, unsigned y, unsigned w, unsigned h, unsigned flags)
 {
     int args[5] = { x, y, w, h, flags };
     union wmCreateWindowResp response;

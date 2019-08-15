@@ -813,11 +813,11 @@ x86_64-*-mingw*)
 	fi
 	;;
 i[34567]86-*-woot*)
-	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
+	extra_parts="$extra_parts crti.o crtbegin.o crtbeginS.o crtend.o crtendS.o crtn.o"
 	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
 	;;
 x86_64-*-woot*)
-	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
+	extra_parts="$extra_parts crti.o crtbegin.o crtbeginS.o crtend.o crtendS.o crtn.o"
 	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic"
 	;;
 ia64*-*-elf*)
@@ -1477,12 +1477,5 @@ aarch64*-*-*)
 	# ILP32 needs an extra header for unwinding
 	tm_file="${tm_file} aarch64/value-unwind.h"
 	;;
-esac
-
-case ${host} in
-x86_64-*-woot*)
-  tmake_file="${tmake_file} t-slibgcc t-slibgcc-libgcc"
-  extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o"
-  md_unwind_header=i386/linux-unwind.h
 esac
 

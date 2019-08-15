@@ -141,7 +141,7 @@ int wmGetMousePos(int *x, int *y);
 pmColor_t wmGetColor(wmColorId_t colorId);
 fntFont_t *wmGetFont(wmFontId_t fontId);
 pmPixMap_t *wmGetIcon(wmIconId_t iconId);
-wmWindow_t *wmCreateWindow(int x, int y, unsigned w, unsigned h, unsigned flags);
+wmWindow_t *wmCreateWindow(unsigned x, unsigned y, unsigned w, unsigned h, unsigned flags);
 int wmDeleteWindow(wmWindow_t *window);
 int wmGetWindowId(wmWindow_t *window);
 pmPixMap_t *wmGetPixMap(wmWindow_t *window);

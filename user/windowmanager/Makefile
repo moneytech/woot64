@@ -9,7 +9,7 @@ TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
 CC = $(TOOLS_PREFIX)gcc
 CXX = $(TOOLS_PREFIX)g++
-LIBS = -Wl,--start-group,-lgcc_eh,-lwoot,-lsyscalls,-lpng,-lz,-lfreetype,--end-group
+LIBS = -Wl,--start-group,-lwoot,-lsyscalls,-lpng,-lz,-lfreetype,--end-group
 
 CFLAGS = -ggdb
 CXXFLAGS = -ggdb

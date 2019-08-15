@@ -256,6 +256,7 @@ long SysCalls::SignalHandler()
 long SysCalls::sys_read(int fd, char *buf, size_t count)
 {
     BUFFER_CHECK(buf, count)
+    //DEBUG("sys_read(%d, %p, %p)\n", fd, buf, count);
     return Process::GetCurrent()->Read(fd, buf, count);
 }
 

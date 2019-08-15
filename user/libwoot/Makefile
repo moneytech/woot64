@@ -40,7 +40,7 @@ LD = $(TOOLS_PREFIX)ld
 
 CFLAGS = -shared -fPIC -I. -I$(WOOT_TOP_DIR)/cross-root/include/freetype2
 LDFLAGS = -shared -Wl,-shared,--no-undefined
-LIBS = -Wl,--start-group,-lgcc_eh,-lsyscalls,-lpng,-lfreetype,--end-group 
+LIBS = -Wl,--start-group,-lsyscalls,-lpng,-lfreetype,--end-group 
 
 export WOOT_TOP_DIR CC CFLAG LDFLAGS LIBS
 
