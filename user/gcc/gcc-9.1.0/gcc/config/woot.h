@@ -16,7 +16,7 @@
 #define STARTFILE_SPEC \
 	"%{shared:; static:crt1.o%s; static-pie:rcrt1.o%s; PIE:Scrt1.o%s; :crt1.o%s} " \
 	"crti.o%s " \
-	"%{static:crtbeginT.o%s; shared|static-pie|PIE:crtbeginS.o%s; :crtbegin.o%s} "
+	"%{static:crtbegin.o%s; shared|static-pie|PIE:crtbeginS.o%s; :crtbegin.o%s} "
 
 #undef ENDFILE_SPEC
 #define ENDFILE_SPEC \
