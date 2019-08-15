@@ -105,6 +105,11 @@ long sys_dup2(int oldfd, int newfd)
     return __syscall2(SYS_dup2, oldfd, newfd);
 }
 
+long sys_nanosleep(void *req, void *rem)
+{
+    return __syscall2(SYS_nanosleep, (long)req, (long)rem);
+}
+
 long sys_getpid(void)
 {
     return __syscall0(SYS_getpid);

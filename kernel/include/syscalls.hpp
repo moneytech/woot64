@@ -25,6 +25,7 @@
 #define SYS_mincore                     27
 #define SYS_dup                         32
 #define SYS_dup2                        33
+#define SYS_nanosleep                   35
 #define SYS_getpid                      39
 #define SYS_exit                        60
 #define SYS_getdents                    78
@@ -138,6 +139,7 @@ class SysCalls
     static long sys_mincore(uintptr_t addr, size_t len, unsigned char *vec);
     static long sys_dup(int fd);
     static long sys_dup2(int oldfd, int newfd);
+    static long sys_nanosleep(const struct timespec *req, struct timespec *rem);
     static long sys_getpid();
     static long sys_exit(intn retVal);
     static long sys_getdents(int fd, struct dirent *de, size_t count);

@@ -22,6 +22,7 @@
 #define SYS_mincore                     27
 #define SYS_dup                         32
 #define SYS_dup2                        33
+#define SYS_nanosleep                   35
 #define SYS_getpid                      39
 #define SYS_exit                        60
 #define SYS_getdents                    78
@@ -196,6 +197,7 @@ long sys_msync(unsigned long addr, size_t len, int flags);
 long sys_mincore(unsigned long addr, size_t len, unsigned char *vec);
 long sys_dup(int fd);
 long sys_dup2(int oldfd, int newfd);
+long sys_nanosleep(void *req, void *rem);
 long sys_getpid(void);
 long sys_exit(long error_code);
 long sys_getdents(int fd, void *de, size_t count);

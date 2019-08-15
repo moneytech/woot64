@@ -552,6 +552,17 @@ long SysCalls::sys_dup2(int oldfd, int newfd)
     return Process::GetCurrent()->DuplicateFileDescriptor(oldfd, newfd);
 }
 
+long SysCalls::sys_nanosleep(const struct timespec *req, struct timespec *rem)
+{
+    uint millis = req->tv_sec * 1000 + req->tv_nsec / 1000000;
+    millis = Time::Sleep(millis, false);
+
+    // TODO: add sleep interruption by signals
+    rem->tv_sec = 0;
+    rem->tv_nsec = 0;
+    return ESUCCESS;
+}
+
 long SysCalls::sys_getpid()
 {
     return Process::GetCurrent()->Id;
@@ -1322,6 +1333,7 @@ void SysCalls::Initialize()
     Handlers[SYS_mincore] = reinterpret_cast<SysCallHandler>(sys_mincore);
     Handlers[SYS_dup] = reinterpret_cast<SysCallHandler>(sys_dup);
     Handlers[SYS_dup2] = reinterpret_cast<SysCallHandler>(sys_dup2);
+    Handlers[SYS_nanosleep] = reinterpret_cast<SysCallHandler>(sys_nanosleep);
     Handlers[SYS_getpid] = reinterpret_cast<SysCallHandler>(sys_getpid);
     Handlers[SYS_exit] = reinterpret_cast<SysCallHandler>(sys_exit);
     Handlers[SYS_getdents] = reinterpret_cast<SysCallHandler>(sys_getdents);
