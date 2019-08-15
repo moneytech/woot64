@@ -439,3 +439,14 @@ char *String::Trim(char *str, const char *chars)
 {
     return TrimStart(TrimEnd(str, chars), chars);
 }
+
+size_t String::Replace(char *str, char chr, char replacement)
+{
+    size_t res = 0;
+    for(; *str; ++str)
+    {
+        if(*str == chr)
+            *str = replacement;
+    }
+    return res;
+}

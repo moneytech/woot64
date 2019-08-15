@@ -28,4 +28,5 @@ public:
     static char *TrimStart(char *str, const char *chars);
     static char *TrimEnd(char *str, const char *chars);
     static char *Trim(char *str, const char *chars);
+    static size_t Replace(char *str, char chr, char replacement);
 };

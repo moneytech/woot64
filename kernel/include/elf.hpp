@@ -446,6 +446,8 @@ public:
     int (*EntryPoint)();
     void (*_module_fini)();
 
+    static void LoadKnownLibs();
+    static void RegisterKnownLib(char *libName, uintptr_t address);
     static ELF *Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs);
 
     Elf_Sym *FindSymbol(const char *Name);

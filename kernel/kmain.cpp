@@ -62,6 +62,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
     Module::LoadBootModules();
     Module::ProbeAll();
 
+    ELF::LoadKnownLibs();
+
     const char *procExec = "/bin/init";
     //const char *procExec = "/bin/usertest";
     //const char *procExec = "/bin/usertest_static";

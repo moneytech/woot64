@@ -80,14 +80,7 @@ void Module::LoadBootModules()
     while(listStream->ReadLine(line, sizeof(line)) > 0)
     {
         // remove comments
-        for(int i = 0; i < sizeof(line); ++i)
-        {
-            if(line[i] == '#')
-            {
-                line[i] = 0;
-                break;
-            }
-        }
+        String::Replace(line, '#', 0);
 
         // trim leading and trailing whitespaces
         char *lineTrimmed = String::Trim(line, " \t");

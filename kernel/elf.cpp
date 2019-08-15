@@ -1,6 +1,7 @@
 #include <debug.hpp>
 #include <elf.hpp>
 #include <file.hpp>
+#include <filestream.hpp>
 #include <filesystem.hpp>
 #include <memory.hpp>
 #include <misc.hpp>
@@ -9,10 +10,11 @@
 #include <string.hpp>
 #include <stringbuilder.hpp>
 #include <sysdefs.h>
+#include <tokenizer.hpp>
 
 #define MIN_LOAD_ADDR   0x0000000000000000
 
-static const char *libDir = "WOOT_OS~/lib";
+static const char *libDir = "/lib";
 
 static char *dupBase(const char *name)
 {
@@ -36,6 +38,43 @@ ELF::ELF(const char *name, Elf_Ehdr *ehdr, uint8_t *phdrData, uint8_t *shdrData,
 Elf_Shdr *ELF::getShdr(int i)
 {
     return (Elf_Shdr *)(shdrData + i * ehdr->e_shentsize);
+}
+
+void ELF::LoadKnownLibs()
+{
+    DEBUG("[elf] Loading known library list\n");
+    File *f = File::Open("/system/knownlibs", O_RDONLY, 0, true);
+    size_t lineBufSize = MAX_PATH_LENGTH + 1 + 128;
+    char *lineBuf = new char[lineBufSize];
+    if(f)
+    {
+        FileStream fs(f);
+        while(fs.ReadLine(lineBuf, static_cast<int64_t>(lineBufSize)))
+        {
+            String::Replace(lineBuf, '#', 0); // deal with comments
+            char *trimmedLine = String::Trim(lineBuf, " \t");
+
+            Tokenizer t(trimmedLine, ":", 2);
+            if(t.Tokens.Count() < 2)
+            {
+                DEBUG("[elf] Malformed line in know library list. Skipping.");
+                continue;
+            }
+
+            char *libName = String::TrimEnd(t[0], " \t");
+            uintptr_t libAddr = String::ToULong(t[1]);
+            RegisterKnownLib(libName, libAddr);
+        }
+        delete f;
+    }
+    else DEBUG("[elf] Couldn't open known library list\n");
+    delete[] lineBuf;
+}
+
+void ELF::RegisterKnownLib(char *libName, uintptr_t address)
+{
+    DEBUG("[elf] Registering known lib '%s' at %p\n", libName, address);
+    DEBUG("[elf] ELF::RegisterKnownLib not implemented\n");
 }
 
 ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs)

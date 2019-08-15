@@ -105,7 +105,14 @@ $(WOOT_TOP_DIR)/root/system/modulelist: modulelist
 	mkdir -p $(WOOT_TOP_DIR)/root/system
 	cp $< $@
 
-install: $(WOOT_TOP_DIR)/root/boot/grub/grub.cfg $(WOOT_TOP_DIR)/root/system/$(OUTFILE) $(WOOT_TOP_DIR)/root/system/modulelist
+$(WOOT_TOP_DIR)/root/system/knownlibs: knownlibs
+	mkdir -p $(WOOT_TOP_DIR)/root/system
+	cp $< $@
+
+install: $(WOOT_TOP_DIR)/root/boot/grub/grub.cfg \
+ $(WOOT_TOP_DIR)/root/system/$(OUTFILE) \
+ $(WOOT_TOP_DIR)/root/system/modulelist \
+ $(WOOT_TOP_DIR)/root/system/knownlibs
 	for dir in $(MODULES); do $(MAKE) -C $$dir install; done
 
 clean:
