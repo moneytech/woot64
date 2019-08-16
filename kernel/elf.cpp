@@ -12,9 +12,12 @@
 #include <sysdefs.h>
 #include <tokenizer.hpp>
 
-#define MIN_LOAD_ADDR   0x0000000000000000
+#define MIN_LOAD_ADDR   (1 << 20)
 
 static const char *libDir = "/lib";
+
+Mutex ELF::knownLibsLock(false, "ELF::knownLibsLock");
+List<ELF::KnownLib *> ELF::knownLibs;
 
 static char *dupBase(const char *name)
 {
@@ -29,6 +32,23 @@ static char *dupBase(const char *name)
     return String::Duplicate(basename + 1);
 }
 
+ELF::KnownLib *ELF::GetKnownLib(const char *libName)
+{
+    if(!libName || !libName[0])
+        return nullptr;
+    knownLibsLock.Acquire(10000);
+    for(KnownLib *lib : knownLibs)
+    {
+        if(!String::Compare(libName, lib->LibName))
+        {
+            knownLibsLock.Release();
+            return lib;
+        }
+    }
+    knownLibsLock.Release();
+    return nullptr;
+}
+
 ELF::ELF(const char *name, Elf_Ehdr *ehdr, uint8_t *phdrData, uint8_t *shdrData, bool user) :
     Name(dupBase(name)), ehdr(ehdr), phdrData(phdrData), shdrData(shdrData), user(user),
     EntryPoint((int (*)())ehdr->e_entry)
@@ -37,7 +57,7 @@ ELF::ELF(const char *name, Elf_Ehdr *ehdr, uint8_t *phdrData, uint8_t *shdrData,
 
 Elf_Shdr *ELF::getShdr(int i)
 {
-    return (Elf_Shdr *)(shdrData + i * ehdr->e_shentsize);
+    return reinterpret_cast<Elf_Shdr *>(shdrData + i * ehdr->e_shentsize);
 }
 
 void ELF::LoadKnownLibs()
@@ -53,11 +73,13 @@ void ELF::LoadKnownLibs()
         {
             String::Replace(lineBuf, '#', 0); // deal with comments
             char *trimmedLine = String::Trim(lineBuf, " \t");
+            if(!trimmedLine[0])
+                continue;
 
             Tokenizer t(trimmedLine, ":", 2);
             if(t.Tokens.Count() < 2)
             {
-                DEBUG("[elf] Malformed line in know library list. Skipping.");
+                DEBUG("[elf] Malformed line in know library list. Skipping.\n");
                 continue;
             }
 
@@ -74,10 +96,19 @@ void ELF::LoadKnownLibs()
 void ELF::RegisterKnownLib(char *libName, uintptr_t address)
 {
     DEBUG("[elf] Registering known lib '%s' at %p\n", libName, address);
-    DEBUG("[elf] ELF::RegisterKnownLib not implemented\n");
+    KnownLib *lib = new KnownLib(libName, address);
+    if(!lib->Image)
+    {
+        delete lib;
+        DEBUG("[elf] Couldn't load known lib '%s'\n", libName);
+        return;
+    }
+    knownLibsLock.Acquire(10000);
+    knownLibs.Append(lib);
+    knownLibsLock.Release();
 }
 
-ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs)
+ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs, uintptr_t loadAddr, bool skipNeeded)
 {
     File *f = File::Open(filename, O_RDONLY, 0, true);
     if(!f)
@@ -85,67 +116,110 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
         DEBUG("[elf] Couldn't find '%s' file\n", filename);
         return nullptr;
     }
-    Elf_Ehdr *ehdr = new Elf_Ehdr;
-    if(f->Read(ehdr, sizeof(Elf_Ehdr)) != sizeof(Elf_Ehdr))
+
+    // get full path name of the file
+    char *fullPath = new char[MAX_PATH_LENGTH + 1];
+    f->GetFullPath(fullPath, MAX_PATH_LENGTH + 1);
+
+    ELF *elf = nullptr;
+    bool usingKnownLib = false;
+    KnownLib *knownLib = GetKnownLib(fullPath);
+    if(knownLib)
     {
-        DEBUG("[elf] Couldn't load ELF header\n", filename);
-        delete ehdr;
-        delete f;
-        return nullptr;
-    }
-    if(ehdr->e_ident[0] != 127 || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F')
-    {
-        DEBUG("[elf] Invalid ELF header magic\n", filename);
-        delete ehdr;
-        delete f;
-        return nullptr;
-    }
-    // load program headers
-    if(f->Seek(ehdr->e_phoff, SEEK_SET) != ehdr->e_phoff)
-    {
-        DEBUG("[elf] Couldn't seek to program headers\n", filename);
-        delete ehdr;
-        delete f;
-        return nullptr;
-    }
-    size_t phSize = ehdr->e_phentsize * ehdr->e_phnum;
-    uint8_t *phdrData = new uint8_t[phSize];
-    if(f->Read(phdrData, phSize) != phSize)
-    {
-        DEBUG("[elf] Couldn't load program headers\n", filename);
-        delete[] phdrData;
-        delete ehdr;
-        delete f;
-        return nullptr;
+        // check if there is a free space in current address space
+        bool fits = true;
+        uintptr_t startVA = knownLib->Image->base;
+        uintptr_t endVA = knownLib->Image->endPtr;
+        for(uintptr_t va = startVA; va < endVA; va += PAGE_SIZE)
+        {
+            uintptr_t pa = Paging::GetPhysicalAddress(PG_CURRENT_ADDR_SPC, va);
+            if(pa == PG_INVALID_ADDRESS)
+                continue;
+            fits = false;
+            break;
+        }
+
+        if(fits)
+        {
+            DEBUG("[elf] Found known lib '%s' at %p\n", filename, knownLib->Address);
+            elf = knownLib->CloneImage(Process::GetCurrent());
+            usingKnownLib = elf != nullptr;
+        }
     }
 
-    // load section headers
-    if(f->Seek(ehdr->e_shoff, SEEK_SET) != ehdr->e_shoff)
+    Elf_Ehdr *ehdr = nullptr;
+    uint8_t *phdrData = nullptr;
+    if(!elf)
     {
-        DEBUG("[elf] Couldn't seek to section headers\n", filename);
-        delete[] phdrData;
-        delete ehdr;
-        delete f;
-        return nullptr;
+        ehdr = new Elf_Ehdr;
+        if(f->Read(ehdr, sizeof(Elf_Ehdr)) != sizeof(Elf_Ehdr))
+        {
+            DEBUG("[elf] Couldn't load ELF header\n", filename);
+            delete ehdr;
+            delete[] fullPath;
+            delete f;
+            return nullptr;
+        }
+        if(ehdr->e_ident[0] != 127 || ehdr->e_ident[1] != 'E' || ehdr->e_ident[2] != 'L' || ehdr->e_ident[3] != 'F')
+        {
+            DEBUG("[elf] Invalid ELF header magic\n", filename);
+            delete ehdr;
+            delete f;
+            return nullptr;
+        }
+        // load program headers
+        if(f->Seek(ehdr->e_phoff, SEEK_SET) != ehdr->e_phoff)
+        {
+            DEBUG("[elf] Couldn't seek to program headers\n", filename);
+            delete ehdr;
+            delete[] fullPath;
+            delete f;
+            return nullptr;
+        }
+        size_t phSize = ehdr->e_phentsize * ehdr->e_phnum;
+        phdrData = new uint8_t[phSize];
+        if(f->Read(phdrData, phSize) != phSize)
+        {
+            DEBUG("[elf] Couldn't load program headers\n", filename);
+            delete[] phdrData;
+            delete ehdr;
+            delete[] fullPath;
+            delete f;
+            return nullptr;
+        }
+
+        // load section headers
+        if(f->Seek(ehdr->e_shoff, SEEK_SET) != ehdr->e_shoff)
+        {
+            DEBUG("[elf] Couldn't seek to section headers\n", filename);
+            delete[] phdrData;
+            delete ehdr;
+            delete[] fullPath;
+            delete f;
+            return nullptr;
+        }
+        size_t shSize = ehdr->e_shentsize * ehdr->e_shnum;
+        uint8_t *shdrData = new uint8_t[shSize];
+        if(f->Read(shdrData, shSize) != shSize)
+        {
+            DEBUG("[elf] Couldn't load section headers\n", filename);
+            delete[] shdrData;
+            delete[] phdrData;
+            delete ehdr;
+            delete[] fullPath;
+            delete f;
+            return nullptr;
+        }
+
+        // create ELF object itself
+        elf = new ELF(filename, ehdr, phdrData, shdrData, user);
+        elf->FullPath = fullPath;
     }
-    size_t shSize = ehdr->e_shentsize * ehdr->e_shnum;
-    uint8_t *shdrData = new uint8_t[shSize];
-    if(f->Read(shdrData, shSize) != shSize)
+    else
     {
-        DEBUG("[elf] Couldn't load section headers\n", filename);
-        delete[] shdrData;
-        delete[] phdrData;
-        delete ehdr;
-        delete f;
-        return nullptr;
+        ehdr = elf->ehdr;
+        phdrData = elf->phdrData;
     }
-
-    // create ELF object itself
-    ELF *elf = new ELF(filename, ehdr, phdrData, shdrData, user);
-
-    // get full pathname of the file
-    elf->FullPath = new char[MAX_PATH_LENGTH + 1];
-    f->GetFullPath(elf->FullPath, MAX_PATH_LENGTH + 1);
 
     // attach it to the process
     Process *proc = Process::GetCurrent();
@@ -154,52 +228,39 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
     // calculate boundaries
     uintptr_t lowest_vaddr = __UINTPTR_MAX__;
     uintptr_t highest_vaddr = 0;
-    for(int i = 0; i < ehdr->e_phnum; ++i)
+    if(!usingKnownLib)
     {
-        Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
-        if(phdr->p_type != PT_LOAD)
-            continue;
-        if(phdr->p_vaddr < lowest_vaddr)
-            lowest_vaddr = phdr->p_vaddr;
-        if((phdr->p_vaddr + phdr->p_memsz) > highest_vaddr)
-            highest_vaddr = phdr->p_vaddr + phdr->p_memsz;
+        for(int i = 0; i < ehdr->e_phnum; ++i)
+        {
+            Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
+            if(phdr->p_type != PT_LOAD)
+                continue;
+            if(phdr->p_vaddr < lowest_vaddr)
+                lowest_vaddr = phdr->p_vaddr;
+            if((phdr->p_vaddr + phdr->p_memsz) > highest_vaddr)
+                highest_vaddr = phdr->p_vaddr + phdr->p_memsz;
+        }
+        elf->base = lowest_vaddr = PAGE_SIZE * (lowest_vaddr / PAGE_SIZE);
+        elf->top = highest_vaddr = align(highest_vaddr, PAGE_SIZE);
     }
-    elf->base = lowest_vaddr = PAGE_SIZE * (lowest_vaddr / PAGE_SIZE);
-    elf->top = highest_vaddr = align(highest_vaddr, PAGE_SIZE);
-
-    //DEBUG("%s la: %p ha %p\n", elf->Name, lowest_vaddr, highest_vaddr);
+    else
+    {
+        lowest_vaddr = elf->base;
+        highest_vaddr = elf->endPtr;
+    }
 
     if(!onlyHeaders && proc)
     {
         elf->process = proc;
-        elf->releaseData = true;
 
-        // check if image can be mapped where it wants
-        bool fits = true;
-        if(lowest_vaddr >= MIN_LOAD_ADDR)
+        if(!usingKnownLib)
         {
-            for(uintptr_t va = lowest_vaddr; va < highest_vaddr; va += PAGE_SIZE)
+            // check if image can be mapped where it wants
+            bool fits = true;
+            if(lowest_vaddr >= MIN_LOAD_ADDR && loadAddr == PG_INVALID_ADDRESS)
             {
-                uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                if(pa != PG_INVALID_ADDRESS)
+                for(uintptr_t va = lowest_vaddr; va < highest_vaddr; va += PAGE_SIZE)
                 {
-                    fits = false;
-                    break;
-                }
-            }
-        } else fits = false;
-        if(!fits)
-        {   // nope, we have to find some other place
-            uintptr_t candidateStart = user ? max(1 << 20, lowest_vaddr) : lowest_vaddr;
-
-            while(candidateStart < (user ? KERNEL_BASE : 0xFFFFE000))
-            {
-                uintptr_t candidateEnd = candidateStart + highest_vaddr - lowest_vaddr;
-                fits = true;
-                size_t checkedBytes = 0;
-                for(uintptr_t va = candidateStart; va < candidateEnd; va += PAGE_SIZE)
-                {
-                    checkedBytes += PAGE_SIZE;
                     uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
                     if(pa != PG_INVALID_ADDRESS)
                     {
@@ -207,96 +268,128 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                         break;
                     }
                 }
-                if(!fits)
+            } else fits = false;
+            if(!fits)
+            {   // nope, we have to find some other place
+                uintptr_t candidateStart = user ? max(1 << 20, lowest_vaddr) : lowest_vaddr;
+                if(loadAddr != PG_INVALID_ADDRESS) candidateStart = loadAddr;
+
+                while(candidateStart < (user ? KERNEL_BASE : 0xFFFFE000))
                 {
-                    candidateStart += checkedBytes;
+                    uintptr_t candidateEnd = candidateStart + highest_vaddr - lowest_vaddr;
+                    fits = true;
+                    size_t checkedBytes = 0;
+                    for(uintptr_t va = candidateStart; va < candidateEnd; va += PAGE_SIZE)
+                    {
+                        checkedBytes += PAGE_SIZE;
+                        uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
+                        if(pa != PG_INVALID_ADDRESS)
+                        {
+                            fits = false;
+                            break;
+                        }
+                    }
+                    if(!fits)
+                    {
+                        if(loadAddr != PG_INVALID_ADDRESS)
+                        {
+                            DEBUG("[elf] Couldn't load '%s' at %p\n", filename, loadAddr);
+                            delete f;
+                            delete[] phdrData;
+                            delete ehdr;
+                            delete elf;
+                            return nullptr;
+                        }
+
+                        candidateStart += checkedBytes;
+                        continue;
+                    } else break;
+                }
+
+                elf->baseDelta = candidateStart - lowest_vaddr;
+            }
+            elf->base += elf->baseDelta;
+            elf->top += elf->baseDelta;
+            DEBUG("[elf] Loading '%s' at %p\n", elf->Name, elf->base);
+
+            // load the data
+            for(uint i = 0; i < ehdr->e_phnum; ++i)
+            {
+                Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
+                if(phdr->p_type != PT_LOAD)
                     continue;
-                } else break;
-            }
+                if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
+                {
+                    DEBUG("[elf] Couldn't seek to data of program header %d in file '%s'\n", i, filename);
+                    delete f;
+                    delete[] phdrData;
+                    delete ehdr;
+                    delete elf;
+                    return nullptr;
+                }
 
-            elf->baseDelta = candidateStart - lowest_vaddr;
+                uintptr_t endva = phdr->p_vaddr + phdr->p_memsz;
+                uintptr_t s = phdr->p_vaddr / PAGE_SIZE;
+                uintptr_t e = align(endva, PAGE_SIZE) / PAGE_SIZE;
+                size_t pageCount = e - s;
+                for(uint i = 0; i < pageCount; ++i)
+                {
+                    uintptr_t va = elf->baseDelta + phdr->p_vaddr + i * PAGE_SIZE;
+                    if(user && va >= KERNEL_BASE)
+                    {   // user elf can't map any kernel memory
+                        DEBUG("[elf] Invalid user address %p in file '%s'\n", va, filename);
+                        delete f;
+                        delete[] phdrData;
+                        delete ehdr;
+                        delete elf;
+                        return nullptr;
+                    }
+                    uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
+                    if(!user && pa != PG_INVALID_ADDRESS)
+                    {
+                        /*printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
+                        delete f;
+                        return nullptr;*/
+                        continue;
+                    }
+                    pa = Paging::AllocFrame();
+                    if(pa == PG_INVALID_ADDRESS)
+                    {
+                        DEBUG("[elf] Couldn't allocate memory for data in file '%s'\n", filename);
+                        delete f;
+                        delete[] phdrData;
+                        delete ehdr;
+                        delete elf;
+                        return nullptr;
+                    }
+                    if(!Paging::MapPage(proc->AddressSpace, va, pa, user, true))
+                    {
+                        DEBUG("[elf] Couldn't map memory for data in file '%s'\n", filename);
+                        delete f;
+                        delete[] phdrData;
+                        delete ehdr;
+                        delete elf;
+                        return nullptr;
+                    }
+                    elf->endPtr = max(elf->endPtr, va + PAGE_SIZE);
+                }
+                uint8_t *buffer = reinterpret_cast<uint8_t *>(phdr->p_vaddr + elf->baseDelta);
+                Memory::Zero(buffer, phdr->p_memsz);
+                if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
+                {
+                    DEBUG("[elf] Couldn't read data of program header %d in file '%s'\n", i, filename);
+                    delete f;
+                    delete[] phdrData;
+                    delete ehdr;
+                    delete elf;
+                    return nullptr;
+                }
+            }
+            delete f;
         }
-        elf->base += elf->baseDelta;
-        elf->top += elf->baseDelta;
-        DEBUG("[elf] Loading '%s' at %p\n", elf->Name, elf->base);
-
-        // load the data
-        for(uint i = 0; i < ehdr->e_phnum; ++i)
-        {
-            Elf_Phdr *phdr = reinterpret_cast<Elf_Phdr *>(phdrData + ehdr->e_phentsize * i);
-            if(phdr->p_type != PT_LOAD)
-                continue;
-            if(f->Seek(phdr->p_offset, SEEK_SET) != phdr->p_offset)
-            {
-                DEBUG("[elf] Couldn't seek to data of program header %d in file '%s'\n", i, filename);
-                delete f;
-                delete[] phdrData;
-                delete ehdr;
-                delete elf;
-                return nullptr;
-            }
-
-            uintptr_t endva = phdr->p_vaddr + phdr->p_memsz;
-            uintptr_t s = phdr->p_vaddr / PAGE_SIZE;
-            uintptr_t e = align(endva, PAGE_SIZE) / PAGE_SIZE;
-            size_t pageCount = e - s;
-            for(uint i = 0; i < pageCount; ++i)
-            {
-                uintptr_t va = elf->baseDelta + phdr->p_vaddr + i * PAGE_SIZE;
-                if(user && va >= KERNEL_BASE)
-                {   // user elf can't map any kernel memory
-                    DEBUG("[elf] Invalid user address %p in file '%s'\n", va, filename);
-                    delete f;
-                    delete[] phdrData;
-                    delete ehdr;
-                    delete elf;
-                    return nullptr;
-                }
-                uintptr_t pa = Paging::GetPhysicalAddress(proc->AddressSpace, va);
-                if(!user && pa != PG_INVALID_ADDRESS)
-                {
-                    /*printf("[elf] Address conflict at %p in file '%s'\n", va, filename);
-                    delete f;
-                    return nullptr;*/
-                    continue;
-                }
-                pa = Paging::AllocFrame();
-                if(pa == PG_INVALID_ADDRESS)
-                {
-                    DEBUG("[elf] Couldn't allocate memory for data in file '%s'\n", filename);
-                    delete f;
-                    delete[] phdrData;
-                    delete ehdr;
-                    delete elf;
-                    return nullptr;
-                }
-                if(!Paging::MapPage(proc->AddressSpace, va, pa, user, true))
-                {
-                    DEBUG("[elf] Couldn't map memory for data in file '%s'\n", filename);
-                    delete f;
-                    delete[] phdrData;
-                    delete ehdr;
-                    delete elf;
-                    return nullptr;
-                }
-                elf->endPtr = max(elf->endPtr, va + PAGE_SIZE);
-            }
-            uint8_t *buffer = reinterpret_cast<uint8_t *>(phdr->p_vaddr + elf->baseDelta);
-            Memory::Zero(buffer, phdr->p_memsz);
-            if(f->Read(buffer, phdr->p_filesz) != phdr->p_filesz)
-            {
-                DEBUG("[elf] Couldn't read data of program header %d in file '%s'\n", i, filename);
-                delete f;
-                delete[] phdrData;
-                delete ehdr;
-                delete elf;
-                return nullptr;
-            }
-        }
-        delete f;
 
         // load needed shared objects
-        if(user)
+        if(user && !skipNeeded)
         { // ignore DT_NEEDED for kernel modules for now
             // find soname if possible
             for(uint i = 0; i < ehdr->e_shnum; ++i)
@@ -335,18 +428,22 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                     //DEBUG("[elf] loading DT_NEEDED %s for %s\n", soname, elf->Name);
                     StringBuilder sb(MAX_PATH_LENGTH);
                     sb.WriteFmt("%s/%s", libDir, soname);
-                    ELF *soELF = Load(sb.String(), user, false, applyRelocs);
+                    ELF *soELF = Load(sb.String(), user, false, applyRelocs, PG_INVALID_ADDRESS, false);
                     (void)soELF;
                 }
             }
         }
     } else delete f;
 
-    delete[] phdrData;
-    delete ehdr;
+    if(!usingKnownLib)
+    {
+        delete[] phdrData;
+        delete ehdr;
 
-    elf->ehdr = reinterpret_cast<Elf_Ehdr *>(elf->base);
-    elf->phdrData = reinterpret_cast<uint8_t *>(elf->base + elf->ehdr->e_phoff);
+        elf->ehdr = reinterpret_cast<Elf_Ehdr *>(elf->base);
+        elf->phdrData = reinterpret_cast<uint8_t *>(elf->base + elf->ehdr->e_phoff);
+    }
+
 
     if(applyRelocs && !elf->ApplyRelocations())
     {
@@ -561,9 +658,53 @@ ELF::~ELF()
         {
             uintptr_t pa = Paging::GetPhysicalAddress(as, va);
             Paging::UnMapPage(as, va);
-            if(pa == ~0) continue;
+            if(pa == PG_INVALID_ADDRESS)
+                continue;
             Paging::FreeFrame(pa);
         }
     }
     if(shdrData) delete[] shdrData;
+}
+
+ELF::KnownLib::KnownLib() :
+    LibName(nullptr), Address(0),
+    Image(nullptr)
+{
+}
+
+ELF::KnownLib::KnownLib(const char *libName, uintptr_t address) :
+    LibName(String::Duplicate(libName)), Address(address), Image(nullptr)
+{
+    Image = ELF::Load(libName, true, false, false, address, true);
+
+}
+
+ELF *ELF::KnownLib::CloneImage(Process *dstProc)
+{
+    if(!dstProc) return nullptr;
+    knownLibsLock.Acquire(10000);
+
+    // clone image data
+    Paging::CloneRange(dstProc->AddressSpace,
+                       Paging::GetKernelAddressSpace(),
+                       Image->base,
+                       Image->endPtr - Image->base);
+
+    // clone ELF structure itself
+    ELF *elf = new ELF(Image->Name, reinterpret_cast<Elf_Ehdr *>(Image->base), reinterpret_cast<uint8_t *>(Image->base + Image->ehdr->e_phoff),
+                       reinterpret_cast<uint8_t *>(Memory::Duplicate(Image->shdrData, Image->ehdr->e_shentsize * Image->ehdr->e_shnum)), true);
+    elf->FullPath = String::Duplicate(Image->FullPath);
+    elf->base = Image->base;
+    elf->top = Image->top;
+    elf->baseDelta = Image->baseDelta;
+    elf->endPtr = Image->endPtr;
+
+    knownLibsLock.Release();
+    return elf;
+}
+
+ELF::KnownLib::~KnownLib()
+{
+    if(Image) delete Image;
+    if(LibName) delete[] LibName;
 }

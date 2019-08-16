@@ -56,7 +56,7 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
         delete rootDir;
     }
 
-    ELF *kernelImage = ELF::Load("/system/kernel", false, true, false);
+    ELF *kernelImage = ELF::Load("/system/kernel", false, true, false, PG_INVALID_ADDRESS, false);
     if(!kernelImage) DEBUG("[kmain] Couldn't load kernel image. Modules won't load properly.\n");
 
     Module::LoadBootModules();

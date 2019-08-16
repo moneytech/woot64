@@ -87,7 +87,7 @@ private:
     bool noAutoRelocs;
     bool deleteAddressSpace;
 
-    static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer);
+    static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf);
     static int processEntryPoint(const char *cmdline);
     static int userThreadEntryPoint(void *arg);
 

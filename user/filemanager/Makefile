@@ -8,7 +8,7 @@ TOOLS_PREFIX = $(WOOT_TOP_DIR)/cross-root/bin/x86_64-woot-
 
 CC = $(TOOLS_PREFIX)gcc
 CXX = $(TOOLS_PREFIX)g++
-LIBS = -Wl,--start-group,-lstdc++,-lwoot,-lsyscalls,--end-group
+LIBS = -Wl,--start-group,-lwoot,-lsyscalls,--end-group
 
 CFLAGS = -ggdb
 CXXFLAGS = -ggdb
@@ -20,10 +20,10 @@ all: $(OUTFILE)
 static: $(OUTFILE_STATIC)
 
 $(OUTFILE_STATIC): $(OBJS)
-	$(CC) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) -static $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 $(OUTFILE): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
+	$(CXX) $(LDFLAGS) $(OBJS) -o $@ $(LIBS)
 
 install: $(BIN_DIR)/$(OUTFILE)
 

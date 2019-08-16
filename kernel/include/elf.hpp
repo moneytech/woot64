@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list.hpp>
 #include <types.h>
 
 #pragma pack(push, 1)
@@ -422,11 +423,29 @@ typedef Elf32_Rela Elf_Rela;
 #endif // __SIZE_WIDTH__
 
 class DEntry;
+class Mutex;
 class Process;
 
 class ELF
 {
     friend class Process;
+
+    class KnownLib
+    {
+    public:
+        char *LibName;
+        uintptr_t Address;
+        ELF *Image;        
+
+        KnownLib();
+        KnownLib(const char *libName, uintptr_t address);
+        ELF *CloneImage(Process *dstProc);
+        ~KnownLib();
+    };
+    static Mutex knownLibsLock;
+    static List<KnownLib *> knownLibs;
+
+    static KnownLib *GetKnownLib(const char *libName);
 
     Elf_Ehdr *ehdr;
     uint8_t *phdrData;
@@ -434,7 +453,6 @@ class ELF
     uintptr_t base;
     uintptr_t top;
     uintptr_t baseDelta;
-    bool releaseData;
     Process *process;
     bool user;
     uintptr_t endPtr;
@@ -448,7 +466,7 @@ public:
 
     static void LoadKnownLibs();
     static void RegisterKnownLib(char *libName, uintptr_t address);
-    static ELF *Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs);
+    static ELF *Load(const char *filename, bool user, bool onlyHeaders, bool applyRelocs, uintptr_t loadAddr, bool skipNeeded);
 
     Elf_Sym *FindSymbol(const char *Name);
     const char *GetSymbolName(uintptr_t addr, ptrdiff_t *delta);

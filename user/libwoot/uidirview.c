@@ -91,7 +91,7 @@ static void updateTiles(uiDirView_t *view)
         if(!fi) break;
         fileTile_t *ti = *(fileTile_t **)vecGet(view->Tiles, j);
         if(!ti) break;
-        int isLink = fi->Stat.st_ino != fi->LStat.st_ino;
+        int isLink = S_ISLNK(fi->LStat.st_mode);
         uiControlSetTextColor((uiControl_t *)ti, isLink ? lnkColor : defColor);
         uiControlSetText((uiControl_t *)ti, fi->Name);
         uiControlSetContext((uiControl_t *)ti, fi);

@@ -36,6 +36,7 @@ public:
     static void Initialize(multiboot_info_t *mboot);
     static void BuildAddressSpace(AddressSpace as);
     static AddressSpace GetCurrentAddressSpace();
+    static AddressSpace GetKernelAddressSpace();
     static void FlushTLB();
     static void InvalidatePage(uintptr_t addr);
     static bool MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write);

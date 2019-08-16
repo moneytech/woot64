@@ -1,1 +1,6 @@
-/lib/libc.so : 0x0000000010000000
+WOOT_OS~/lib/libc.so            : 0x0000000010000000
+WOOT_OS~/lib/libwoot.so         : 0x0000000011000000
+WOOT_OS~/lib/libsyscalls.so     : 0x0000000012000000
+WOOT_OS~/lib/libpng16.so.16     : 0x0000000013000000
+WOOT_OS~/lib/libfreetype.so.6   : 0x0000000014000000
+WOOT_OS~/lib/libz.so            : 0x0000000015000000

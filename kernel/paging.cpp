@@ -95,6 +95,11 @@ AddressSpace Paging::GetCurrentAddressSpace()
     return res;
 }
 
+AddressSpace Paging::GetKernelAddressSpace()
+{
+    return kernelAddressSpace;
+}
+
 void Paging::FlushTLB()
 {
     bool ints = cpuDisableInterrupts();
@@ -357,7 +362,10 @@ void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, 
                     if(!(pml1[pml1idx] & 1))
                         continue;
 
-                    uintptr_t entry = pml1[pml1idx] & ~PAGE_MASK;
+                    uintptr_t entry = pml1[pml1idx];
+                    bool user = entry & 0x04;
+                    bool write = entry & 0x02;
+                    entry &= ~PAGE_MASK;
                     uintptr_t srcPA = entry;
                     uintptr_t dstPA = AllocFrame();
                     if(dstPA == PG_INVALID_ADDRESS)
@@ -365,7 +373,7 @@ void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, 
 
                     // TODO: implement copy on write
                     Memory::Move((void *)(dstPA + KERNEL_BASE), (void *)(srcPA + KERNEL_BASE), PAGE_SIZE);
-                    Paging::MapPage(dstAS, va, dstPA, entry & 0x04, entry & 0x02);
+                    Paging::MapPage(dstAS, va, dstPA, user, write);
                     if(invalidate)
                         InvalidatePage(va);
                 }

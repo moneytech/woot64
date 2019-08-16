@@ -36,8 +36,7 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
             }
             continue;
         }
-        ::DEntry *nextDe = FileSystem::LookupDEntry(dentry, t.String);
-        //FileSystem::PutDEntry(dentry);
+        ::DEntry *nextDe = FileSystem::LookupDEntry(dentry, t.String, !followSymLinks);
         ::DEntry *prevDE = dentry;
         if(!nextDe)
         {
@@ -56,22 +55,25 @@ File *File::open(::DEntry *parent, const char *name, int flags, mode_t createMod
         {
             char *linkPath = new char[MAX_PATH_LENGTH];
             int res = dentry->INode->GetLink(linkPath, MAX_PATH_LENGTH);
+            ::DEntry *parent = FileSystem::GetDEntry(dentry->Parent);
             FileSystem::PutDEntry(dentry);
             if(res < 0)
             {
+                FileSystem::PutDEntry(parent);
                 delete[] linkPath;
                 return nullptr;
             }
             File *file = open(prevDE, linkPath, flags, createMode, followSymLinks);
             if(!file)
             {   // broken symlink
+                FileSystem::PutDEntry(parent);
                 delete[] linkPath;
                 return nullptr;
             }
             dentry = FileSystem::GetDEntry(file->DEntry);
             if(dentry->Name) delete[] dentry->Name;
             dentry->Name = String::Duplicate(t.String);
-            dentry->Parent = FileSystem::GetDEntry(parent);
+            dentry->Parent = parent;
             delete file;
             delete[] linkPath;
         }

@@ -5,6 +5,7 @@
 #include <filestream.hpp>
 #include <misc.hpp>
 #include <module.hpp>
+#include <paging.hpp>
 #include <string.hpp>
 
 List<Module *> Module::modules;
@@ -55,7 +56,7 @@ Module *Module::GetByName(const char *name)
 int Module::Load(const char *filename)
 {
     DEBUG("[module] Loading '%s'\n", filename);
-    ELF *module = ELF::Load(filename, false, false, true);
+    ELF *module = ELF::Load(filename, false, false, true, PG_INVALID_ADDRESS, false);
     if(!module) return errno ? -errno : -EINVAL;
     int res = module->EntryPoint();
     if(IS_ERROR(res))

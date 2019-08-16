@@ -84,12 +84,12 @@ typedef struct AuxVector
 #define AT_SECURE       23
 #define AT_SYSINFO      32
 
-uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf, uintptr_t retAddr, uintptr_t basePointer)
+uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf)
 {
     auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
     {
         stackPtr -= size;
-        void *buf = (void *)stackPtr;
+        void *buf = reinterpret_cast<void *>(stackPtr);
         Memory::Move(buf, data, size);
         return stackPtr;
     };
@@ -106,7 +106,12 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
     // info block
     int i;
     for(i = 0; i < envCount; ++i)
-        envPtrs[i] = stackPtr = stackPush(stackPtr, (void *)envVars[i], String::Length(envVars[i]) + 1);
+    {
+        envPtrs[i] = stackPtr =
+                stackPush(stackPtr,
+                          reinterpret_cast<void *>(const_cast<char *>(envVars[i])),
+                          String::Length(envVars[i]) + 1);
+    }
     i = 0;
     for(Tokenizer::Token token : cmd.Tokens)
     {
@@ -126,12 +131,12 @@ uintptr_t Process::buildUserStack(uintptr_t stackPtr, const char *cmdLine, int e
         { AT_GID, 0 },
         { AT_EUID, 0 },
         { AT_EGID, 0 },
-        { AT_ENTRY, (uintptr_t)elf->EntryPoint },
+        { AT_ENTRY, reinterpret_cast<uintptr_t>(elf->EntryPoint) },
         { AT_BASE, elf->GetBase() },
         { AT_PAGESZ, PAGE_SIZE },
-        { AT_PHNUM, (uintptr_t)elf->ehdr->e_phnum },
-        { AT_PHENT, (uintptr_t)elf->ehdr->e_phentsize },
-        { AT_PHDR, (uintptr_t)elf->phdrData }
+        { AT_PHNUM, static_cast<uintptr_t>(elf->ehdr->e_phnum) },
+        { AT_PHENT, static_cast<uintptr_t>(elf->ehdr->e_phentsize) },
+        { AT_PHDR, reinterpret_cast<uintptr_t>(elf->phdrData) }
     };
 
     // aux vectors
@@ -156,7 +161,7 @@ int Process::processEntryPoint(const char *cmdline)
 {
     Process *proc = GetCurrent();
     Tokenizer cmd(cmdline, " ", 2);
-    ELF *elf = ELF::Load(cmd[0], true, false, !proc->noAutoRelocs);
+    ELF *elf = ELF::Load(cmd[0], true, false, !proc->noAutoRelocs, PG_INVALID_ADDRESS, false);
     if(!elf) return 127;
     if(!elf->EntryPoint) return 126;
     if(!proc->lock.Acquire(0, false)) return 126;
@@ -180,27 +185,31 @@ int Process::processEntryPoint(const char *cmdline)
         "LD_LIBRARY_PATH=WOOT_OS~/lib",
         "TEST=value"
     };
-    stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf, 0, 0);
+    stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf);
 
+    ct->FS = proc->SBrk(PAGE_SIZE, true); //  FIXME: may leak
     cpuWriteMSR(0xC0000100, ct->FS);
     cpuWriteMSR(0xC0000101, ct->GS);
 
     proc->lock.Release();
     ct->Initialized->Signal(nullptr);
-    cpuEnterUserMode(ct->UserArgument, stackPointer, (uintptr_t)elf->EntryPoint);
+    cpuEnterUserMode(ct->UserArgument, stackPointer, reinterpret_cast<uintptr_t>(elf->EntryPoint));
     return 0;
 }
 
 int Process::userThreadEntryPoint(void *arg)
 {
+    (void)arg;
     Thread *ct = Thread::GetCurrent();
 
     // allocate and initialize user stack
-    uintptr_t *stack = (uintptr_t *)ct->AllocStack(&ct->UserStack, ct->UserStackSize);
-    *(--stack) = (uintptr_t)userThreadReturn;
+    uintptr_t *stack = reinterpret_cast<uintptr_t *>(ct->AllocStack(&ct->UserStack, ct->UserStackSize));
+    *(--stack) = reinterpret_cast<uintptr_t>(userThreadReturn);
 
     ct->Initialized->Signal(nullptr);
-    cpuEnterUserMode(ct->UserArgument, (uintptr_t)stack, (uintptr_t)ct->UserEntryPoint);
+    cpuEnterUserMode(ct->UserArgument,
+                     reinterpret_cast<uintptr_t>(stack),
+                     reinterpret_cast<uintptr_t>(ct->UserEntryPoint));
     return 0;
 }
 
@@ -232,7 +241,6 @@ void Process::freeHandleSlot(int handle)
 uintptr_t Process::brk(uintptr_t brk, bool allocPages)
 {
     brk = align(brk, PAGE_SIZE);
-    uintptr_t obrk = CurrentBrk;
 
     if(brk < MinBrk || brk > MaxBrk)
         return (brk = CurrentBrk);
@@ -246,7 +254,7 @@ uintptr_t Process::brk(uintptr_t brk, bool allocPages)
             for(uintptr_t va = MappedBrk; va < mappedNeeded; va += PAGE_SIZE)
             {
                 uintptr_t pa = Paging::AllocFrame();
-                if(pa == ~0)
+                if(pa == PG_INVALID_ADDRESS)
                     return CurrentBrk;
                 if(!Paging::MapPage(AddressSpace, va, pa, true, true))
                     return CurrentBrk;
@@ -259,7 +267,7 @@ uintptr_t Process::brk(uintptr_t brk, bool allocPages)
         for(uintptr_t va = mappedNeeded; va < MappedBrk; va += PAGE_SIZE)
         {
             uintptr_t pa = Paging::GetPhysicalAddress(AddressSpace, va);
-            if(pa != ~0) Paging::FreeFrame(pa);
+            if(pa != PG_INVALID_ADDRESS) Paging::FreeFrame(pa);
             Paging::UnMapPage(AddressSpace, va);
         }
         MappedBrk = mappedNeeded;
@@ -298,8 +306,11 @@ Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoR
         deleteFinished = true;
     }
     char *cmdLine = String::Duplicate(filename);
-    Thread *thread = new Thread("main", nullptr, (void *)processEntryPoint, (uintptr_t)cmdLine,
-                                DEFAULT_STACK_SIZE, DEFAULT_USER_STACK_SIZE, retVal, finished);
+
+    Thread *thread = new Thread("main", nullptr, reinterpret_cast<void *>(processEntryPoint),
+                                reinterpret_cast<uintptr_t>(cmdLine), DEFAULT_STACK_SIZE,
+                                DEFAULT_USER_STACK_SIZE, retVal, finished);
+
     Process *proc = new Process(filename, thread, 0, deleteFinished);
     proc->noAutoRelocs = noAutoRelocs;
     proc->Finished = finished;
@@ -890,8 +901,9 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
 
     // allocate and initialize new TLS area for new thread
     t->FS = SBrk(PAGE_SIZE, true);
+    Thread *ct = Thread::GetCurrent();
     Memory::Move(reinterpret_cast<void *>(t->FS),
-                 reinterpret_cast<void *>(Thread::GetCurrent()->FS),
+                 reinterpret_cast<void *>(ct->FS),
                  PAGE_SIZE);
 
     pid_t res = t->Id;

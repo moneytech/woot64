@@ -1,6 +1,7 @@
 #include <debug.hpp>
 #include <dentry.hpp>
 #include <errno.h>
+#include <file.hpp>
 #include <filesystem.hpp>
 #include <filesystemtype.hpp>
 #include <inode.hpp>
@@ -166,17 +167,20 @@ void FileSystem::PutINode(INode *inode)
     UnLock();
 }
 
-DEntry *FileSystem::LookupDEntry(DEntry *parent, const char *name)
+DEntry *FileSystem::LookupDEntry(DEntry *parent, const char *name, bool noCache)
 {
     if(!Lock() || !parent || !parent->INode || !parent->INode->FS || !name)
         return nullptr;
-    for(DEntry *dentry : dentryCache)
+    if(!noCache)
     {
-        if(parent == dentry->Parent && !String::Compare(name, dentry->Name))
-        {   // if dentry already in cache
-            ++dentry->ReferenceCount;
-            UnLock();
-            return dentry;
+        for(DEntry *dentry : dentryCache)
+        {
+            if(parent == dentry->Parent && !String::Compare(name, dentry->Name))
+            {   // if dentry already in cache
+                ++dentry->ReferenceCount;
+                UnLock();
+                return dentry;
+            }
         }
     }
 
@@ -187,6 +191,7 @@ DEntry *FileSystem::LookupDEntry(DEntry *parent, const char *name)
         return nullptr;
     }
     DEntry *dentry = new DEntry(name, parent, parent->INode->FS->GetINode(ino));
+    ++dentry->ReferenceCount;
     UnLock();
     return dentry;
 }

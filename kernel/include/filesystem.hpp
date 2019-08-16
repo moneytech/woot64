@@ -49,7 +49,7 @@ public:
     static void SynchronizeAll();
 
     static void PutINode(INode *inode);
-    static DEntry *LookupDEntry(DEntry *parent, const char *name);
+    static DEntry *LookupDEntry(DEntry *parent, const char *name, bool noCache);
     static DEntry *GetDEntry(DEntry *dentry);
     static void PutDEntry(DEntry *dentry);
 

@@ -10,9 +10,9 @@ CC = $(TOOLS_PREFIX)gcc
 CXX = $(TOOLS_PREFIX)g++
 
 CFLAGS = -ggdb
-CXXFLAGS = -ggdb -fno-exceptions
-LDFLAGS =
-LIBS = -Wl,--start-group,-lwoot,-lsyscalls,--end-group
+CXXFLAGS = -ggdb
+LDFLAGS = #-s
+LIBS = -lwoot
 
 export WOOT_TOP_DIR CC CXX
 
