@@ -1083,7 +1083,7 @@ long SysCalls::sysProcessGetMap(int pid, struct processMapEntry *buf, size_t buf
                 return -ENOMEM; // buffer too small
 
             entry->EntrySize = thisEntrySize;
-            entry->Address = elf->GetBase() + phdr->p_vaddr;
+            entry->Address = elf->GetBaseDelta() + phdr->p_vaddr;
             entry->Size = phdr->p_memsz;
             entry->Offset = phdr->p_offset;
             entry->Flags = PROC_MAP_READ | PROC_MAP_WRITE | PROC_MAP_EXEC | (elfName ? PROC_MAP_NAME : 0);

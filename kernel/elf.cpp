@@ -632,6 +632,11 @@ uintptr_t ELF::GetBase() const
     return base;
 }
 
+uintptr_t ELF::GetBaseDelta() const
+{
+    return baseDelta;
+}
+
 uintptr_t ELF::GetEndPtr() const
 {
     return endPtr;

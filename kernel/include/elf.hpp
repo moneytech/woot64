@@ -472,6 +472,7 @@ public:
     const char *GetSymbolName(uintptr_t addr, ptrdiff_t *delta);
     bool ApplyRelocations();
     uintptr_t GetBase() const;
+    uintptr_t GetBaseDelta() const;
     uintptr_t GetEndPtr() const;
     void *GetPHdr() const;
     Elf_Ehdr *GetEHdr() const;
