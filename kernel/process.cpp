@@ -731,9 +731,9 @@ int Process::Close(int handle)
     else if(h.Type == Handle::HandleType::Pipe)
     {
         if(h.Pipe->FDs[0] == handle)
-            h.Pipe->FDs[0] = -EBADF;
+            h.Pipe->FDs[0] = -EPIPE;
         if(h.Pipe->FDs[1] == handle)
-            h.Pipe->FDs[1] = -EBADF;
+            h.Pipe->FDs[1] = -EPIPE;
 
         if(h.Pipe->FDs[0] < 0 && h.Pipe->FDs[1] < 0)
             delete h.Pipe;
@@ -1069,4 +1069,5 @@ Process::Pipe::Pipe(size_t size, int *fds) :
 Process::Pipe::~Pipe()
 {
     if(Data) delete Data;
+    Data = nullptr;
 }
