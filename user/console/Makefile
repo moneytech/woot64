@@ -11,7 +11,7 @@ CXX = $(TOOLS_PREFIX)g++
 
 CFLAGS = -ggdb
 CXXFLAGS = -ggdb
-LDFLAGS = #-s
+LDFLAGS = -s
 LIBS = -lwoot
 
 export WOOT_TOP_DIR CC CXX

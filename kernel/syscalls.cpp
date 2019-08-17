@@ -1097,7 +1097,7 @@ long SysCalls::sysProcessGetMap(int pid, struct processMapEntry *buf, size_t buf
 
 long SysCalls::sysIPCSendMessage(int dst, int num, int flags, void *payload, unsigned payloadSize)
 {
-    BUFFER_CHECK(payload, payloadSize);
+    BUFFER_CHECK(payload, payloadSize)
     return IPC::SendMessage(dst, num, flags, payload, payloadSize);
 }
 
