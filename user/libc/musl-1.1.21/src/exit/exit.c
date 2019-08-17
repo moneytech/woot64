@@ -14,12 +14,30 @@ weak_alias(dummy, _fini);
 
 extern weak hidden void (*const __fini_array_start)(void), (*const __fini_array_end)(void);
 
+#ifdef __WOOT__
+typedef void (*init_fini_func)(void);
+extern init_fini_func *___fini_array_start_;
+extern init_fini_func *___fini_array_end_;
+#endif // __WOOT__
+
 static void libc_exit_fini(void)
 {
+#ifdef __WOOT__
+    if(___fini_array_start_)
+    {
+        int fini_count = ___fini_array_end_ - ___fini_array_start_;
+        for(int i = 0; i < fini_count; ++i)
+        {
+            if(___fini_array_start_[i])
+                ___fini_array_start_[i]();
+        }
+    }
+#else
 	uintptr_t a = (uintptr_t)&__fini_array_end;
 	for (; a>(uintptr_t)&__fini_array_start; a-=sizeof(void(*)()))
 		(*(void (**)())(a-sizeof(void(*)())))();
 	_fini();
+#endif // __WOOT__
 }
 
 weak_alias(libc_exit_fini, __libc_exit_fini);

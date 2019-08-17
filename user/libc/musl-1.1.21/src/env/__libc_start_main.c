@@ -10,7 +10,15 @@
 static void dummy(void) {}
 weak_alias(dummy, _init);
 
+#ifdef __WOOT__
+typedef void (*init_fini_func)(void);
+static init_fini_func *___init_array_start;
+static init_fini_func *___init_array_end;
+init_fini_func *___fini_array_start_;
+init_fini_func *___fini_array_end_;
+#else
 extern weak hidden void (*const __init_array_start)(void), (*const __init_array_end)(void);
+#endif // __WOOT__
 
 static void dummy1(void *p) {}
 weak_alias(dummy1, __init_ssp);
@@ -58,10 +66,22 @@ void __init_libc(char **envp, char *pn)
 
 static void libc_start_init(void)
 {
+#ifdef __WOOT__
+    if(___init_array_start)
+    {
+        int init_count = ___init_array_end - ___init_array_start;
+        for(int i = 0; i < init_count; ++i)
+        {
+            if(___init_array_start[i])
+                ___init_array_start[i]();
+        }
+    }
+#else
 	_init();
 	uintptr_t a = (uintptr_t)&__init_array_start;
 	for (; a<(uintptr_t)&__init_array_end; a+=sizeof(void(*)()))
 		(*(void (**)(void))a)();
+#endif // __WOOT__
 }
 
 weak_alias(libc_start_init, __libc_start_init);
@@ -69,9 +89,16 @@ weak_alias(libc_start_init, __libc_start_init);
 typedef int lsm2_fn(int (*)(int,char **,char **), int, char **);
 static lsm2_fn libc_start_main_stage2;
 
-int __libc_start_main(int (*main)(int,char **,char **), int argc, char **argv)
+int __libc_start_main(int (*main)(int,char **,char **), int argc, char **argv, void (*_init_)(), void (*_fini_)(), void (*_unknown_)(), void *__init_array_start_, void *__init_array_end_, void *__fini_array_start_, void *__fini_array_end_)
 {
 	char **envp = argv+argc+1;
+
+#ifdef __WOOT__
+    ___init_array_start = (init_fini_func *)__init_array_start_;
+    ___init_array_end = (init_fini_func *)__init_array_end_;
+    ___fini_array_start_ = (init_fini_func *)__fini_array_start_;
+    ___fini_array_end_ = (init_fini_func *)__fini_array_end_;
+#endif // __WOOT__
 
 	/* External linkage, and explicit noinline attribute if available,
 	 * are used to prevent the stack frame used during init from

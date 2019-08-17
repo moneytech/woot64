@@ -13,7 +13,8 @@ CONFIG_ARGS="\
 --disable-nls \
 --enable-shared \
 --disable-multilib \
---disable-werror"
+--disable-werror \
+$*"
 
 echo Using WOOT root directory $WOOT_TOP_DIR
 echo Build directory $BUILD_DIR
