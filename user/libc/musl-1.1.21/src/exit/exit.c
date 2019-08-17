@@ -26,18 +26,15 @@ static void libc_exit_fini(void)
     if(___fini_array_start_)
     {
         int fini_count = ___fini_array_end_ - ___fini_array_start_;
-        for(int i = 0; i < fini_count; ++i)
-        {
-            if(___fini_array_start_[i])
-                ___fini_array_start_[i]();
-        }
+        for(int i = fini_count - 1; i >= 0; --i)
+            ___fini_array_start_[i]();
     }
 #else
 	uintptr_t a = (uintptr_t)&__fini_array_end;
 	for (; a>(uintptr_t)&__fini_array_start; a-=sizeof(void(*)()))
 		(*(void (**)())(a-sizeof(void(*)())))();
-	_fini();
 #endif // __WOOT__
+    _fini();
 }
 
 weak_alias(libc_exit_fini, __libc_exit_fini);

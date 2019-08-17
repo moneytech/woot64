@@ -66,18 +66,15 @@ void __init_libc(char **envp, char *pn)
 
 static void libc_start_init(void)
 {
+    _init();
 #ifdef __WOOT__
     if(___init_array_start)
     {
         int init_count = ___init_array_end - ___init_array_start;
         for(int i = 0; i < init_count; ++i)
-        {
-            if(___init_array_start[i])
-                ___init_array_start[i]();
-        }
+            ___init_array_start[i]();
     }
 #else
-	_init();
 	uintptr_t a = (uintptr_t)&__init_array_start;
 	for (; a<(uintptr_t)&__init_array_end; a+=sizeof(void(*)()))
 		(*(void (**)(void))a)();
