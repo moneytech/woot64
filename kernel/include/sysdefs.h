@@ -14,8 +14,8 @@
 #define DEFAULT_STACK_SIZE      (64 << 10)
 #define DEFAULT_USER_STACK_SIZE (128 << 10)
 
-#define PAGE_SHIFT  12
-#define PAGE_SIZE   (1 << PAGE_SHIFT)
+#define PAGE_SHIFT  12ull
+#define PAGE_SIZE   (1ull << PAGE_SHIFT)
 #define PAGE_MASK   (PAGE_SIZE - 1)
 
 #define KERNEL_VERSION_MAJOR 0

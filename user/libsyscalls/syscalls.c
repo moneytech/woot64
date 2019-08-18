@@ -115,6 +115,11 @@ long sys_getpid(void)
     return __syscall0(SYS_getpid);
 }
 
+long sys_fork(void)
+{
+    return __syscall0(SYS_fork);
+}
+
 long sys_exit(long error_code)
 {
     return __syscall1(SYS_exit, error_code);

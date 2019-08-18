@@ -21,7 +21,10 @@ class Paging
     };
 
     static uintptr_t memoryTop;
-    static Bitmap *pageFrameBitmap;
+
+    static size_t pageFrameCount;
+    static uint32_t *pageFrameMap;
+
     static AddressSpace kernelAddressSpace;
     static List<DMAPointerHead> dmaPtrList;
     static uintptr_t currentMMIOPtr;
@@ -50,8 +53,8 @@ public:
     static uintptr_t AllocFrame(size_t alignment);
     static uintptr_t AllocFrames(size_t n);
     static uintptr_t AllocFrames(size_t n, size_t alignment);
-    static bool FreeFrame(uintptr_t pa);
-    static bool FreeFrames(uintptr_t pa, size_t n);
+    static void FreeFrame(uintptr_t pa);
+    static void FreeFrames(uintptr_t pa, size_t n);
     static void ReserveFrame(uintptr_t pa);
     static void ReserveFrames(uintptr_t pa, size_t n);
     static void *AllocDMA(size_t size);

@@ -683,6 +683,12 @@ char *Process::GetExecName()
     return execELF->FullPath;
 }
 
+Process *Process::Fork()
+{
+    //Process *p = new Process(this->Name, nullptr, 0, true);
+    return nullptr;
+}
+
 int Process::Open(const char *filename, int flags, mode_t mode)
 {
     if(!filename) return -EINVAL;

@@ -153,6 +153,7 @@ public:
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
     char *GetExecName();
+    Process *Fork();
 
     // files and handles
     int Open(const char *filename, int flags, mode_t mode);

@@ -569,8 +569,15 @@ long SysCalls::sys_getpid()
     return Process::GetCurrent()->Id;
 }
 
+long SysCalls::sys_fork()
+{
+    Process *p = Process::GetCurrent()->Fork();
+    return p ? p->Id : -EAGAIN;
+}
+
 long SysCalls::sys_exit(intn retVal)
 {
+    asm("cli");
     Thread::Finalize(nullptr, retVal);
     return ESUCCESS;
 }
@@ -1336,6 +1343,7 @@ void SysCalls::Initialize()
     Handlers[SYS_dup2] = reinterpret_cast<SysCallHandler>(sys_dup2);
     Handlers[SYS_nanosleep] = reinterpret_cast<SysCallHandler>(sys_nanosleep);
     Handlers[SYS_getpid] = reinterpret_cast<SysCallHandler>(sys_getpid);
+    Handlers[SYS_fork] = reinterpret_cast<SysCallHandler>(sys_fork);
     Handlers[SYS_exit] = reinterpret_cast<SysCallHandler>(sys_exit);
     Handlers[SYS_getdents] = reinterpret_cast<SysCallHandler>(sys_getdents);
     Handlers[SYS_getcwd] = reinterpret_cast<SysCallHandler>(sys_getcwd);

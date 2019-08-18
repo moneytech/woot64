@@ -27,6 +27,7 @@
 #define SYS_dup2                        33
 #define SYS_nanosleep                   35
 #define SYS_getpid                      39
+#define SYS_fork                        57
 #define SYS_exit                        60
 #define SYS_getdents                    78
 #define SYS_getcwd                      79
@@ -141,6 +142,7 @@ class SysCalls
     static long sys_dup2(int oldfd, int newfd);
     static long sys_nanosleep(const struct timespec *req, struct timespec *rem);
     static long sys_getpid();
+    static long sys_fork();
     static long sys_exit(intn retVal);
     static long sys_getdents(int fd, struct dirent *de, size_t count);
     static long sys_getcwd(char *buf, size_t size);
