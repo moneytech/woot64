@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ints.hpp>
 #include <list.hpp>
 #include <multiboot.h>
 #include <types.h>
@@ -28,6 +29,7 @@ class Paging
     static AddressSpace kernelAddressSpace;
     static List<DMAPointerHead> dmaPtrList;
     static uintptr_t currentMMIOPtr;
+    static Ints::Handler cowHandler;
 
     static void *moveMemTop(intptr_t incr);
     static uint64_t getRAMSize(multiboot_info_t *mboot);
@@ -35,6 +37,8 @@ class Paging
     static void *alloc4k(uintptr_t pa);
     static void free4k(void *ptr);
     static void mapUser(uintptr_t as, void *start, void *end, bool write);
+    static uintptr_t getPTE(AddressSpace as, uintptr_t va);
+    static bool cowHandlerFunc(Ints::State *state, void *context);
 public:
     static void Initialize(multiboot_info_t *mboot);
     static void BuildAddressSpace(AddressSpace as);
@@ -42,7 +46,7 @@ public:
     static AddressSpace GetKernelAddressSpace();
     static void FlushTLB();
     static void InvalidatePage(uintptr_t addr);
-    static bool MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write);
+    static bool MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write, bool cow);
     static bool UnMapPage(AddressSpace as, uintptr_t va);
     static bool MapPages(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write, size_t n);
     static bool UnMapPages(AddressSpace as, uintptr_t va, size_t n);
@@ -70,5 +74,6 @@ public:
     static size_t GetFreeBytes();
     static size_t GetUsedBytes();
     static size_t CountPresentPages(AddressSpace as, uintptr_t startVA, size_t rangeSize);
+    static bool HandleCOW(uintptr_t va);
     static void DumpAddressSpace(AddressSpace as);
 };

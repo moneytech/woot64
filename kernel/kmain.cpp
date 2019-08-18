@@ -96,8 +96,8 @@ extern "C" int kmain(multiboot_info_t *mbootInfo)
 
 typedef void (*InitFiniFunc)(void);
 
-extern "C" InitFiniFunc __init_array_start[0], __init_array_end[0];
-extern "C" InitFiniFunc __fini_array_start[0], __fini_array_end[0];
+extern "C" InitFiniFunc __init_array_start[1], __init_array_end[1];
+extern "C" InitFiniFunc __fini_array_start[1], __fini_array_end[1];
 
 extern "C" void _init(multiboot_info_t *mbootInfo)
 {
@@ -114,6 +114,7 @@ extern "C" void _init(multiboot_info_t *mbootInfo)
 
 extern "C" void _fini(void)
 {
-    for(InitFiniFunc *func = __fini_array_start; func != __fini_array_end; ++func)
-        (*func)();
+    long finiCount = __fini_array_end - __fini_array_start;
+    for(long i = finiCount - 1; i >= 0; --i)
+        __fini_array_end[i]();
 }

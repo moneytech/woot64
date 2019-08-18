@@ -555,27 +555,27 @@ uint Thread::Sleep(uint millis, bool interruptible)
 
 uintptr_t Thread::AllocStack(uint8_t **stackAddr, size_t size)
 {
-    if(!size) return ~0;
+    if(!size) return INVALID_POINTER;
     uintptr_t as = Process->AddressSpace;
     uintptr_t res = Process->UserStackPtr;
     size_t pageCount = align(size, PAGE_SIZE) / PAGE_SIZE;
     uintptr_t startPtr = align(res, PAGE_SIZE) - pageCount * PAGE_SIZE;
-    *stackAddr = (uint8_t *)startPtr;
+    *stackAddr = reinterpret_cast<uint8_t *>(startPtr);
     for(uint i = 0; i < pageCount; ++i)
     {
         uintptr_t pa = Paging::AllocFrame();
-        if(pa == ~0)
+        if(pa == INVALID_POINTER)
         {
-            freeStack((uintptr_t)*stackAddr, size);
-            return ~0;
+            freeStack(reinterpret_cast<uintptr_t>(*stackAddr), size);
+            return INVALID_POINTER;
         }
-        if(!Paging::MapPage(as, startPtr + i * PAGE_SIZE, pa, true, true))
+        if(!Paging::MapPage(as, startPtr + i * PAGE_SIZE, pa, true, true, false))
         {
-            freeStack((uintptr_t)*stackAddr, size);
-            return ~0;
+            freeStack(reinterpret_cast<uintptr_t>(*stackAddr), size);
+            return INVALID_POINTER;
         }
     }
-    Process->UserStackPtr = (uintptr_t)*stackAddr;
+    Process->UserStackPtr = reinterpret_cast<uintptr_t>(*stackAddr);
     return res;
 }
 
@@ -586,7 +586,7 @@ Thread::~Thread()
     if(KernelStack) delete[] KernelStack;
     if(UserStack)
     {   // we have user stack
-        freeStack((uintptr_t)UserStack, UserStackSize);
+        freeStack(reinterpret_cast<uintptr_t>(UserStack), UserStackSize);
         UserStack = nullptr;
     }
     if(FXSaveData) delete[] FXSaveData;

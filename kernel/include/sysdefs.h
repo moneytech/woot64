@@ -29,3 +29,5 @@
 
 #define INLINE_ASM_SYNTAX   ".intel_syntax noprefix\n"
 #define NORMAL_ASM_SYNTAX   ".intel_syntax noprefix\n"
+
+#define INVALID_POINTER (~0ull)

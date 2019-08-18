@@ -256,7 +256,7 @@ uintptr_t Process::brk(uintptr_t brk, bool allocPages)
                 uintptr_t pa = Paging::AllocFrame();
                 if(pa == PG_INVALID_ADDRESS)
                     return CurrentBrk;
-                if(!Paging::MapPage(AddressSpace, va, pa, true, true))
+                if(!Paging::MapPage(AddressSpace, va, pa, true, true, false))
                     return CurrentBrk;
             }
         }
@@ -669,7 +669,7 @@ uintptr_t Process::MMapSBrk(intptr_t incr, bool allocPages)
         if(va < KERNEL_BASE)
         {
             uintptr_t pa = Paging::AllocFrame();
-            Paging::MapPage(AddressSpace, va, pa, true, true);
+            Paging::MapPage(AddressSpace, va, pa, true, true, false);
         }
     }
     MemoryLock.Release();

@@ -10,12 +10,18 @@ extern "C" void *_utext_start;
 extern "C" void *_utext_end;
 extern "C" void *_end;
 
+#define PG_PRESENT  (1 << 0)
+#define PG_WRITE    (1 << 1)
+#define PG_USER     (1 << 2)
+#define PG_COW      (1 << 9)
+
 uintptr_t Paging::memoryTop = reinterpret_cast<uintptr_t>(&_end);
 size_t Paging::pageFrameCount;
 uint32_t *Paging::pageFrameMap;
 AddressSpace Paging::kernelAddressSpace;
 List<Paging::DMAPointerHead> Paging::dmaPtrList;
 uintptr_t Paging::currentMMIOPtr = KERNEL_MMIO_BASE;
+Ints::Handler Paging::cowHandler = { nullptr, cowHandlerFunc, nullptr };
 
 void *Paging::moveMemTop(intptr_t incr)
 {
@@ -38,6 +44,41 @@ uint64_t Paging::getRAMSize(multiboot_info_t *mboot)
         mmapAddr += mmap->size + 4;
     }
     return ramSize;
+}
+
+uintptr_t Paging::getPTE(AddressSpace as, uintptr_t va)
+{
+    if(as == PG_CURRENT_ADDR_SPC)
+        as = GetCurrentAddressSpace();
+
+    va &= ~PAGE_MASK;
+
+    uint pml1idx = (va >> 12) & 511;
+    uint pml2idx = (va >> 21) & 511;
+    uint pml3idx = (va >> 30) & 511;
+    uint pml4idx = (va >> 39) & 511;
+
+    uintptr_t *pml4 = reinterpret_cast<uintptr_t *>(as + KERNEL_BASE);
+    if(!(pml4[pml4idx] & PG_PRESENT))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml3 = reinterpret_cast<uintptr_t *>((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+    if(!(pml3[pml3idx] & PG_PRESENT))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml2 = reinterpret_cast<uintptr_t *>((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
+    if(!(pml2[pml2idx] & PG_PRESENT))
+        return PG_INVALID_ADDRESS;
+    uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
+    if(!(pml1[pml1idx] & PG_PRESENT))
+        return PG_INVALID_ADDRESS;
+    return pml1[pml1idx];
+}
+
+bool Paging::cowHandlerFunc(Ints::State *state, void *context)
+{
+    (void)context;
+    if(!(state->ErrorCode & PG_WRITE))
+        return false;
+    return HandleCOW(cpuGetCR2());
 }
 
 void Paging::Initialize(multiboot_info_t *mboot)
@@ -75,6 +116,7 @@ void Paging::Initialize(multiboot_info_t *mboot)
     //       address space coherency over all processes
 
     cpuSetCR3(kernelAddressSpace);
+    Ints::RegisterHandler(14, &cowHandler);
 }
 
 void Paging::BuildAddressSpace(AddressSpace as)
@@ -112,7 +154,7 @@ void Paging::InvalidatePage(uintptr_t addr)
     cpuInvalidatePage(addr);
 }
 
-bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write)
+bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bool write, bool cow)
 {
     va &= ~PAGE_MASK;
     pa &= ~PAGE_MASK;
@@ -154,7 +196,7 @@ bool Paging::MapPage(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, boo
     }
     uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] + KERNEL_BASE) & ~PAGE_MASK);
 
-    pml1[pml1idx] = pa | 0x01 | (write ? 0x02 : 0x00) | (user ? 0x04 : 0x00);
+    pml1[pml1idx] = pa | PG_PRESENT | (write ? PG_WRITE : 0) | (user ? PG_USER : 0) | (cow ? PG_COW : 0);
     InvalidatePage(va);
     return true;
 }
@@ -176,7 +218,8 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     if(!(pml4[pml4idx] & 1))
         return false;
 
-    uintptr_t *pml3 = reinterpret_cast<uintptr_t *>((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
+    uintptr_t pml3PA = pml4[pml4idx] & ~PAGE_MASK;
+    uintptr_t *pml3 = reinterpret_cast<uintptr_t *>(pml3PA + KERNEL_BASE);
     if(!(pml3[pml3idx] & 1))
     {
         bool freePML3 = true;
@@ -190,7 +233,8 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml2 = reinterpret_cast<uintptr_t *>((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
+    uintptr_t pml2PA = pml3[pml3idx] & ~PAGE_MASK;
+    uintptr_t *pml2 = reinterpret_cast<uintptr_t *>(pml2PA + KERNEL_BASE);
     if(!(pml2[pml2idx] & 1))
     {
         bool freePML2 = true;
@@ -204,7 +248,8 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         return false;
     }
 
-    uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
+    uintptr_t pml1PA = pml2[pml2idx] & ~PAGE_MASK;
+    uintptr_t *pml1 = reinterpret_cast<uintptr_t *>(pml1PA + KERNEL_BASE);
     pml1[pml1idx] = 0;
 
     bool freePML1 = true;
@@ -213,7 +258,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     if(freePML1)
     {
         pml2[pml2idx] = 0;
-        FreeFrame(reinterpret_cast<uintptr_t>(pml1));
+        FreeFrame(reinterpret_cast<uintptr_t>(pml1PA));
     }
 
     bool freePML2 = true;
@@ -222,7 +267,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
     if(freePML2)
     {
         pml3[pml3idx] = 0;
-        FreeFrame(reinterpret_cast<uintptr_t>(pml2));
+        FreeFrame(reinterpret_cast<uintptr_t>(pml2PA));
     }
 
     if(va < KERNEL_BASE)
@@ -233,7 +278,7 @@ bool Paging::UnMapPage(AddressSpace as, uintptr_t va)
         if(freePML3)
         {
             pml4[pml4idx] = 0;
-            FreeFrame(reinterpret_cast<uintptr_t>(pml3));
+            FreeFrame(reinterpret_cast<uintptr_t>(pml3PA));
         }
     }
 
@@ -248,7 +293,7 @@ bool Paging::MapPages(AddressSpace as, uintptr_t va, uintptr_t pa, bool user, bo
 
     for(uintptr_t i = 0; i < n; ++i, va += PAGE_SIZE, pa += PAGE_SIZE)
     {
-        if(!MapPage(as, va, pa, user, write))
+        if(!MapPage(as, va, pa, user, write, false))
             return false;
     }
     return true;
@@ -367,15 +412,9 @@ void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, 
                     bool write = entry & 0x02;
                     entry &= ~PAGE_MASK;
                     uintptr_t srcPA = entry;
-                    uintptr_t dstPA = AllocFrame();
-                    if(dstPA == PG_INVALID_ADDRESS)
-                        return;
 
-                    // TODO: implement copy on write
-                    Memory::Move(reinterpret_cast<void *>(dstPA + KERNEL_BASE),
-                                 reinterpret_cast<void *>(srcPA + KERNEL_BASE),
-                                 PAGE_SIZE);
-                    Paging::MapPage(dstAS, va, dstPA, user, write);
+                    ReserveFrame(srcPA);
+                    Paging::MapPage(dstAS, va, srcPA, user, false, write);
                     if(invalidate)
                         InvalidatePage(va);
                 }
@@ -387,29 +426,8 @@ void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, 
 
 uintptr_t Paging::GetPhysicalAddress(AddressSpace as, uintptr_t va)
 {
-    if(as == PG_CURRENT_ADDR_SPC)
-        as = GetCurrentAddressSpace();
-
-    va &= ~PAGE_MASK;
-
-    uint pml1idx = (va >> 12) & 511;
-    uint pml2idx = (va >> 21) & 511;
-    uint pml3idx = (va >> 30) & 511;
-    uint pml4idx = (va >> 39) & 511;
-
-    uintptr_t *pml4 = reinterpret_cast<uintptr_t *>(as + KERNEL_BASE);
-    if(!(pml4[pml4idx] & 1))
-        return PG_INVALID_ADDRESS;
-    uintptr_t *pml3 = reinterpret_cast<uintptr_t *>((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
-    if(!(pml3[pml3idx] & 1))
-        return PG_INVALID_ADDRESS;
-    uintptr_t *pml2 = reinterpret_cast<uintptr_t *>((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
-    if(!(pml2[pml2idx] & 1))
-        return PG_INVALID_ADDRESS;
-    uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
-    if(!(pml1[pml1idx] & 1))
-        return PG_INVALID_ADDRESS;
-    return pml1[pml1idx] & ~PAGE_MASK;
+    uintptr_t pte = getPTE(as, va);
+    return pte == PG_INVALID_ADDRESS ? PG_INVALID_ADDRESS : pte & ~PAGE_MASK;
 }
 
 uintptr_t Paging::AllocFrame()
@@ -738,6 +756,31 @@ size_t Paging::CountPresentPages(AddressSpace as, uintptr_t startVA, size_t rang
         }
     }
     return res;
+}
+
+bool Paging::HandleCOW(uintptr_t va)
+{
+    AddressSpace as = GetCurrentAddressSpace();
+    uintptr_t pte = getPTE(as, va);
+    if(pte == PG_INVALID_ADDRESS || !(pte & PG_COW))
+        return false;
+
+    bool user = pte & PG_USER;
+    uintptr_t srcPA = pte & ~PAGE_MASK;
+    uintptr_t dstPA = AllocFrame();
+    if(dstPA == PG_INVALID_ADDRESS)
+        return false;
+    Memory::Move(reinterpret_cast<void *>(dstPA + KERNEL_BASE),
+                 reinterpret_cast<void *>(srcPA + KERNEL_BASE),
+                 PAGE_SIZE);
+    //UnMapPage(as, va); // I think this is not needed
+    FreeFrame(srcPA);
+    if(!MapPage(as, va, dstPA, user, true, false))
+    {
+        FreeFrame(dstPA);
+        return false;
+    }
+    return true;
 }
 
 #include <debug.hpp>

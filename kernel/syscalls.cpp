@@ -382,7 +382,7 @@ long SysCalls::sys_mmap(uintptr_t addr, unsigned long len, int prot, int flags, 
             {
                 pa = Paging::AllocFrame();
                 if(pa == PG_INVALID_ADDRESS) return -ENOMEM;
-                if(!Paging::MapPage(PG_CURRENT_ADDR_SPC, va, pa, true, true))
+                if(!Paging::MapPage(PG_CURRENT_ADDR_SPC, va, pa, true, true, false))
                     return -1;
             }
             Memory::Zero((void *)va, PAGE_SIZE);    // zero mmapped memory to avoid
@@ -841,7 +841,7 @@ long SysCalls::sysFBMapPixels(int fd, uintptr_t hint)
     {
         if(va >= USER_END)
             break;
-        Paging::MapPage(cp->AddressSpace, va, pa, true, true);
+        Paging::MapPage(cp->AddressSpace, va, pa, true, true, false);
     }
     cp->MemoryLock.Release();
     return startVA;

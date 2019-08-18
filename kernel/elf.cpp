@@ -362,7 +362,7 @@ ELF *ELF::Load(const char *filename, bool user, bool onlyHeaders, bool applyRelo
                         delete elf;
                         return nullptr;
                     }
-                    if(!Paging::MapPage(proc->AddressSpace, va, pa, user, true))
+                    if(!Paging::MapPage(proc->AddressSpace, va, pa, user, true, false))
                     {
                         DEBUG("[elf] Couldn't map memory for data in file '%s'\n", filename);
                         delete f;

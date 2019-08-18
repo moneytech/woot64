@@ -27,7 +27,7 @@ bool Heap::pageFault(Ints::State *state, void *context)
     if(phAddr == PG_INVALID_ADDRESS)
         return false; // out of memory
     uintptr_t pageAddr = addr & ~PAGE_MASK;
-    if(!Paging::MapPage(as, pageAddr, phAddr, false, true))
+    if(!Paging::MapPage(as, pageAddr, phAddr, false, true, false))
     {   // couldn't map page
         Paging::FreeFrame(phAddr);
         return false;
