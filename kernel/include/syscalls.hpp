@@ -29,11 +29,13 @@
 #define SYS_getpid                      39
 #define SYS_fork                        57
 #define SYS_exit                        60
+#define SYS_wait4                       61
 #define SYS_getdents                    78
 #define SYS_getcwd                      79
 #define SYS_chdir                       80
 #define SYS_sysinfo                     99
 #define SYS_arch_prctl                  158
+#define SYS_gettid                      186
 #define SYS_getdents64                  217
 #define SYS_set_tid_address             218
 #define SYS_clock_get_time              228
@@ -144,11 +146,13 @@ class SysCalls
     static long sys_getpid();
     static long sys_fork();
     static long sys_exit(intn retVal);
+    static long sys_wait4(int pid, int *status, int options, void *rusage);
     static long sys_getdents(int fd, struct dirent *de, size_t count);
     static long sys_getcwd(char *buf, size_t size);
     static long sys_chdir(char *pathname);
     static long sys_sysinfo(struct sysinfo *info);
     static long sys_arch_prctl(int code, uintptr_t addr);
+    static long sys_gettid();
     static long sys_getdents64(int fd, struct dirent *de, size_t count);
     static long sys_set_tid_address(int *tidptr);
     static long sys_clock_get_time(int clock, struct timespec *t);

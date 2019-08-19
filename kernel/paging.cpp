@@ -87,9 +87,8 @@ void Paging::Initialize(multiboot_info_t *mboot)
     kernelAddressSpace = reinterpret_cast<uintptr_t>(moveMemTop(PAGE_SIZE)) - KERNEL_BASE;
     Memory::Zero(reinterpret_cast<void *>(kernelAddressSpace), PAGE_SIZE);
 
-    // allocate page bitmap
+    // allocate page frame map
     uint64_t ramSize = getRAMSize(mboot);
-
     pageFrameCount = ramSize >> PAGE_SHIFT;
     size_t mapSize = pageFrameCount * sizeof(uint32_t);
     pageFrameMap = reinterpret_cast<uint32_t *>(moveMemTop(align(mapSize, PAGE_SIZE)));
@@ -100,7 +99,7 @@ void Paging::Initialize(multiboot_info_t *mboot)
     ReserveFrames(0, memoryTopPA >> PAGE_SHIFT);
 
     // map whole physical memory to kernel space
-    MapPages(kernelAddressSpace, KERNEL_BASE, 0, false, true, ramSize >> PAGE_SHIFT);
+    MapPages(kernelAddressSpace, KERNEL_BASE, 0, false, true, pageFrameCount);
 
     // map .text.user section as user code
     uintptr_t utext_start = reinterpret_cast<uintptr_t>(&_utext_start);

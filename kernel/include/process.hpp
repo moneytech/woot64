@@ -19,6 +19,8 @@ class Semaphore;
 class Stream;
 class Thread;
 
+struct ForkEntryArgs;
+
 #define MAX_HANDLES 1024
 
 class Process
@@ -90,6 +92,7 @@ private:
     static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf);
     static int processEntryPoint(const char *cmdline);
     static int userThreadEntryPoint(void *arg);
+    static int forkThreadEntryPoint(ForkEntryArgs *args);
 
     int allocHandleSlot(Handle handle);
     void freeHandleSlot(int handle);
@@ -126,6 +129,7 @@ public:
     static void Initialize();
     static Process *GetByID(pid_t pid);
     static Process *Create(const char *filename, Semaphore *finished, bool noAutoRelocs, int *retVal);
+    static Process *Create(uintptr_t entry, uintptr_t stackPtr);
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static void SetCurrentDir(DEntry *dentry);
@@ -153,7 +157,6 @@ public:
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
     char *GetExecName();
-    Process *Fork();
 
     // files and handles
     int Open(const char *filename, int flags, mode_t mode);

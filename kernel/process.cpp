@@ -24,6 +24,13 @@ extern "C" void userThreadReturn(int retVal);
 #define MAKE_STR(s) #s
 #define STRINGIFY(s) MAKE_STR(s)
 
+struct ForkEntryArgs
+{
+    Process *CallerProcess;
+    uintptr_t EntryPoint;
+    uintptr_t StackPointer;
+};
+
 #ifdef __i386__
 asm(
 INLINE_ASM_SYNTAX
@@ -213,6 +220,22 @@ int Process::userThreadEntryPoint(void *arg)
     return 0;
 }
 
+int Process::forkThreadEntryPoint(ForkEntryArgs *args)
+{
+    Process *cp = Process::GetCurrent();
+    Process *proc = args->CallerProcess;
+    uintptr_t entry = args->EntryPoint;
+    uintptr_t stack = args->StackPointer;
+    delete args;
+
+    Paging::CloneRange(cp->AddressSpace, proc->AddressSpace, 0, USER_END);
+
+    Thread *ct = Thread::GetCurrent();
+    ct->Initialized->Signal(nullptr);
+    cpuEnterUserMode(ct->UserArgument, stack, entry);
+    return 0;
+}
+
 int Process::allocHandleSlot(Handle handle)
 {
     size_t handlesSize = Handles.Size();
@@ -317,6 +340,16 @@ Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoR
     proc->DeleteFinished = deleteFinished;
     proc->CommandLine = cmdLine;
     return proc;
+}
+
+Process *Process::Create(uintptr_t entry, uintptr_t stackPtr)
+{
+    Process *cp = Process::GetCurrent();
+    ForkEntryArgs *args = new ForkEntryArgs { cp, entry, stackPtr };
+    Thread *thread = new Thread("forked", nullptr, reinterpret_cast<void *>(forkThreadEntryPoint),
+                                reinterpret_cast<uintptr_t>(args), DEFAULT_STACK_SIZE,
+                                DEFAULT_USER_STACK_SIZE, nullptr, nullptr);
+    return new Process(cp->Name, thread, 0, true);
 }
 
 Process *Process::GetCurrent()
@@ -535,6 +568,7 @@ bool Process::Start()
 
 bool Process::AddThread(Thread *thread)
 {
+    if(!thread) return false;
     if(!Lock()) return false;
     Threads.Append(thread);
     thread->Process = this;
@@ -681,12 +715,6 @@ char *Process::GetExecName()
     ELF *execELF = Images.Get(0);
     if(!execELF) return nullptr;
     return execELF->FullPath;
-}
-
-Process *Process::Fork()
-{
-    //Process *p = new Process(this->Name, nullptr, 0, true);
-    return nullptr;
 }
 
 int Process::Open(const char *filename, int flags, mode_t mode)

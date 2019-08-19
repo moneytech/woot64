@@ -28,6 +28,8 @@
 #define SIG_UNBLOCK 1
 #define SIG_SETMASK 2
 
+#define WNOHANG    1
+
 extern "C" void syscallHandler();
 asm(
 INLINE_ASM_SYNTAX
@@ -571,14 +573,25 @@ long SysCalls::sys_getpid()
 
 long SysCalls::sys_fork()
 {
-    Process *p = Process::GetCurrent()->Fork();
-    return p ? p->Id : -EAGAIN;
+    uintptr_t *bp = reinterpret_cast<uintptr_t *>(__builtin_frame_address(1));
+    uintptr_t userInstrPointer = bp[-19];
+    uintptr_t userStackPointer = bp[-18];
+    Process::Create(userInstrPointer, userStackPointer);
+    return ESUCCESS;
 }
 
 long SysCalls::sys_exit(intn retVal)
 {
-    asm("cli");
     Thread::Finalize(nullptr, retVal);
+    return ESUCCESS;
+}
+
+long SysCalls::sys_wait4(int pid, int *status, int options, void *rusage)
+{
+    Process *p = Process::GetByID(pid);
+    if(!p) return -ECHILD;
+    p->Finished->Wait(0, options & WNOHANG ? true : false, false);
+    if(status) *status = 0;
     return ESUCCESS;
 }
 
@@ -640,22 +653,27 @@ long SysCalls::sys_arch_prctl(int code, uintptr_t addr)
         return ESUCCESS;
     case ARCH_GET_FS:
         if(!addr) return -EINVAL;
-        *((uintptr_t *)(addr)) = cpuReadMSR(0xC0000100);
+        *(reinterpret_cast<uintptr_t *>(addr)) = cpuReadMSR(0xC0000100);
         return ESUCCESS;
     case ARCH_GET_GS:
         if(!addr) return -EINVAL;
-        *((uintptr_t *)(addr)) = cpuReadMSR(0xC0000101);
+        *(reinterpret_cast<uintptr_t *>(addr)) = cpuReadMSR(0xC0000101);
         return ESUCCESS;
     }
     DEBUG("[syscalls] sys_arch_prctl: unknown code %p\n", code);
     return -ENOSYS;
 }
 
+long SysCalls::sys_gettid()
+{
+    return Thread::GetCurrent()->Id;
+}
+
 long SysCalls::sys_getdents64(int fd, struct dirent *de, size_t count)
 {
     BUFFER_CHECK(de, count)
 
-    File *f = (File *)Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File);
+    File *f = reinterpret_cast<File *>(Process::GetCurrent()->GetHandleData(fd, Process::Handle::HandleType::File));
     if(!f) return -EBADF;
     if(!S_ISDIR(f->Mode))
         return -ENOTDIR;
@@ -1345,11 +1363,13 @@ void SysCalls::Initialize()
     Handlers[SYS_getpid] = reinterpret_cast<SysCallHandler>(sys_getpid);
     Handlers[SYS_fork] = reinterpret_cast<SysCallHandler>(sys_fork);
     Handlers[SYS_exit] = reinterpret_cast<SysCallHandler>(sys_exit);
+    Handlers[SYS_wait4] = reinterpret_cast<SysCallHandler>(sys_wait4);
     Handlers[SYS_getdents] = reinterpret_cast<SysCallHandler>(sys_getdents);
     Handlers[SYS_getcwd] = reinterpret_cast<SysCallHandler>(sys_getcwd);
     Handlers[SYS_chdir] = reinterpret_cast<SysCallHandler>(sys_chdir);
     Handlers[SYS_sysinfo] = reinterpret_cast<SysCallHandler>(sys_sysinfo);
     Handlers[SYS_arch_prctl] = reinterpret_cast<SysCallHandler>(sys_arch_prctl);
+    Handlers[SYS_gettid] = reinterpret_cast<SysCallHandler>(sys_gettid);
     Handlers[SYS_getdents64] = reinterpret_cast<SysCallHandler>(sys_getdents64);
     Handlers[SYS_set_tid_address] = reinterpret_cast<SysCallHandler>(sys_set_tid_address);
     Handlers[SYS_clock_get_time] = reinterpret_cast<SysCallHandler>(sys_clock_get_time);

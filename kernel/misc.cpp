@@ -1,6 +1,7 @@
 #include <debug.hpp>
 #include <ints.hpp>
 #include <misc.hpp>
+#include <thread.hpp>
 
 static int __errno_value = 0;
 
@@ -15,6 +16,8 @@ bool Misc::int3Handler(Ints::State *state, void *context)
 {
     (void)context;
     DEBUG("BREAKPOINT! at %p\n", state->RIP);
+    Thread *ct = Thread::GetCurrent();
+    if(ct) DEBUG("Thread: '%s' (%d)\n", ct->Name, ct->Id);
     Ints::DumpState(state);
     return true;
 }

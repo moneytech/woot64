@@ -125,6 +125,11 @@ long sys_exit(long error_code)
     return __syscall1(SYS_exit, error_code);
 }
 
+long sys_wait4(int pid, int *status, int options, void *rusage)
+{
+    return __syscall4(SYS_wait4, (long)pid, (long)status, (long)options, (long)rusage);
+}
+
 long sys_getdents(int fd, void *de, size_t count)
 {
     return __syscall3(SYS_getdents, fd, (long)de, (long)count);
@@ -148,6 +153,11 @@ long sys_sysinfo(void *info)
 long sys_arch_prctl(int code, uintptr_t addr)
 {
     return __syscall2(SYS_arch_prctl, code, (long)addr);
+}
+
+long sys_gettid(void)
+{
+    return __syscall0(SYS_gettid);
 }
 
 long sys_getdents64(int fd, void *de, size_t count)

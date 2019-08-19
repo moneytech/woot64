@@ -79,15 +79,15 @@ NORMAL_ASM_SYNTAX);
 static inline uint32_t fbMakeColor(uint8_t r, uint8_t g, uint8_t b)
 {
     uint32_t color = 0;
-    color |= ((uint32_t)r) << multibootInfo->framebuffer_red_field_position;
-    color |= ((uint32_t)g) << multibootInfo->framebuffer_green_field_position;
-    color |= ((uint32_t)b) << multibootInfo->framebuffer_blue_field_position;
+    color |= static_cast<uint32_t>(r) << multibootInfo->framebuffer_red_field_position;
+    color |= static_cast<uint32_t>(g) << multibootInfo->framebuffer_green_field_position;
+    color |= static_cast<uint32_t>(b) << multibootInfo->framebuffer_blue_field_position;
     return color;
 }
 
 static inline void fbSetPixel(uint x, uint y, uint32_t color)
 {
-    *((uint32_t *)(fbPixels + multibootInfo->framebuffer_pitch * y + 4 * x)) = color;
+    *(reinterpret_cast<uint32_t *>(fbPixels + multibootInfo->framebuffer_pitch * y + 4 * x)) = color;
 }
 
 static inline void fbPutChar(uint x, uint y, int chr, uint32_t color)

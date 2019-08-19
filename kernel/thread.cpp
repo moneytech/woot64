@@ -1,6 +1,5 @@
 #include <cpu.hpp>
 #include <debug.hpp>
-//#include <gdt.hpp>
 #include <irqs.hpp>
 #include <misc.hpp>
 #include <mutex.hpp>
@@ -17,19 +16,6 @@ extern "C" void *kmain;
 extern "C" uint8_t mainKernelThreadStack[];
 extern "C" uint8_t mainKernelThreadStackEnd[];
 extern "C" struct TSS mainTSS;
-
-#pragma pack(push, 1)
-struct TSS
-{
-    uint32_t Reserved1;
-    uint64_t RSP[3];
-    uint64_t Reserved2;
-    uint64_t IST[7];
-    uint64_t Reserved3;
-    uint16_t Reserved4;
-    uint16_t IOBMAddr;
-};
-#pragma pack(pop)
 
 extern "C" void threadFinalize(Thread *thread, int returnValue)
 {

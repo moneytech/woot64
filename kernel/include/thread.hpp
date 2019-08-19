@@ -6,6 +6,19 @@
 #include <signal.hpp>
 #include <types.h>
 
+#pragma pack(push, 1)
+struct TSS
+{
+    uint32_t Reserved1;
+    uint64_t RSP[3];
+    uint64_t Reserved2;
+    uint64_t IST[7];
+    uint64_t Reserved3;
+    uint16_t Reserved4;
+    uint16_t IOBMAddr;
+};
+#pragma pack(pop)
+
 class Mutex;
 class Process;
 class Semaphore;
@@ -104,7 +117,7 @@ public:
     static Thread *GetIdleThread();
     static void Finalize(Thread *thread, int returnValue);
 
-    Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished);
+    Thread(const char *name, class Process *process, void *entryPoint, uintptr_t argument, size_t kernelStackSize, size_t userStackSize, int *returnCodePtr, Semaphore *finished);    
     static Thread *GetByID(pid_t id);
     static bool Exists(Thread *thread);
     static Thread *GetNext(bool doTick);
