@@ -1,5 +1,6 @@
 #include <bitmap.hpp>
 #include <cpu.hpp>
+#include <debug.hpp>
 #include <memory.hpp>
 #include <misc.hpp>
 #include <new.hpp>
@@ -386,23 +387,25 @@ void Paging::CloneRange(AddressSpace dstAS, uintptr_t srcAS, uintptr_t startVA, 
             continue;
 
         uintptr_t *pml3 = reinterpret_cast<uintptr_t *>((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
-        for(uintptr_t pml3idx = 0; pml3idx < 511; ++pml3idx)
+        for(uintptr_t pml3idx = 0; pml3idx < 512; ++pml3idx)
         {
             if(!(pml3[pml3idx] & 1))
                 continue;
 
             uintptr_t *pml2 = reinterpret_cast<uintptr_t *>((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
-            for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
+            for(uintptr_t pml2idx = 0; pml2idx < 512; ++pml2idx)
             {
                 if(!(pml2[pml2idx] & 1))
                     continue;
 
                 uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
-                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                for(uintptr_t pml1idx = 0; pml1idx < 512; ++pml1idx)
                 {
                     uintptr_t va = pml4idx << 39 | pml3idx << 30 | pml2idx << 21 | pml1idx << 12;
                     if(va < startVA || va >= endVA)
                         continue;
+                    if(va >= USER_END && va < KERNEL_BASE)
+                        return; // trying to clone invalid address
                     if(!(pml1[pml1idx] & 1))
                         continue;
 
@@ -781,8 +784,6 @@ bool Paging::HandleCOW(uintptr_t va)
     }
     return true;
 }
-
-#include <debug.hpp>
 
 void Paging::DumpAddressSpace(AddressSpace as)
 {
