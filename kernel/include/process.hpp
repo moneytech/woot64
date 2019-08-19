@@ -23,10 +23,15 @@ struct ForkEntryArgs;
 
 #define MAX_HANDLES 1024
 
+struct ForkRegisters
+{
+    uintptr_t RSP, RBP, RIP, R15, R14, R13, R12, RBX;
+};
+
 class Process
 {
 public:
-    class Handle;
+    struct Handle;
 
     class Pipe
     {
@@ -92,7 +97,7 @@ private:
     static uintptr_t buildUserStack(uintptr_t stackPtr, const char *cmdLine, int envCount, const char *envVars[], ELF *elf);
     static int processEntryPoint(const char *cmdline);
     static int userThreadEntryPoint(void *arg);
-    static int forkThreadEntryPoint(ForkEntryArgs *args);
+    static int forkThreadEntryPoint(ForkEntryArgs *forkArgs);
 
     int allocHandleSlot(Handle handle);
     void freeHandleSlot(int handle);
@@ -129,7 +134,7 @@ public:
     static void Initialize();
     static Process *GetByID(pid_t pid);
     static Process *Create(const char *filename, Semaphore *finished, bool noAutoRelocs, int *retVal);
-    static Process *Create(uintptr_t entry, uintptr_t stackPtr);
+    static Process *Create(ForkRegisters *regs);
     static Process *GetCurrent();
     static DEntry *GetCurrentDir();
     static void SetCurrentDir(DEntry *dentry);

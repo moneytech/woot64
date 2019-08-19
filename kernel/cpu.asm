@@ -1346,7 +1346,26 @@ cpuEnterUserMode:
     push 0x0043     ; cs - 64 bit user code selector
     push rdx        ; rip
     xor rax, rax
-    xor rbp, rbp
+    mov rbp, rcx
+    iretq
+
+global cpuEnterUserModeFork
+cpuEnterUserModeFork:
+    mov rax, 0x003B ; 64 bit user data selector
+    mov ds, ax
+    mov es, ax
+    push rax                ; ss
+    push qword [rdi]        ; rsp
+    push 0x0202             ; rflags
+    push 0x0043             ; cs - 64 bit user code selector
+    push qword [rdi + 16]   ; rip
+    mov rbp, [rdi + 8]
+    mov r15, [rdi + 24]
+    mov r14, [rdi + 32]
+    mov r13, [rdi + 40]
+    mov r12, [rdi + 48]
+    mov rbx, [rdi + 56]
+    xor rax, rax
     iretq
 
 global cpuReadTSC

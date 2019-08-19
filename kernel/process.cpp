@@ -27,8 +27,7 @@ extern "C" void userThreadReturn(int retVal);
 struct ForkEntryArgs
 {
     Process *CallerProcess;
-    uintptr_t EntryPoint;
-    uintptr_t StackPointer;
+    ForkRegisters Registers;
 };
 
 #ifdef __i386__
@@ -200,7 +199,7 @@ int Process::processEntryPoint(const char *cmdline)
 
     proc->lock.Release();
     ct->Initialized->Signal(nullptr);
-    cpuEnterUserMode(ct->UserArgument, stackPointer, reinterpret_cast<uintptr_t>(elf->EntryPoint));
+    cpuEnterUserMode(ct->UserArgument, stackPointer, reinterpret_cast<uintptr_t>(elf->EntryPoint), 0);
     return 0;
 }
 
@@ -216,23 +215,20 @@ int Process::userThreadEntryPoint(void *arg)
     ct->Initialized->Signal(nullptr);
     cpuEnterUserMode(ct->UserArgument,
                      reinterpret_cast<uintptr_t>(stack),
-                     reinterpret_cast<uintptr_t>(ct->UserEntryPoint));
+                     reinterpret_cast<uintptr_t>(ct->UserEntryPoint),
+                     0);
     return 0;
 }
 
-int Process::forkThreadEntryPoint(ForkEntryArgs *args)
+int Process::forkThreadEntryPoint(ForkEntryArgs *forkArgs)
 {
     Process *cp = Process::GetCurrent();
-    Process *proc = args->CallerProcess;
-    uintptr_t entry = args->EntryPoint;
-    uintptr_t stack = args->StackPointer;
-    delete args;
-
-    Paging::CloneRange(cp->AddressSpace, proc->AddressSpace, 0, USER_END);
+    ForkEntryArgs args = *forkArgs;
+    delete forkArgs;
 
     Thread *ct = Thread::GetCurrent();
     ct->Initialized->Signal(nullptr);
-    cpuEnterUserMode(ct->UserArgument, stack, entry);
+    cpuEnterUserModeFork(&args.Registers);
     return 0;
 }
 
@@ -342,14 +338,19 @@ Process *Process::Create(const char *filename, Semaphore *finished, bool noAutoR
     return proc;
 }
 
-Process *Process::Create(uintptr_t entry, uintptr_t stackPtr)
+Process *Process::Create(ForkRegisters *regs)
 {
     Process *cp = Process::GetCurrent();
-    ForkEntryArgs *args = new ForkEntryArgs { cp, entry, stackPtr };
+    Thread *ct = Thread::GetCurrent();
+    ForkEntryArgs *args = new ForkEntryArgs { cp, *regs };
     Thread *thread = new Thread("forked", nullptr, reinterpret_cast<void *>(forkThreadEntryPoint),
                                 reinterpret_cast<uintptr_t>(args), DEFAULT_STACK_SIZE,
                                 DEFAULT_USER_STACK_SIZE, nullptr, nullptr);
-    return new Process(cp->Name, thread, 0, true);
+    thread->FS = ct->FS;
+    thread->GS = ct->GS;
+    Process *proc =  new Process(cp->Name, thread, 0, true);
+    Paging::CloneRange(proc->AddressSpace, args->CallerProcess->AddressSpace, 0, USER_END);
+    return proc;
 }
 
 Process *Process::GetCurrent()

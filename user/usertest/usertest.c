@@ -38,34 +38,13 @@ static uiMenu_t *menu = NULL;
 static void btnActivate(uiControl_t *sender)
 {
     (void)sender;
-
-    int res = SDL_Init(0);
-    if(res < 0)
+    pid_t pid = fork();
+    if(!pid)
     {
-        fprintf(stderr, "[usertest] SDL_Init() failed: %s\n", SDL_GetError());
-        return;
+        fprintf(stderr, "child process here: tid %d\n", __syscall0(SYS_gettid));
+        exit(0);
     }
-    fprintf(stderr, "[usertest] SDL_Init() succeeded\n");
-
-    SDL_Surface *surf = SDL_SetVideoMode(640, 480, 32, 0);
-    if(!surf)
-    {
-        fprintf(stderr, "[usertest] SDL_SetVideoMode failed: %s\n", SDL_GetError());
-        return;
-    }
-    fprintf(stderr, "[usertest] SDL_SetVideoMode succeeded\n");
-
-    SDL_Event event;
-    while(SDL_WaitEvent(&event))
-    {
-        if(event.type == SDL_QUIT)
-            break;
-    }
-    SDL_Quit();
-
-    /*int mx, my;
-    wmGetMousePos(&mx, &my);
-    uiMenuShow(menu, mx - 4, my - 4);*/
+    fprintf(stderr, "main process here. child pid is %d\n", pid);
 }
 
 static void sldChange(uiSlider_t *sender)

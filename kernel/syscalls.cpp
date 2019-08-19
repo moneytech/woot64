@@ -37,24 +37,19 @@ INLINE_ASM_SYNTAX
 ".type syscallHandler, function\n"
 "syscallHandler:\n"
 "sub rsp, 128\n"                            // deal with red zone
+
+"push rbx\n"
+"push r12\n"
+"push r13\n"
+"push r14\n"
+"push r15\n"
+
 "push rcx\n"                                // save return address
 "push rbp\n"                                // save user frame pointer
 "mov rbp, rsp\n"                            // save user stack pointer
 "mov rsp, [rip + mainTSS + 4]\n"            // load kernel stack
 "and rsp, ~0xF\n"                           // align stack for SSE
 "sti\n"                                     // enable interrupts disabled by FMASK msr
-
-"push rbx\n"
-"push rdx\n"
-"push rsi\n"
-"push rdi\n"
-"push r8\n"
-"push r9\n"
-"push r10\n"
-"push r12\n"
-"push r13\n"
-"push r14\n"
-"push r15\n"
 
 "push r11\n"                                // save flags
 "mov rcx, r10\n"                            // move argument 4 from r10 to rcx
@@ -71,21 +66,16 @@ INLINE_ASM_SYNTAX
 "call _ZN8SysCalls13SignalHandlerEv\n"      // call function for handling syscall initiated signals
 "pop rax\n"                                 // restore syscall result
 
+"mov rsp, rbp\n"                            // restore user stack pointer
+"pop rbp\n"                                 // restore user frame pointer
+"pop rcx\n"                                 // restore return address
+
 "pop r15\n"
 "pop r14\n"
 "pop r13\n"
 "pop r12\n"
-"pop r10\n"
-"pop r9\n"
-"pop r8\n"
-"pop rdi\n"
-"pop rsi\n"
-"pop rdx\n"
 "pop rbx\n"
 
-"mov rsp, rbp\n"                            // restore user stack pointer
-"pop rbp\n"                                 // restore user frame pointer
-"pop rcx\n"                                 // restore return address
 "add rsp, 128\n"                            // deal with red zone
 "sysretq\n"                                 // return to usermode code
 NORMAL_ASM_SYNTAX
@@ -573,11 +563,20 @@ long SysCalls::sys_getpid()
 
 long SysCalls::sys_fork()
 {
+    // FIXME: Something is still not right here. Should work without disabling interrupts.
+    //        I imagine, doing it here might cause hangups when using heap.
+    bool ints = cpuDisableInterrupts();
     uintptr_t *bp = reinterpret_cast<uintptr_t *>(__builtin_frame_address(1));
-    uintptr_t userInstrPointer = bp[-19];
-    uintptr_t userStackPointer = bp[-18];
-    Process::Create(userInstrPointer, userStackPointer);
-    return ESUCCESS;
+    ForkRegisters regs =
+    {
+        reinterpret_cast<uintptr_t>(bp + 2) + 128 + 5 * 8,
+        bp[0], bp[1], bp[2], bp[3], bp[4], bp[5], bp[6]
+    };
+
+    Process *proc = Process::Create(&regs);
+    proc->Start();
+    cpuRestoreInterrupts(ints);
+    return proc ? proc->Id : -EAGAIN;
 }
 
 long SysCalls::sys_exit(intn retVal)
