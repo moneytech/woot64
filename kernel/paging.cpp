@@ -333,23 +333,25 @@ void Paging::UnmapRange(AddressSpace as, uintptr_t startVA, size_t rangeSize)
             continue;
 
         uintptr_t *pml3 = reinterpret_cast<uintptr_t *>((pml4[pml4idx] & ~PAGE_MASK) + KERNEL_BASE);
-        for(uintptr_t pml3idx = 0; pml3idx < 511; ++pml3idx)
+        for(uintptr_t pml3idx = 0; pml3idx < 512; ++pml3idx)
         {
             if(!(pml3[pml3idx] & 1))
                 continue;
 
             uintptr_t *pml2 = reinterpret_cast<uintptr_t *>((pml3[pml3idx] & ~PAGE_MASK) + KERNEL_BASE);
-            for(uintptr_t pml2idx = 0; pml2idx < 511; ++pml2idx)
+            for(uintptr_t pml2idx = 0; pml2idx < 512; ++pml2idx)
             {
                 if(!(pml2[pml2idx] & 1))
                     continue;
 
                 uintptr_t *pml1 = reinterpret_cast<uintptr_t *>((pml2[pml2idx] & ~PAGE_MASK) + KERNEL_BASE);
-                for(uintptr_t pml1idx = 0; pml1idx < 511; ++pml1idx)
+                for(uintptr_t pml1idx = 0; pml1idx < 512; ++pml1idx)
                 {
                     uintptr_t va = pml4idx << 39 | pml3idx << 30 | pml2idx << 21 | pml1idx << 12;
                     if(va < startVA || va >= endVA)
                         continue;
+                    if(va >= USER_END && va < KERNEL_BASE)
+                        return; // trying to unmap invalid address
                     if(!(pml1[pml1idx] & 1))
                         continue;
                     FreeFrame(pml1[pml1idx] & ~PAGE_MASK);
