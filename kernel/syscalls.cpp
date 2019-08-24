@@ -579,6 +579,31 @@ long SysCalls::sys_fork()
     return proc ? proc->Id : -EAGAIN;
 }
 
+long SysCalls::sys_execve(const char *filename, const char *const argv[], const char *const envp[])
+{
+    size_t fnLen = String::Length(filename);
+    BUFFER_CHECK(filename, fnLen)
+    size_t nargv = 0;
+    for(;; ++nargv)
+    {
+        const char *a = argv[nargv];
+        if(!a) break;
+        size_t len = String::Length(a);
+        BUFFER_CHECK(a, len)
+    }
+    size_t nenvp = 0;
+    for(;; ++nenvp)
+    {
+        const char *e = envp[nenvp];
+        if(!e) break;
+        size_t len = String::Length(e);
+        BUFFER_CHECK(e, len)
+    }
+    BUFFER_CHECK(argv, sizeof(const char *) * (nargv + 1))
+    BUFFER_CHECK(envp, sizeof(const char *) * (nenvp + 1))
+    return Process::GetCurrent()->ExecVE(filename, argv, envp);
+}
+
 long SysCalls::sys_exit(intn retVal)
 {
     Thread::Finalize(nullptr, retVal);
@@ -1361,6 +1386,7 @@ void SysCalls::Initialize()
     Handlers[SYS_nanosleep] = reinterpret_cast<SysCallHandler>(sys_nanosleep);
     Handlers[SYS_getpid] = reinterpret_cast<SysCallHandler>(sys_getpid);
     Handlers[SYS_fork] = reinterpret_cast<SysCallHandler>(sys_fork);
+    Handlers[SYS_execve] = reinterpret_cast<SysCallHandler>(sys_execve);
     Handlers[SYS_exit] = reinterpret_cast<SysCallHandler>(sys_exit);
     Handlers[SYS_wait4] = reinterpret_cast<SysCallHandler>(sys_wait4);
     Handlers[SYS_getdents] = reinterpret_cast<SysCallHandler>(sys_getdents);

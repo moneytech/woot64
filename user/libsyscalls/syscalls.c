@@ -120,6 +120,11 @@ long sys_fork(void)
     return __syscall0(SYS_fork);
 }
 
+long sys_execve(const char *filename, const char *const argv[], const char *const envp[])
+{
+    return __syscall3(SYS_execve, (long)filename, (long)argv, (long)envp);
+}
+
 long sys_exit(long error_code)
 {
     return __syscall1(SYS_exit, error_code);

@@ -25,6 +25,7 @@
 #define SYS_nanosleep                   35
 #define SYS_getpid                      39
 #define SYS_fork                        57
+#define SYS_execve                      59
 #define SYS_exit                        60
 #define SYS_wait4                       61
 #define SYS_getdents                    78
@@ -203,6 +204,7 @@ long sys_dup2(int oldfd, int newfd);
 long sys_nanosleep(void *req, void *rem);
 long sys_getpid(void);
 long sys_fork(void);
+long sys_execve(const char *filename, const char *const argv[], const char *const envp[]);
 long sys_exit(long error_code);
 long sys_wait4(int pid, int *status, int options, void *rusage);
 long sys_getdents(int fd, void *de, size_t count);

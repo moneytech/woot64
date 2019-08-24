@@ -718,6 +718,125 @@ char *Process::GetExecName()
     return execELF->FullPath;
 }
 
+long Process::ExecVE(const char *filename, const char * const argv[], const char * const envp[])
+{
+    if(Process::GetCurrent() != this)
+        return -ENOEXEC; // this function must be called by this process itself
+
+    // we need local copies of input arguments since we will be unmapping
+    // the whole userspace of the calling process
+    char *_filename = String::Duplicate(filename);
+    size_t nargv = 0;
+    size_t nenvp = 0;
+    for(;argv[nargv] ; ++nargv);
+    for(;envp[nenvp] ; ++nenvp);
+    char **_argv = new char *[nargv];
+    char **_envp = new char *[nenvp];
+    for(size_t i = 0; i < nargv; ++i)
+        _argv[i] = String::Duplicate(argv[i]);
+    for(size_t i = 0; i < nenvp; ++i)
+        _envp[i] = String::Duplicate(envp[i]);
+
+    // Unload all images
+    for(ELF *elf : Images)
+        delete elf;
+
+    // unmap everything
+    Paging::UnmapRange(AddressSpace, USER_BASE, USER_END - USER_BASE);
+
+    // finalize all possibly existing threads, except current thread
+    Thread *ct = Thread::GetCurrent();
+    for(Thread *t : Threads)
+    {
+        if(t == ct) continue;
+        Thread::Finalize(t, 0);
+    }
+
+    // load new image
+    ELF *elf = ELF::Load(_filename, true, false, true, PG_INVALID_ADDRESS, false);
+    if(!elf)
+    {
+        // delete local copies of arguments
+        for(size_t i = 0; i < nargv; ++i)
+            delete[] _argv[i];
+        for(size_t i = 0; i < nenvp; ++i)
+            delete[] _envp[i];
+        delete[] _filename;
+        delete[] _argv;
+        delete[] _envp;
+        return -ENOENT;
+    }
+
+    // create new userspace stack
+    auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
+    {
+        stackPtr -= size;
+        void *buf = reinterpret_cast<void *>(stackPtr);
+        Memory::Move(buf, data, size);
+        return stackPtr;
+    };
+    uintptr_t stackPtr = ct->AllocStack(&ct->UserStack, ct->UserStackSize);
+    uintptr_t zero = 0;
+    stackPtr = stackPush(stackPtr, &zero, sizeof(zero));
+    Vector<uintptr_t> envPtrs(128, 128);
+    for(size_t i = 0; i < nenvp; ++i)
+    {
+        stackPtr = stackPush(stackPtr, _envp[i], String::Length(_envp[i]) + 1);
+        envPtrs.Append(stackPtr);
+    }
+    Vector<uintptr_t> argPtrs(128, 128);
+    for(size_t i = 0; i < nargv; ++i)
+    {
+        stackPtr = stackPush(stackPtr, _argv[i], String::Length(_argv[i]) + 1);
+        argPtrs.Append(stackPtr);
+    }
+    AuxVector auxVectors[] =
+    {
+        { AT_SECURE, 0 },
+        { AT_UID, 0 },
+        { AT_GID, 0 },
+        { AT_EUID, 0 },
+        { AT_EGID, 0 },
+        { AT_ENTRY, reinterpret_cast<uintptr_t>(elf->EntryPoint) },
+        { AT_BASE, elf->GetBase() },
+        { AT_PAGESZ, PAGE_SIZE },
+        { AT_PHNUM, static_cast<uintptr_t>(elf->ehdr->e_phnum) },
+        { AT_PHENT, static_cast<uintptr_t>(elf->ehdr->e_phentsize) },
+        { AT_PHDR, reinterpret_cast<uintptr_t>(elf->phdrData) }
+    };
+    // aux vectors
+    for(size_t i = 0; i < 2; ++i)
+        stackPtr = stackPush(stackPtr, &zero, sizeof zero);
+    stackPtr = stackPush(stackPtr, auxVectors, sizeof auxVectors);
+    // env pointers
+    stackPtr = stackPush(stackPtr, &zero, sizeof zero);
+    for(size_t i = 0; i < nenvp; ++i)
+    {
+        uintptr_t envPtr = envPtrs.Get(static_cast<uint>(nenvp - i - 1));
+        stackPtr = stackPush(stackPtr, &envPtr, sizeof envPtr);
+    }
+    // arg pointers
+    stackPtr = stackPush(stackPtr, &zero, sizeof zero);
+    for(size_t i = 0; i < nargv; ++i)
+    {
+        uintptr_t argPtr = argPtrs.Get(static_cast<uint>(nargv - i - 1));
+        stackPtr = stackPush(stackPtr, &argPtr, sizeof argPtr);
+    }
+    ct->StackPointer = stackPtr = stackPush(stackPtr, &nargv, sizeof nargv);
+
+    // delete local copies of arguments
+    for(size_t i = 0; i < nargv; ++i)
+        delete[] _argv[i];
+    for(size_t i = 0; i < nenvp; ++i)
+        delete[] _envp[i];
+    delete[] _filename;
+    delete[] _argv;
+    delete[] _envp;
+
+    cpuEnterUserMode(ct->UserArgument, ct->StackPointer, reinterpret_cast<uintptr_t>(elf->EntryPoint), 0);
+    return ESUCCESS;
+}
+
 int Process::Open(const char *filename, int flags, mode_t mode)
 {
     if(!filename) return -EINVAL;

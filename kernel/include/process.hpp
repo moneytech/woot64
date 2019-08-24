@@ -114,7 +114,6 @@ public:
     DEntry *CurrentDirectory;
     uintptr_t UserStackPtr;
     Vector<Handle> Handles;
-    uintptr_t V86PageZeroPhAddr;
     MessageQueue<ipcMessage> Messages;
 
     // used for brk() syscall
@@ -162,6 +161,7 @@ public:
     uintptr_t SBrk(intptr_t incr, bool allocPages);
     uintptr_t MMapSBrk(intptr_t incr, bool allocPages);
     char *GetExecName();
+    long ExecVE(const char *filename, const char *const argv[], const char *const envp[]);
 
     // files and handles
     int Open(const char *filename, int flags, mode_t mode);
