@@ -28,6 +28,7 @@
 #include <woot/wm.h>
 
 #include <SDL/SDL.h>
+#include <sys/wait.h>
 
 static int mainTId = -1;
 static pmPixMap_t *pm = NULL;
@@ -42,9 +43,13 @@ static void btnActivate(uiControl_t *sender)
     if(!pid)
     {
         fprintf(stderr, "child process here: tid %d\n", __syscall0(SYS_gettid));
+        threadSleep(THREAD_SELF, 5000);
         exit(0);
     }
     fprintf(stderr, "main process here. child pid is %d\n", pid);
+    fprintf(stderr, "waiting for child thread\n");
+    waitpid(pid, NULL, 0);
+    fprintf(stderr, "done waiting\n");
 }
 
 static void sldChange(uiSlider_t *sender)

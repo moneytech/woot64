@@ -187,9 +187,9 @@ int Process::processEntryPoint(const char *cmdline)
     const char *envVars[] =
     {
         "LC_ALL=C",
+        "PS1=\\w \\$",
         "PATH=WOOT_OS~/bin",
-        "LD_LIBRARY_PATH=WOOT_OS~/lib",
-        "TEST=value"
+        "LD_LIBRARY_PATH=WOOT_OS~/lib"
     };
     stackPointer = buildUserStack(stackPointer, cmdline, sizeof(envVars) / sizeof(const char *), envVars, elf);
 
@@ -345,10 +345,11 @@ Process *Process::Create(ForkRegisters *regs)
     ForkEntryArgs *args = new ForkEntryArgs { cp, *regs };
     Thread *thread = new Thread("forked", nullptr, reinterpret_cast<void *>(forkThreadEntryPoint),
                                 reinterpret_cast<uintptr_t>(args), DEFAULT_STACK_SIZE,
-                                DEFAULT_USER_STACK_SIZE, nullptr, nullptr);
+                                DEFAULT_USER_STACK_SIZE, nullptr, new Semaphore(0));
     thread->FS = ct->FS;
     thread->GS = ct->GS;
     Process *proc =  new Process(cp->Name, thread, 0, true);
+    proc->Finished = thread->Finished;
     Paging::CloneRange(proc->AddressSpace, args->CallerProcess->AddressSpace, 0, USER_END);
     return proc;
 }
@@ -609,7 +610,6 @@ ELF *Process::GetELF(const char *name)
     }
     UnLock();
     return res;
-    return nullptr;
 }
 
 bool Process::RemoveELF(ELF *elf)
