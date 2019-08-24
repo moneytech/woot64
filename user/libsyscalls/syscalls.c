@@ -150,6 +150,11 @@ long sys_chdir(char *pathname)
     return __syscall1(SYS_chdir, (long)pathname);
 }
 
+long sys_readlink(const char *path, char *buf, size_t bufsiz)
+{
+    return __syscall3(SYS_readlink, (long)path, (long)buf, (long)bufsiz);
+}
+
 long sys_sysinfo(void *info)
 {
     return __syscall1(SYS_sysinfo, (long)info);

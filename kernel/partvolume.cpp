@@ -188,7 +188,7 @@ void PartVolume::Cleanup()
 }
 
 PartVolume::PartVolume(Drive *parentDrive, VolumeType *vt, uint64_t firstSector, uint64_t sectorCount) :
-    BufferedVolume(parentDrive, vt, 16, 16),
+    BufferedVolume(parentDrive, vt, 32, 128),
     firstSector(firstSector),
     sectorCount(sectorCount)
 {

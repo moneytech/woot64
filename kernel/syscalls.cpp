@@ -645,6 +645,24 @@ long SysCalls::sys_chdir(char *pathname)
     return ESUCCESS;
 }
 
+long SysCalls::sys_readlink(const char *path, char *buf, size_t bufsiz)
+{
+    size_t pathLen = String::Length(path);
+    BUFFER_CHECK(path, pathLen + 1)
+    BUFFER_CHECK(buf, bufsiz)
+
+    File *f = File::Open(path, 0, 0, false);
+    if(!f) return -errno;
+    if(!S_ISLINK(f->Mode))
+    {
+        delete f;
+        return -EINVAL;
+    }
+    int res = f->DEntry->INode->GetLink(buf, bufsiz);
+    delete f;
+    return res <= 0 ? -EINVAL : res;
+}
+
 long SysCalls::sys_sysinfo(struct sysinfo *info)
 {
     BUFFER_CHECK(info, sizeof(sysinfo))
@@ -1392,6 +1410,7 @@ void SysCalls::Initialize()
     Handlers[SYS_getdents] = reinterpret_cast<SysCallHandler>(sys_getdents);
     Handlers[SYS_getcwd] = reinterpret_cast<SysCallHandler>(sys_getcwd);
     Handlers[SYS_chdir] = reinterpret_cast<SysCallHandler>(sys_chdir);
+    Handlers[SYS_readlink] = reinterpret_cast<SysCallHandler>(sys_readlink);
     Handlers[SYS_sysinfo] = reinterpret_cast<SysCallHandler>(sys_sysinfo);
     Handlers[SYS_arch_prctl] = reinterpret_cast<SysCallHandler>(sys_arch_prctl);
     Handlers[SYS_gettid] = reinterpret_cast<SysCallHandler>(sys_gettid);

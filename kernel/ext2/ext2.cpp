@@ -1189,9 +1189,10 @@ int EXT2::FSINode::GetLink(char *buf, size_t bufSize)
     uint64_t size = GetSize();
     if(size < 60)
     {   // short symlink (data in the inode itself)
-        Memory::Move(buf, Data.i_link, bufSize < size ? bufSize : size);
-        buf[bufSize] = 0;
-        return static_cast<int>(size);
+        size_t btc = bufSize < size ? bufSize : size;
+        Memory::Move(buf, Data.i_link, btc);
+        buf[btc] = 0;
+        return static_cast<int>(btc);
     }
 
     // long symlink (data in regular blocks)
