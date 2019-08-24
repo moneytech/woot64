@@ -767,6 +767,15 @@ long Process::ExecVE(const char *filename, const char * const argv[], const char
         return -ENOENT;
     }
 
+    // initialize heap
+    MemoryLock.Acquire(0, false);
+    for(ELF *elf : Images)
+        MinBrk = max(MinBrk, align(elf->GetEndPtr(), (64 << 10)));
+    CurrentBrk = MinBrk;
+    MappedBrk = CurrentBrk;
+    MaxBrk = USER_MAX_BRK;
+    MemoryLock.Release();
+
     // create new userspace stack
     auto stackPush = [](uintptr_t stackPtr, void *data, size_t size) -> uintptr_t
     {
@@ -1053,12 +1062,15 @@ int Process::NewThread(const char *name, void *entry, uintptr_t arg, int *retVal
     t->UserEntryPoint = entry;
     t->UserArgument = arg;
 
-    // allocate and initialize new TLS area for new thread
-    t->FS = SBrk(PAGE_SIZE, true);
+    // allocate and initialize new TLS area for new thread    
     Thread *ct = Thread::GetCurrent();
-    Memory::Move(reinterpret_cast<void *>(t->FS),
-                 reinterpret_cast<void *>(ct->FS),
-                 PAGE_SIZE);
+    if(ct->FS)
+    {
+        t->FS = SBrk(PAGE_SIZE, true);
+        Memory::Move(reinterpret_cast<void *>(t->FS),
+                     reinterpret_cast<void *>(ct->FS),
+                     PAGE_SIZE);
+    }
 
     pid_t res = t->Id;
     t->Enable();
